@@ -8,8 +8,9 @@ import { Disposable } from '../../../base/common/lifecycle.js';
 import { deriveGitHubEndpoints, IGitHubEndpoints } from '../../github/common/githubEndpoints.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 import { ILogService } from '../../log/common/log.js';
+import { IProductService } from '../../product/common/productService.js';
 import { AgentHostConfigKey, agentHostCustomizationConfigSchema } from '../common/agentHostCustomizationConfig.js';
-import { gitHubCopilotResource, gitHubRepoResource } from '../common/githubEndpoints.js';
+import { gitHubCopilotResource, gitHubRepoResource, vegaChatResource } from '../common/githubEndpoints.js';
 import { ProtectedResourceMetadata } from '../common/state/protocol/state.js';
 import { IAgentConfigurationService } from './agentConfigurationService.js';
 
@@ -76,6 +77,7 @@ export class AgentHostGitHubEndpointService extends Disposable implements IAgent
 	constructor(
 		@IAgentConfigurationService private readonly _configurationService: IAgentConfigurationService,
 		@ILogService private readonly _logService: ILogService,
+		@IProductService private readonly _productService: IProductService,
 	) {
 		super();
 		const resolved = this._resolve();
@@ -119,6 +121,12 @@ export class AgentHostGitHubEndpointService extends Disposable implements IAgent
 	}
 
 	getCopilotResource(): ProtectedResourceMetadata {
+		// When the product's chat provider is VEGA, the protected resource is the
+		// VEGA API — the `vega` authentication provider resolves it to a
+		// device-flow session carrying the `sk-apivega-...` application key.
+		if (this._productService.defaultChatAgent?.provider?.default?.id === 'vega') {
+			return vegaChatResource();
+		}
 		return gitHubCopilotResource(this._endpoints);
 	}
 

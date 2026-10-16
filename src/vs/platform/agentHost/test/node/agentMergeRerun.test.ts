@@ -20,6 +20,7 @@ import { createTestGitHubService } from './testGitHubService.js';
 import { IPullRequestMutations } from '../../../github/common/pullRequestMutationService.js';
 import { IPullRequestResources } from '../../../github/common/pullRequestResourceService.js';
 import { NullLogService } from '../../../log/common/log.js';
+import { IProductService } from '../../../product/common/productService.js';
 import { AgentMergeConfigKey, readAgentMergeSessionState, withAgentMergeFolderControllerState } from '../../common/agentMerge.js';
 import { parseAgentMergePrompt } from '../../common/agentMergePrompt.js';
 import { IAgentHostGitService } from '../../common/agentHostGitService.js';
@@ -590,7 +591,7 @@ class RerunTestHarness extends Disposable {
 			this.gitStateService,
 			this.gitService,
 			createTestGitHubService(this.client),
-			this._register(new AgentHostGitHubEndpointService(this.configurationService, this.logService)),
+			this._register(new AgentHostGitHubEndpointService(this.configurationService, this.logService, { _serviceBrand: undefined } as IProductService)),
 			new class extends mock<IAgentHostProviderService>() {
 				override getProviderForSession(): undefined { return undefined; }
 			}(),

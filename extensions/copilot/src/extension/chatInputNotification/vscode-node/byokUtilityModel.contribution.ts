@@ -80,7 +80,7 @@ export class ByokUtilityModelNotificationContribution extends Disposable {
 	private async _update(): Promise<void> {
 		await this._refreshHasByokModels();
 
-		const signedOut = !this._authService.anyGitHubSession;
+		const signedOut = !this._authService.anySession;
 		const utilityUnset = !this._isUtilityOverrideSet(UTILITY_MODEL_SETTING);
 		const utilitySmallUnset = !this._isUtilityOverrideSet(UTILITY_SMALL_MODEL_SETTING);
 		const byokUtilityModelDefault = this._configService.getNonExtensionConfig<unknown>(BYOK_UTILITY_MODEL_DEFAULT_SETTING);

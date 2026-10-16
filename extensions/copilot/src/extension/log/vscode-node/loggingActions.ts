@@ -85,7 +85,7 @@ export class LoggingActionsContrib {
 - OS: ${os.platform()} ${os.release()} ${os.arch()}${vscode.env.remoteName ? `
 - Remote Name: ${vscode.env.remoteName}` : ''}${vscode.env.remoteName && ext ? `
 - Extension Kind: ${vscode.ExtensionKind[ext.extensionKind]}` : ''}
-- GitHub Account: ${this.authService.anyGitHubSession?.account.label || 'Signed Out'}
+- Chat Account: ${this.authService.anySession?.account.label || 'Signed Out'}
 
 ## Network
 
@@ -232,35 +232,35 @@ User Settings:
 				fetcher: { name: string; fetcher: IFetcher };
 				connect: (fetcher: IFetcher, url: string) => Promise<Response | string>;
 			}[] = [
-				microsoftIsOneDS
-					? {
-						// Microsoft 1DS/OneCollector telemetry endpoint (newer).
-						url: oneCollectorTelemetryUrl,
-						fetcher: currentFetcher,
-						connect: (fetcher, url) => vscode.env.isTelemetryEnabled
-							? sendRawTelemetry(fetcher, this.envService, url, this._context, 'GitHub.copilot-chat/diagnosticsTelemetryProbe', {})
-							: Promise.resolve('Telemetry is not enabled'),
-					}
-					: {
-						// Azure Application Insights telemetry endpoint (older).
-						url: 'https://dc.services.visualstudio.com/v2.1/track',
-						fetcher: currentFetcher,
+					microsoftIsOneDS
+						? {
+							// Microsoft 1DS/OneCollector telemetry endpoint (newer).
+							url: oneCollectorTelemetryUrl,
+							fetcher: currentFetcher,
+							connect: (fetcher, url) => vscode.env.isTelemetryEnabled
+								? sendRawTelemetry(fetcher, this.envService, url, this._context, 'GitHub.copilot-chat/diagnosticsTelemetryProbe', {})
+								: Promise.resolve('Telemetry is not enabled'),
+						}
+						: {
+							// Azure Application Insights telemetry endpoint (older).
+							url: 'https://dc.services.visualstudio.com/v2.1/track',
+							fetcher: currentFetcher,
+							connect: (fetcher, url) => sendRawAITelemetry(fetcher, this.envService, url),
+						},
+					{
+						// GitHub Copilot telemetry endpoint (App Insights-compatible ingestion; the URL already
+						// ends in `/telemetry`, which is the path production posts telemetry to).
+						url: this.capiClientService.copilotTelemetryURL,
+						fetcher: githubTelemetryFetcher,
 						connect: (fetcher, url) => sendRawAITelemetry(fetcher, this.envService, url),
 					},
-				{
-					// GitHub Copilot telemetry endpoint (App Insights-compatible ingestion; the URL already
-					// ends in `/telemetry`, which is the path production posts telemetry to).
-					url: this.capiClientService.copilotTelemetryURL,
-					fetcher: githubTelemetryFetcher,
-					connect: (fetcher, url) => sendRawAITelemetry(fetcher, this.envService, url),
-				},
-				{
-					// Experimentation (ExP/TAS) service endpoint (path used by vscode-tas-client).
-					url: 'https://default.exp-tas.com/vscode/ab',
-					fetcher: nodeFetchFetcher,
-					connect: (fetcher, url) => fetcher.fetch(url, { callSite: 'diagnostics-secondary-probe' }),
-				},
-			];
+					{
+						// Experimentation (ExP/TAS) service endpoint (path used by vscode-tas-client).
+						url: 'https://default.exp-tas.com/vscode/ab',
+						fetcher: nodeFetchFetcher,
+						connect: (fetcher, url) => fetcher.fetch(url, { callSite: 'diagnostics-secondary-probe' }),
+					},
+				];
 			await appendText(editor, `\n`);
 			for (const { url, fetcher, connect } of secondaryUrls) {
 				await appendText(editor, `Connecting to ${url} (${fetcher.name}): `);

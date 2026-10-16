@@ -206,7 +206,7 @@ export class ConversationFeature implements IExtensionContribution {
 			this._searchProviderRegistered = true;
 
 			// Don't register for no auth user or BYOK-only users
-			if (!this.authenticationService.anyGitHubSession || this.authenticationService.copilotToken?.isNoAuthUser) {
+			if (!this.authenticationService.anySession || this.authenticationService.copilotToken?.isNoAuthUser) {
 				this.logService.debug('ConversationFeature: Skipping search provider registration - no GitHub session available');
 				return;
 			}
@@ -227,7 +227,7 @@ export class ConversationFeature implements IExtensionContribution {
 		this._settingsSearchProviderRegistered = true;
 
 		// Don't register for no auth user or or BYOK-only users
-		if (!this.authenticationService.anyGitHubSession || this.authenticationService.copilotToken?.isNoAuthUser) {
+		if (!this.authenticationService.anySession || this.authenticationService.copilotToken?.isNoAuthUser) {
 			this.logService.debug('ConversationFeature: Skipping settings search provider registration - no GitHub session available');
 			return;
 		}
@@ -260,7 +260,7 @@ export class ConversationFeature implements IExtensionContribution {
 
 	private registerParticipantDetectionProvider() {
 		// Many BYOK models are slow and we don't want to risk invalid detection with those, at least for now.
-		if (!this.authenticationService.anyGitHubSession) {
+		if (!this.authenticationService.anySession) {
 			return;
 		}
 

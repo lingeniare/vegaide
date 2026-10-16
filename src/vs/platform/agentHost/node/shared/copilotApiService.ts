@@ -14,6 +14,7 @@ import { createDecorator } from '../../../instantiation/common/instantiation.js'
 import { ILogService } from '../../../log/common/log.js';
 import { IProductService } from '../../../product/common/productService.js';
 import type { IAgentTelemetryContext } from '../../common/agent.js';
+import { VEGA_API_BASE_URL } from '../../common/githubEndpoints.js';
 import { IAgentHostGitHubEndpointService } from '../agentHostGitHubEndpointService.js';
 
 // #region Types
@@ -177,6 +178,98 @@ const USER_API_VERSION = '2025-04-01';
 const CAPI_URL_OVERRIDE_ENV = 'VSCODE_AGENT_HOST_CAPI_URL_OVERRIDE';
 const CAPI_URL_OVERRIDE_SMOKE_TEST_HOST = 'vscode-smoke.test';
 const CAPI_URL_OVERRIDE_SMOKE_TEST_ENV = 'VSCODE_SMOKE_TEST_PROXY_HEADER';
+
+/**
+ * Server-side API key format minted by VEGA (`POST /api/v1/keys/<app>`).
+ * Such keys authenticate against `api.vega.chat` directly — there is no
+ * GitHub `copilot_internal` discovery behind them.
+ */
+export const VEGA_API_KEY_PREFIX = 'sk-apivega-';
+
+/** Whether the supplied credential is a VEGA application key. */
+export function isVegaApiKey(token: string | undefined): boolean {
+	return typeof token === 'string' && token.startsWith(VEGA_API_KEY_PREFIX);
+}
+
+/**
+ * `CAPIClient` derives `ChatMessages` as `{api}/v1/messages`. With the VEGA
+ * base (`…/api/v1`) that yields a doubled `/v1/v1/` segment; VEGA's
+ * Anthropic endpoint is flat `…/api/v1/messages`. Collapse the duplication
+ * in the fetch wrapper so the request reaches the real route.
+ */
+function rewriteVegaRequestUrl(url: string | URL): string | URL {
+	if (typeof url === 'string' && url.startsWith(VEGA_API_BASE_URL)) {
+		return url.replace(/\/v1\/v1\//, '/v1/');
+	}
+	return url;
+}
+
+/**
+ * Normalize an OpenRouter-style model record (as served by
+ * `GET api.vega.chat/api/v1/models`) into the {@link CCAModel} shape
+ * consumers read. Fields that VEGA does not provide get safe defaults.
+ */
+function normalizeVegaModel(model: Record<string, unknown>): CCAModel {
+	const id = typeof model['id'] === 'string' ? model['id'] : '';
+	const architecture = model['architecture'] as { input_modalities?: unknown } | undefined;
+	const topProvider = model['top_provider'] as { max_completion_tokens?: number; context_length?: number } | undefined;
+	const contextLength = typeof model['context_length'] === 'number' ? model['context_length'] : topProvider?.context_length;
+	const vision = Array.isArray(architecture?.input_modalities) && architecture.input_modalities.includes('image');
+	const isAnthropic = id.startsWith('anthropic/');
+	// VEGA/OpenRouter pricing is USD per token; the downstream normalizer
+	// scales `input_price` by `1e6 / batch_size`, so with batch_size 1 the
+	// raw per-token values land as per-million-token prices.
+	const pricing = model['pricing'] as { prompt?: string; completion?: string; input_cache_read?: string; input_cache_write?: string } | undefined;
+	const perToken = (value: string | undefined): number | undefined => {
+		const parsed = value === undefined ? NaN : Number(value);
+		return Number.isFinite(parsed) ? parsed : undefined;
+	};
+	const tokenPrices = pricing ? {
+		batch_size: 1,
+		default: {
+			input_price: perToken(pricing.prompt),
+			output_price: perToken(pricing.completion),
+			cache_read_price: perToken(pricing.input_cache_read),
+			cache_write_price: perToken(pricing.input_cache_write),
+			context_max: contextLength,
+		},
+	} : undefined;
+	return {
+		...model,
+		id,
+		vendor: typeof model['vendor'] === 'string' ? model['vendor'] : (id.split('/')[0] || 'vega'),
+		name: typeof model['name'] === 'string' ? model['name'] : id,
+		object: typeof model['object'] === 'string' ? model['object'] : 'model',
+		version: typeof model['version'] === 'string' ? model['version'] : '1.0',
+		model_picker_enabled: model['model_picker_enabled'] !== false,
+		model_picker_category: typeof model['model_picker_category'] === 'string' ? model['model_picker_category'] : 'versatile',
+		is_chat_default: model['is_chat_default'] === true,
+		is_chat_fallback: model['is_chat_fallback'] === true,
+		preview: model['preview'] === true,
+		policy: (model['policy'] as CCAModel['policy']) ?? { state: 'enabled', terms: '' },
+		billing: (model['billing'] as CCAModel['billing']) ?? { is_premium: false, multiplier: 0, restricted_to: [], token_prices: tokenPrices },
+		supported_endpoints: Array.isArray(model['supported_endpoints'])
+			? model['supported_endpoints'] as string[]
+			: (isAnthropic ? ['/v1/messages', '/chat/completions', '/responses'] : ['/chat/completions', '/responses']),
+		capabilities: (model['capabilities'] as CCAModel['capabilities']) ?? {
+			family: id.split('/').pop() ?? id,
+			type: 'chat',
+			object: 'model_capabilities',
+			tokenizer: 'o200k_base',
+			limits: {
+				max_context_window_tokens: contextLength ?? 128_000,
+				max_output_tokens: topProvider?.max_completion_tokens ?? Math.min(contextLength ?? 128_000, 8_192),
+				max_prompt_tokens: contextLength ?? 128_000,
+			},
+			supports: {
+				streaming: true,
+				tool_calls: true,
+				parallel_tool_calls: true,
+				vision,
+			},
+		},
+	} as CCAModel;
+}
 
 /** True iff `url` parses and its host is a loopback address (localhost / 127.0.0.0/8 / ::1). */
 function isLoopbackUrl(url: string): boolean {
@@ -613,7 +706,10 @@ export class CopilotApiService extends Disposable implements ICopilotApiService 
 		}
 
 		const json = await response.json();
-		return json.data ?? [];
+		const data = json.data ?? [];
+		// VEGA serves OpenRouter-shaped records; lift them into the CCA model
+		// shape so downstream capability/picker logic keeps working.
+		return isVegaApiKey(githubToken) ? data.map(normalizeVegaModel) : data;
 	}
 
 	async responses(
@@ -1000,13 +1096,30 @@ export class CopilotApiService extends Disposable implements ICopilotApiService 
 		const { extensionInfo } = await this._getCapiBase();
 		const fetch = this._fetch;
 		const capiClient = new CAPIClient(extensionInfo, COPILOT_LICENSE_AGREEMENT, {
-			fetch: (url, options) => fetch(url, {
+			fetch: (url, options) => fetch(rewriteVegaRequestUrl(url), {
 				method: options.method ?? 'GET',
 				headers: options.headers,
 				body: options.body,
 				signal: options.signal as AbortSignal | undefined,
 			}),
 		});
+
+		if (isVegaApiKey(githubToken)) {
+			// VEGA application keys authenticate against the OpenAI-compatible
+			// gateway directly; there is no GitHub-style /copilot_internal/user
+			// discovery to perform.
+			capiClient.updateDomains({ endpoints: { api: VEGA_API_BASE_URL }, sku: 'vega' }, undefined);
+			return {
+				capiClient,
+				expiresAt: Date.now() / 1000 + CAPI_CONTEXT_TTL_SECONDS,
+				utilityModelIdsByFamily: new Map(),
+				copilotSku: 'vega',
+				apiEndpoint: VEGA_API_BASE_URL,
+				restrictedTelemetryEnabled: false,
+				isInternal: false,
+				isVscodeTeamMember: false,
+			};
+		}
 
 		this._logService.debug('[CopilotApiService] Discovering CAPI endpoints via /copilot_internal/user');
 
@@ -1087,7 +1200,11 @@ export class CopilotApiService extends Disposable implements ICopilotApiService 
 		}
 
 		const models = await this.models(githubToken);
-		const match = models.find(m => m.capabilities?.family === modelFamily);
+		const match = models.find(m => m.capabilities?.family === modelFamily)
+			// VEGA catalogs use qualified ids and may not carry the preferred
+			// family at all; fall back to the flagged fallback model or the
+			// first catalog entry rather than failing the utility request.
+			?? (isVegaApiKey(githubToken) ? models.find(m => m.is_chat_fallback) ?? models[0] : undefined);
 		if (!match) {
 			throw new Error(`No CAPI model available for family '${modelFamily}'`);
 		}

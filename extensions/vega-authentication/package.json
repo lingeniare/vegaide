@@ -1,0 +1,53 @@
+{
+	"name": "vega-authentication",
+	"displayName": "VEGA Authentication",
+	"description": "VEGA sign-in provider (device flow) for api.vega.chat",
+	"publisher": "vscode",
+	"license": "MIT",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.99.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"api": "none",
+	"enabledApiProposals": [
+		"authIssuers"
+	],
+	"extensionKind": [
+		"ui",
+		"workspace"
+	],
+	"activationEvents": [],
+	"capabilities": {
+		"virtualWorkspaces": true,
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
+	"contributes": {
+		"authentication": [
+			{
+				"label": "VEGA",
+				"id": "vega",
+				"authorizationServerGlobs": [
+					"https://api.vega.chat"
+				]
+			}
+		]
+	},
+	"main": "./out/extension.js",
+	"browser": "./dist/browser/extension.js",
+	"scripts": {
+		"compile": "gulp compile-extension:vega-authentication",
+		"compile-web": "node esbuild.browser.mts",
+		"watch": "gulp watch-extension:vega-authentication",
+		"watch-web": "node esbuild.browser.mts --watch",
+		"vscode:prepublish": "npm run compile"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/microsoft/vscode.git"
+	}
+}

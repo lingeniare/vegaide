@@ -955,7 +955,7 @@ export class TitleBarAccountWidget extends BaseActionViewItem {
 			case ChatEntitlement.Business:
 			case ChatEntitlement.Enterprise:
 			case ChatEntitlement.Max:
-				return getChatPlanName(this.chatEntitlementService.entitlement);
+				return getChatPlanName(this.chatEntitlementService.entitlement, this.chatEntitlementService.sku);
 			default:
 				return '';
 		}

@@ -98,7 +98,7 @@ import { AgentHostGitHubMcpServerEnabledSettingId } from '../../common/agentServ
 import { CopilotToolName, getEditFilePaths, getInvocationMessage, getPastTenseMessage, getPermissionDisplay, getSdkImageGenerationMetadata, getToolIntention, getShellLanguage, getStreamingInvocationMessage, getSubagentMetadata, getTaskCompleteMarkdown, getToolDisplayName, getToolInputString, getToolKind, getToolSummaryInputContract, isAgentCoordinationTool, isCopilotSdkToolOutputFile, isEditTool, isHiddenTool, isShellHelperTool, isShellTool, isTaskCompleteTool, parseCopilotStreamingToolInput, synthesizeSkillToolCall, tryStringify } from './copilotToolDisplay.js';
 import { imageGenerationToolMetaKey } from '../../common/meta/agentImageGenerationMeta.js';
 import { FileEditTracker } from '../shared/fileEditTracker.js';
-import { ICopilotApiService, type IRestrictedTelemetryContext } from '../shared/copilotApiService.js';
+import { ICopilotApiService, isVegaApiKey, type IRestrictedTelemetryContext } from '../shared/copilotApiService.js';
 import type { IAgentHostRestrictedTelemetryContext } from '../agentHostRestrictedTelemetry.js';
 import { buildChatErrorInfoFromCopilotSdkFields } from './copilotSdkChatError.js';
 import { buildMcpTopLevelCustomizationId, getMcpServerCustomizations, McpCustomizationController, type IMcpServerProvenance, type ISdkMcpServer } from '../shared/mcpCustomizationController.js';
@@ -3511,6 +3511,14 @@ export class CopilotAgentSession extends Disposable {
 
 	/** Updates the GitHub credentials used by this live SDK session. */
 	async updateGitHubCredentials(host: string, token: string): Promise<GitHubCredentialsUpdateResult> {
+		if (isVegaApiKey(token)) {
+			// VEGA sessions authenticate through the `provider` config captured
+			// at launch — there is no GitHub credential to update in the
+			// runtime, and the application key must never be handed to GitHub
+			// auth. Report failure so the caller schedules a client restart
+			// that re-launches with the new key.
+			return { success: false } as GitHubCredentialsUpdateResult;
+		}
 		const result = await this._wrapper.session.rpc.gitHubAuth.setCredentials({
 			credentials: { type: 'token', host, token },
 		});
@@ -3785,7 +3793,9 @@ export class CopilotAgentSession extends Disposable {
 	private async _initialGitHubMcpToken(request: McpAuthRequest): Promise<string | undefined> {
 		const githubToken = this._currentGitHubToken;
 		const requestUrl = normalizeMcpServerUrl(request.serverUrl);
-		if (!githubToken || requestUrl === undefined) {
+		// A VEGA key must never be offered to the GitHub MCP server (or any
+		// MCP endpoint masquerading as it).
+		if (!githubToken || requestUrl === undefined || isVegaApiKey(githubToken)) {
 			return undefined;
 		}
 		const configuredUrls = [gitHubMcpServerUrl(undefined)];

@@ -1888,7 +1888,7 @@ suite('ClaudeAgent', () => {
 			const logService = new NullLogService();
 			const state = disposables.add(new AgentHostStateManager(logService));
 			const configuration = disposables.add(new AgentConfigurationService(state, logService));
-			const endpoints = disposables.add(new AgentHostGitHubEndpointService(configuration, logService));
+			const endpoints = disposables.add(new AgentHostGitHubEndpointService(configuration, logService, FakeProductService));
 			let retiredCredentialReachedEnterprise = false;
 			const api = disposables.add(new CopilotApiService(async url => {
 				if (String(url).endsWith('/copilot_internal/user')) {

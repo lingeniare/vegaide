@@ -7,6 +7,7 @@ import * as assert from 'assert';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { DeferredPromise, timeout } from '../../../../base/common/async.js';
 import { NullLogService } from '../../../log/common/log.js';
+import { IProductService } from '../../../product/common/productService.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
 import { mock } from '../../../../base/test/common/mock.js';
 import { runWithFakedTimers } from '../../../../base/test/common/timeTravelScheduler.js';
@@ -41,6 +42,8 @@ import { PullRequestChatContribution } from '../../node/chatContributions/pullRe
 
 let sessionCounter = 0;
 
+const GITHUB_PRODUCT_SERVICE = { _serviceBrand: undefined } as IProductService;
+
 function createProviderService(getAutonomousSessionConfig: NonNullable<IAgent['getAutonomousSessionConfig']>): IAgentHostProviderService {
 	const provider = new class extends mock<IAgent>() {
 		override getAutonomousSessionConfig(config: Readonly<Record<string, unknown>>): Record<string, unknown> | undefined {
@@ -73,7 +76,7 @@ suite('AgentMergeController', () => {
 			override readonly onDidRefreshSessionGitState = Event.None;
 			override readonly onDidChangeSessionGitHubState = Event.None;
 		}();
-		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
+		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE));
 		disposables.add(new AgentMergeController(
 			{
 				startTurn: () => false,
@@ -372,7 +375,7 @@ suite('AgentMergeController', () => {
 					}
 				}();
 			}()),
-			disposables.add(new AgentHostGitHubEndpointService(configurationService, logService)),
+			disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE)),
 			createProviderService(() => ({})),
 			logService,
 		));
@@ -1040,7 +1043,7 @@ suite('AgentMergeController', () => {
 			// this; it finds no pull request and idles on the backstop.
 			override async attachSessionGitHubPullRequest(): Promise<void> { }
 		}();
-		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
+		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE));
 		disposables.add(new AgentMergeController(
 			{
 				startTurn: () => false,
@@ -1310,7 +1313,7 @@ suite('AgentMergeController', () => {
 				}
 			}
 		}();
-		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
+		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE));
 		disposables.add(new AgentMergeController(
 			{
 				startTurn: () => false,
@@ -1363,7 +1366,7 @@ suite('AgentMergeController', () => {
 			}
 			override async attachSessionGitHubPullRequest(): Promise<void> { }
 		}();
-		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
+		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE));
 		disposables.add(new AgentMergeController(
 			{
 				startTurn: () => false,
@@ -1595,7 +1598,7 @@ suite('AgentMergeController', () => {
 			override async refreshSessionGitState(): Promise<void> { }
 			override async attachSessionGitHubPullRequest(): Promise<void> { }
 		}();
-		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
+		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE));
 		const notices: { kind: AgentSystemNotificationKind; content: string }[] = [];
 		const noticeChats: string[] = [];
 		const controller = disposables.add(new AgentMergeController(
@@ -1715,7 +1718,7 @@ suite('AgentMergeController', () => {
 					}
 				}();
 			}()),
-			disposables.add(new AgentHostGitHubEndpointService(configurationService, logService)),
+			disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE)),
 			createProviderService(() => ({})),
 			logService,
 		));
@@ -1804,7 +1807,7 @@ suite('AgentMergeController', () => {
 			override async refreshSessionGitState(): Promise<void> { }
 			override async attachSessionGitHubPullRequest(): Promise<void> { }
 		}();
-		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
+		const endpointService = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, GITHUB_PRODUCT_SERVICE));
 		const notices: { kind: AgentSystemNotificationKind; content: string }[] = [];
 		disposables.add(new AgentMergeController(
 			{

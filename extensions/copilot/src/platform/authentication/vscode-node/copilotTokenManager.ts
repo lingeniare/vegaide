@@ -21,6 +21,7 @@ import { CopilotToken, ExtendedTokenInfo, TokenErrorNotificationId, TokenInfoOrE
 import { ErrorNoTelemetry } from '../../../util/vs/base/common/errors';
 import { nowSeconds } from '../common/copilotTokenManager';
 import { authProviderId } from '../common/authentication';
+import { createVegaTokenInfo } from '../common/vega';
 import { ICopilotTokenStore } from '../common/copilotTokenStore';
 import { authenticationSessionIdentityEquals, resolveGitHubSessionUri } from '../common/enterprise';
 import { BaseCopilotTokenManager } from '../node/copilotTokenManager';
@@ -79,6 +80,16 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 	}
 
 	private async _auth(session: AuthenticationSession | undefined, providerId: AuthProviderId): Promise<TokenInfoOrError> {
+		// VEGA sessions already carry the application API key; no token minting
+		// round trip exists. The envelope just routes the API base to VEGA.
+		if (providerId === AuthProviderId.Vega) {
+			if (!session) {
+				this._logService.warn('VEGA login failed: no session');
+				return { kind: 'failure', reason: 'GitHubLoginFailed' };
+			}
+			this._logService.info(`Logged in to VEGA as ${session.account.label}`);
+			return { kind: 'success', ...createVegaTokenInfo(session) };
+		}
 		const allowNoAuthAccess = providerId === AuthProviderId.GitHub && this.configurationService.getNonExtensionConfig<boolean>('chat.allowAnonymousAccess');
 		if (!session && !allowNoAuthAccess) {
 			this._logService.warn('GitHub login failed');

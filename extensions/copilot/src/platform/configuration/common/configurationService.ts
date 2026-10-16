@@ -668,6 +668,7 @@ export enum AuthProviderId {
 	GitHub = 'github',
 	GitHubEnterprise = 'github-enterprise',
 	Microsoft = 'microsoft',
+	Vega = 'vega',
 }
 
 export enum AuthPermissionMode {
@@ -708,7 +709,7 @@ export namespace ConfigKey {
 		export const DebugUseNodeFetcher = defineSetting('advanced.debug.useNodeFetcher', ConfigType.Simple, false);
 		export const DebugUseElectronFetcher = defineSetting('advanced.debug.useElectronFetcher', ConfigType.Simple, true);
 		export const DebugNodeFetchCache = defineSetting<'off' | 'memory' | 'persistent'>('advanced.debug.nodeFetchCache', ConfigType.Simple, 'memory');
-		export const AuthProvider = defineSetting<AuthProviderId>('advanced.authProvider', ConfigType.Simple, AuthProviderId.GitHub);
+		export const AuthProvider = defineSetting<AuthProviderId>('advanced.authProvider', ConfigType.Simple, AuthProviderId.Vega);
 		export const AuthPermissions = defineSetting<AuthPermissionMode>('advanced.authPermissions', ConfigType.Simple, AuthPermissionMode.Default);
 		/** Override Auto's "Optimize for" preference in both harnesses; the extension additionally accepts `fast`. */
 		export const AutoModeTierOverride = defineSetting<string | null>('chat.autoModeTierOverride', ConfigType.Simple, null);

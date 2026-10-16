@@ -127,6 +127,17 @@ const TEST_PRODUCT_SERVICE: IProductService = {
 	version: '1.2.3',
 };
 
+const GITHUB_PRODUCT_SERVICE: IProductService = {
+	...TEST_PRODUCT_SERVICE,
+	defaultChatAgent: {
+		...TEST_PRODUCT_SERVICE.defaultChatAgent,
+		provider: {
+			...TEST_PRODUCT_SERVICE.defaultChatAgent.provider,
+			default: { id: 'github', name: 'GitHub' },
+		},
+	},
+};
+
 function defaultChatUri(session: URI): URI {
 	return URI.parse(buildDefaultChatUri(session));
 }
@@ -3904,7 +3915,7 @@ suite('CopilotAgent', () => {
 		const stateManager = disposables.add(new AgentHostStateManager(logService));
 		const configuration = disposables.add(new AgentConfigurationService(stateManager, logService));
 		configuration.updateRootConfig({ [AgentHostConfigKey.GithubEnterpriseUri]: 'https://acme.ghe.com' });
-		const endpoints = disposables.add(new AgentHostGitHubEndpointService(configuration, logService));
+		const endpoints = disposables.add(new AgentHostGitHubEndpointService(configuration, logService, GITHUB_PRODUCT_SERVICE));
 		const client = new TestCopilotClient([], [{ id: 'gpt-4o', name: 'GPT-4o' }]);
 		const agent = createTestAgent(disposables, { copilotClient: client, gitHubEndpointService: endpoints });
 		try {
@@ -4031,7 +4042,7 @@ suite('CopilotAgent', () => {
 		const logService = new NullLogService();
 		const stateManager = disposables.add(new AgentHostStateManager(logService));
 		const configuration = disposables.add(new AgentConfigurationService(stateManager, logService));
-		const endpoints = disposables.add(new AgentHostGitHubEndpointService(configuration, logService));
+		const endpoints = disposables.add(new AgentHostGitHubEndpointService(configuration, logService, GITHUB_PRODUCT_SERVICE));
 		const discoveryStarted = new DeferredPromise<void>();
 		const oldDiscovery = new DeferredPromise<Response>();
 		let oldCredentialReachedNewEndpoint = false;

@@ -125,7 +125,7 @@ export function createAgentServiceFoundation(options: ICreateAgentServiceFoundat
 		));
 	}
 	const authenticationService = options.owned.add(new AgentHostAuthenticationService(options.logService));
-	const gitHubEndpointService = options.owned.add(new AgentHostGitHubEndpointService(configurationService, options.logService));
+	const gitHubEndpointService = options.owned.add(new AgentHostGitHubEndpointService(configurationService, options.logService, options.productService));
 	const proxyResolver = options.proxyResolver ?? options.owned.add(new AgentHostProxyResolver(configurationService, options.logService));
 	const requestService = options.owned.add(new AgentHostRequestService(options.logService, proxyResolver));
 	const fetchFn = options.fetchFn ?? proxyResolver.fetch.bind(proxyResolver);

@@ -13,6 +13,7 @@ import { MutableDisposable } from '../../../../../../../base/common/lifecycle.js
 import { autorun, IObservable } from '../../../../../../../base/common/observable.js';
 import { localize } from '../../../../../../../nls.js';
 import { IContextKeyService } from '../../../../../../../platform/contextkey/common/contextkey.js';
+import product from '../../../../../../../platform/product/common/product.js';
 import { IInstantiationService } from '../../../../../../../platform/instantiation/common/instantiation.js';
 import { IKeybindingService } from '../../../../../../../platform/keybinding/common/keybinding.js';
 import { getLanguageModelDisplayNameWithSubscriptionSource } from '../../../../common/languageModelSourcePresentation.js';
@@ -222,7 +223,7 @@ export class ModelPickerActionItem extends BaseActionViewItem {
 			return localize('chat.modelPicker.restrictedHover', "{0} • Unavailable while in Restricted mode. Trust Workspace to enable models.", label);
 		}
 		if (this._pickerWidget.isSetupRequired()) {
-			return localize('chat.modelPicker.setupRequiredHover', "{0} • Sign in to GitHub Copilot to choose a model.", label);
+			return localize('chat.modelPicker.setupRequiredHover', "{0} • Sign in to {1} to choose a model.", label, product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot');
 		}
 		const selectedModel = this._pickerWidget.selectedModel;
 		const { statusIcon, tooltip } = selectedModel?.metadata || {};

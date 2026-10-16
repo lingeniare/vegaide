@@ -5,7 +5,7 @@
 
 import { gitHubMcpServerUrl } from '../../../github/common/githubEndpoints.js';
 import { McpServerType, type IMcpServerConfiguration } from '../../../mcp/common/mcpPlatformTypes.js';
-import type { ICopilotApiService } from './copilotApiService.js';
+import { isVegaApiKey, type ICopilotApiService } from './copilotApiService.js';
 import { findExecutable } from '../../../../base/node/processes.js';
 
 export const GITHUB_MCP_SERVER_NAME = 'github-mcp-server';
@@ -84,7 +84,9 @@ export function createGitHubMcpServerConfiguration(copilotApiBaseUri: string, ha
 }
 
 export async function resolveGitHubMcpServerConfiguration(copilotApiService: ICopilotApiService, token: string | undefined): Promise<IMcpServerConfiguration | undefined> {
-	if (!token) {
+	if (!token || isVegaApiKey(token)) {
+		// VEGA application keys are not GitHub credentials: there is no GitHub
+		// MCP deployment behind `api.vega.chat` to register or authenticate.
 		return undefined;
 	}
 	const [copilotApiBaseUri, hasGhCli] = await Promise.all([

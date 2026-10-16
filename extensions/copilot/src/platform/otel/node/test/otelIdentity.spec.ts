@@ -19,9 +19,9 @@ import { IdentitySpanExporter } from '../otelIdentityExporters';
 import { NodeOTelService, type OTelLogFn } from '../otelServiceImpl';
 
 class TestAuthentication {
-	anyGitHubSession: AuthenticationSession | undefined;
+	anySession: AuthenticationSession | undefined;
 	signIn(name: string): void {
-		this.anyGitHubSession = { id: name, accessToken: 'test-token', account: { id: name, label: name }, scopes: [] };
+		this.anySession = { id: name, accessToken: 'test-token', account: { id: name, label: name }, scopes: [] };
 	}
 }
 
@@ -113,7 +113,7 @@ describe('governed OTel identity', () => {
 		});
 		auth.signIn('second-account');
 		service.startSpan('invoke_agent switched', { attributes: agentIdentityAttributes(service.config, auth) }).end();
-		auth.anyGitHubSession = undefined;
+		auth.anySession = undefined;
 		service.startSpan('invoke_agent signed-out', { attributes: agentIdentityAttributes(service.config, auth) }).end();
 		await service.flush();
 		expect(spanExporter.spans.map(span => [span.name, span.attributes[StdAttr.USER_NAME]])).toEqual([

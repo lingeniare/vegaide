@@ -20,6 +20,7 @@ import { CopilotToken } from './copilotToken';
 import { ICopilotTokenManager } from './copilotTokenManager';
 import { ICopilotTokenStore } from './copilotTokenStore';
 import { authenticationSessionIdentityEquals } from './enterprise';
+import { isVegaAuthSession } from './vega';
 
 // Minimum set of scopes needed for Copilot to work
 export const GITHUB_SCOPE_USER_EMAIL = ['user:email'];
@@ -81,8 +82,22 @@ export interface IAuthenticationService {
 	 * @note See {@link getAnyGitHubToken} for more information and for an async version by calling {@link getGitHubSession} with kind 'any' and `{ silent: true }`.
 	 * @note For best practice of handling of the user's authentication state, you should react to {@link onDidAuthenticationChange}.
 	 * @note This token will have at least the `user:email` scope to be able to access the minimum Copilot API.
+	 * @note Returns `undefined` when the configured provider is not GitHub (e.g. VEGA) even if the user
+	 * is signed in — a non-GitHub credential must never reach GitHub endpoints. Use {@link anySession}
+	 * for provider-agnostic "signed in" checks.
 	 */
 	readonly anyGitHubSession: AuthenticationSession | undefined;
+
+	/**
+	 * The cached session for the configured chat authentication provider, whatever
+	 * that provider is (GitHub, GitHub Enterprise, or VEGA). Under VEGA the session
+	 * carries an `sk-apivega-...` application key rather than a GitHub OAuth token —
+	 * use {@link anyGitHubSession} only when you actually need a GitHub credential.
+	 *
+	 * @note This is the "is the user signed in for chat" check; use this instead of
+	 * {@link anyGitHubSession} when gating AI features.
+	 */
+	readonly anySession: AuthenticationSession | undefined;
 
 	/**
 	 * Whether the authentication service has a source from which a Copilot token can potentially be obtained
@@ -102,8 +117,17 @@ export interface IAuthenticationService {
 	 * @note See {@link getPermissiveGitHubToken} for more information and for an async version by calling {@link getGitHubSession} with kind 'permissive' and `{ silent: true }`.
 	 * @note For best practice of handling of the user's authentication state, you should react to {@link onDidAuthenticationChange}.
 	 * @returns undefined if no auth session is available or Minimal Mode is enabled. Otherwise, returns an auth session with the `repo` scope.
+	 * @note Returns `undefined` under non-GitHub providers (e.g. VEGA); see {@link anyGitHubSession}.
 	 */
 	readonly permissiveGitHubSession: AuthenticationSession | undefined;
+
+	/**
+	 * The cached permissive session for the configured chat authentication
+	 * provider, whatever that provider is. Under VEGA this is the application
+	 * key session; VEGA keys already cover the full API surface so no scope
+	 * upgrade applies. See {@link anySession}.
+	 */
+	readonly permissiveSession: AuthenticationSession | undefined;
 
 	/**
 	 * Gets a GitHub session capable of calling GitHub APIs.
@@ -237,6 +261,18 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 
 	protected _anyGitHubSession: AuthenticationSession | undefined;
 	get anyGitHubSession(): AuthenticationSession | undefined {
+		// A VEGA session carries an application API key, not a GitHub OAuth
+		// token — GitHub REST consumers must see "no GitHub session" so the
+		// key can never be sent to GitHub hosts.
+		return isVegaAuthSession(this._anyGitHubSession) ? undefined : this._anyGitHubSession;
+	}
+
+	/**
+	 * The provider session behind {@link anyGitHubSession} — under VEGA this
+	 * is the `sk-apivega-...` application-key session. AI-path "signed in"
+	 * checks must use this rather than the GitHub-filtered getter.
+	 */
+	get anySession(): AuthenticationSession | undefined {
 		return this._anyGitHubSession;
 	}
 
@@ -254,6 +290,11 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 
 	protected _permissiveGitHubSession: AuthenticationSession | undefined;
 	get permissiveGitHubSession(): AuthenticationSession | undefined {
+		return isVegaAuthSession(this._permissiveGitHubSession) ? undefined : this._permissiveGitHubSession;
+	}
+
+	/** The provider session behind {@link permissiveGitHubSession}. See {@link anySession}. */
+	get permissiveSession(): AuthenticationSession | undefined {
 		return this._permissiveGitHubSession;
 	}
 
@@ -374,9 +415,9 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 }
 
 export function authProviderId(configurationService: IConfigurationService): AuthProviderId {
-	return (
-		configurationService.getConfig(ConfigKey.Shared.AuthProvider) === AuthProviderId.GitHubEnterprise
-			? AuthProviderId.GitHubEnterprise
-			: AuthProviderId.GitHub
-	);
+	const configured = configurationService.getConfig(ConfigKey.Shared.AuthProvider);
+	if (configured === AuthProviderId.GitHubEnterprise || configured === AuthProviderId.Vega) {
+		return configured;
+	}
+	return AuthProviderId.GitHub;
 }

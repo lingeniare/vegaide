@@ -174,11 +174,11 @@ export class CodeSearchChunkSearch extends Disposable {
 
 		// Refresh repository authorization when the session or its account/issuer identity changes.
 		{
-			let lastAnyGitHubSession = this._authenticationService.anyGitHubSession;
-			let lastPermissiveGitHubSession = this._authenticationService.permissiveGitHubSession;
+			let lastAnyGitHubSession = this._authenticationService.anySession;
+			let lastPermissiveGitHubSession = this._authenticationService.permissiveSession;
 			this._register(this._authenticationService.onDidAuthenticationChange(() => {
-				const anySession = this._authenticationService.anyGitHubSession;
-				const permissiveSession = this._authenticationService.permissiveGitHubSession;
+				const anySession = this._authenticationService.anySession;
+				const permissiveSession = this._authenticationService.permissiveSession;
 				if (anySession?.id === lastAnyGitHubSession?.id
 					&& permissiveSession?.id === lastPermissiveGitHubSession?.id
 					&& authenticationSessionIdentityEquals(anySession, lastAnyGitHubSession)

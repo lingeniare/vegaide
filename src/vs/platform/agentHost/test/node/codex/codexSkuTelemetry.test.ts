@@ -54,8 +54,8 @@ function createHarness(disposables: Pick<DisposableStore, 'add'>, fetch: FetchFu
 	};
 	const stateManager = disposables.add(new AgentHostStateManager(logService));
 	const configurationService = disposables.add(new AgentConfigurationService(stateManager, logService));
-	const endpoints = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService));
 	const productService: IProductService = { _serviceBrand: undefined, ...product };
+	const endpoints = disposables.add(new AgentHostGitHubEndpointService(configurationService, logService, productService));
 	const apiService = disposables.add(new CopilotApiService(fetch, logService, productService, endpoints));
 	const events: { eventName: string; data: ITelemetryData }[] = [];
 	const telemetry = disposables.add(new AgentHostTelemetryService(TelemetryService.createWithLevel({

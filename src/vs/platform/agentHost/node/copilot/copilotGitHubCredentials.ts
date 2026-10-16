@@ -3,18 +3,21 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { GitHubTokenProvider } from '@github/copilot-sdk';
+import type { GitHubTokenProvider, ProviderConfig } from '@github/copilot-sdk';
 import { DeferredPromise, timeout } from '../../../../base/common/async.js';
 import { getExpirationTime, getRemainingTimeInSeconds } from '../../../../base/common/date.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
+import { VEGA_API_BASE_URL } from '../../common/githubEndpoints.js';
+import { isVegaApiKey } from '../shared/copilotApiService.js';
 
 const COPILOT_GITHUB_TOKEN_REFRESH_THRESHOLD_SECONDS = 60 * 60;
 const COPILOT_GITHUB_TOKEN_REFRESH_TIMEOUT_MS = 30_000;
 
 type CopilotGitHubSdkSessionOptions =
-	| { readonly gitHubToken: string | undefined; readonly gitHubTokenProvider?: never }
-	| { readonly gitHubToken?: never; readonly gitHubTokenProvider: GitHubTokenProvider };
+	| { readonly gitHubToken: string | undefined; readonly gitHubTokenProvider?: never; readonly provider?: never }
+	| { readonly gitHubToken?: never; readonly gitHubTokenProvider: GitHubTokenProvider; readonly provider?: never }
+	| { readonly gitHubToken?: never; readonly gitHubTokenProvider?: never; readonly provider: ProviderConfig };
 
 /**
  * The GitHub credential configuration captured when an SDK session launches.
@@ -47,9 +50,22 @@ export class CopilotGitHubSessionCredentials {
 	}
 
 	get sdkSessionOptions(): CopilotGitHubSdkSessionOptions {
-		return this._provider
-			? { gitHubTokenProvider: this._provider.tokenProvider }
-			: { gitHubToken: this._useClientAuthentication ? undefined : this._staticToken };
+		if (this._provider) {
+			return { gitHubTokenProvider: this._provider.tokenProvider };
+		}
+		if (isVegaApiKey(this._staticToken)) {
+			// A VEGA application key is not a GitHub credential — the session
+			// talks to the VEGA gateway as a BYOK OpenAI-compatible provider and
+			// no CAPI token exchange or GitHub auth applies.
+			return {
+				provider: {
+					type: 'openai',
+					baseUrl: VEGA_API_BASE_URL,
+					bearerToken: this._staticToken,
+				},
+			};
+		}
+		return { gitHubToken: this._useClientAuthentication ? undefined : this._staticToken };
 	}
 
 	isCurrentToken(token: string): boolean {

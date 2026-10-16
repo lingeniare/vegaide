@@ -19,6 +19,7 @@ import { INativeEnvironmentService } from '../../../environment/common/environme
 import { ILogService } from '../../../log/common/log.js';
 import { IAgentHostAuthenticationService } from '../agentHostAuthenticationService.js';
 import { IAgentHostGitHubEndpointService } from '../agentHostGitHubEndpointService.js';
+import { isVegaApiKey } from '../shared/copilotApiService.js';
 import { IAgentHostGitService } from '../../common/agentHostGitService.js';
 import { readCloudSandboxCloneResult } from '../../common/meta/cloudSandboxProjectMeta.js';
 import { AhpErrorCodes, JsonRpcErrorCodes, ProtocolError } from '../../common/state/sessionProtocol.js';
@@ -362,7 +363,9 @@ export class MissionControlProjects extends Disposable {
 				const resource = this._endpoints.getRepoResource();
 				const token = this._authentication.getAuthToken({ resource: resource.resource })
 					?? this._authentication.getAuthToken({ resource: this._endpoints.getCopilotResource().resource });
-				if (token) {
+				// A VEGA application key is not a GitHub credential — never hand it
+				// to a git clone against a github.com remote.
+				if (token && !isVegaApiKey(token)) {
 					env.VSCODE_MC_GIT_TOKEN = token;
 					env.GIT_CONFIG_COUNT = '2';
 					env.GIT_CONFIG_KEY_0 = `credential.${githubOrigin}.helper`;

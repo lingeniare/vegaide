@@ -80,7 +80,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 
 	private _applyPolicy(): void {
 		const copilotToken = this._authService.copilotToken;
-		const allowed = isClientBYOKAllowed(!!this._authService.anyGitHubSession, copilotToken);
+		const allowed = isClientBYOKAllowed(!!this._authService.anySession, copilotToken);
 		if (allowed && !this._providersRegistered) {
 			if (this._providers.size === 0) {
 				this._buildProviders();

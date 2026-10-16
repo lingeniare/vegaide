@@ -993,6 +993,19 @@ export class DefaultAccountProvider extends Disposable implements IDefaultAccoun
 	}
 
 	private async requestTokenEntitlements(sessions: AuthenticationSession[], sessionContext = this.getAccountSessionContext(sessions[0])): Promise<{ policyData: Partial<IPolicyData>; copilotTokenInfo: ICopilotTokenInfo } | undefined> {
+		// VEGA does not mint Copilot-style token entitlements; the application
+		// key already carries the full feature surface.
+		if (sessionContext.authenticationProvider.id === 'vega') {
+			return {
+				policyData: {
+					chat_agent_enabled: true,
+					chat_preview_features_enabled: true,
+					mcp: true,
+				},
+				copilotTokenInfo: {},
+			};
+		}
+
 		const tokenEntitlementsUrl = this.getTokenEntitlementUrl(sessionContext);
 		if (!tokenEntitlementsUrl) {
 			this.logService.debug('[DefaultAccount] No token entitlements URL found');
@@ -1070,6 +1083,23 @@ export class DefaultAccountProvider extends Disposable implements IDefaultAccoun
 		try {
 			const data = await asJson<IEntitlementsData>(response);
 			if (data) {
+				// VEGA application keys authorize the full API surface; there is
+				// no Copilot-style plan document, so a reachable key endpoint
+				// means the user is signed in with chat enabled.
+				if (sessionContext.authenticationProvider.id === 'vega') {
+					return {
+						data: {
+							access_type_sku: 'vega',
+							analytics_tracking_id: '',
+							assigned_date: new Date().toISOString(),
+							can_signup_for_limited: false,
+							chat_enabled: true,
+							copilot_plan: 'vega',
+							organization_login_list: [],
+						},
+						fetchedAt: Date.now()
+					};
+				}
 				return { data, fetchedAt: Date.now() };
 			}
 			this.logService.error('[DefaultAccount] Failed to fetch entitlements', 'No data returned');

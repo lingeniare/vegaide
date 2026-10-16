@@ -14,6 +14,7 @@ import type { RootState } from '../../../../../../platform/agentHost/common/stat
 import { CommandsRegistry } from '../../../../../../platform/commands/common/commands.js';
 import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
 import { IDefaultAccountService } from '../../../../../../platform/defaultAccount/common/defaultAccount.js';
+import product from '../../../../../../platform/product/common/product.js';
 import { ServicesAccessor } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { IWorkbenchContribution } from '../../../../../common/contributions.js';
 import { IAgentSdkSetupService, type AgentSdkSetupState } from '../../../../../services/agentHost/browser/agentSdkSetupService.js';
@@ -125,16 +126,17 @@ function noAccountDescription(setup: IAgentSdkSetupInfo, displayName: string, in
 		}
 		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.agent', "[Reload the configuration]({1}) if you have set up {0} elsewhere.", name, reload));
 	}
+	const chatProviderName = product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot';
 	if (provider && docs) {
-		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.all', "Sign in to GitHub to use GitHub Copilot models, sign in to {2} to use your {2} subscription, or [reload the configuration]({1}) if you have set up {0} elsewhere. For other ways to set up {0}, [learn more]({3}) on their docs.", name, reload, provider, docs));
+		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.all', "Sign in to {4} to use {4} models, sign in to {2} to use your {2} subscription, or [reload the configuration]({1}) if you have set up {0} elsewhere. For other ways to set up {0}, [learn more]({3}) on their docs.", name, reload, provider, docs, chatProviderName));
 	}
 	if (provider) {
-		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.signIn', "Sign in to GitHub to use GitHub Copilot models, sign in to {2} to use your {2} subscription, or [reload the configuration]({1}) if you have set up {0} elsewhere.", name, reload, provider));
+		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.signIn', "Sign in to {4} to use {4} models, sign in to {2} to use your {2} subscription, or [reload the configuration]({1}) if you have set up {0} elsewhere.", name, reload, provider, chatProviderName));
 	}
 	if (docs) {
-		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.docs', "Sign in to GitHub to use GitHub Copilot models or [reload the configuration]({1}) if you have set up {0} elsewhere. For other ways to set up {0}, [learn more]({2}) on their docs.", name, reload, docs));
+		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.docs', "Sign in to {4} to use {4} models or [reload the configuration]({1}) if you have set up {0} elsewhere. For other ways to set up {0}, [learn more]({2}) on their docs.", name, reload, docs, chatProviderName));
 	}
-	return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription', "Sign in to GitHub to use GitHub Copilot models or [reload the configuration]({1}) if you have set up {0} elsewhere.", name, reload));
+	return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription', "Sign in to {4} to use {4} models or [reload the configuration]({1}) if you have set up {0} elsewhere.", name, reload, chatProviderName));
 }
 
 /**
@@ -229,8 +231,10 @@ export function createAgentSdkSetupNotification(setup: IAgentSdkSetupInfo, displ
 		actions.push(action(localize('agentHost.sdkSetup.signInAction', "Sign in to {0}", setup.signInProviderName), AGENT_SDK_SETUP_SIGN_IN_COMMAND_ID));
 	}
 	if (includeGitHubSignIn) {
-		// The widget styles the final action as primary, so GitHub stays last.
-		actions.push(action(localize('agentHost.sdkSetup.gitHubSignInAction', "Sign in to GitHub"), AGENT_SDK_SETUP_GITHUB_SIGN_IN_COMMAND_ID));
+		// The widget styles the final action as primary, so the default chat
+		// provider sign-in stays last.
+		const chatProviderName = product.defaultChatAgent?.provider?.default?.name ?? 'GitHub';
+		actions.push(action(localize('agentHost.sdkSetup.gitHubSignInAction', "Sign in to {0}", chatProviderName), AGENT_SDK_SETUP_GITHUB_SIGN_IN_COMMAND_ID));
 	}
 	return {
 		...base,

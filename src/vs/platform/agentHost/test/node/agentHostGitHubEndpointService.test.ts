@@ -6,22 +6,30 @@
 import assert from 'assert';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
 import { NullLogService } from '../../../log/common/log.js';
+import { IProductService } from '../../../product/common/productService.js';
 import { AgentHostConfigKey } from '../../common/agentHostCustomizationConfig.js';
 import { AgentConfigurationService } from '../../node/agentConfigurationService.js';
 import { AgentHostGitHubEndpointService } from '../../node/agentHostGitHubEndpointService.js';
 import { AgentHostStateManager } from '../../node/agentHostStateManager.js';
 
+const GITHUB_PRODUCT_SERVICE = { _serviceBrand: undefined } as IProductService;
+
+const VEGA_PRODUCT_SERVICE = {
+	_serviceBrand: undefined,
+	defaultChatAgent: { provider: { default: { id: 'vega', name: 'VEGA' } } },
+} as IProductService;
+
 suite('AgentHostGitHubEndpointService', () => {
 	const disposables = ensureNoDisposablesAreLeakedInTestSuite();
 
-	function createService(enterpriseUri?: string): { service: AgentHostGitHubEndpointService; configService: AgentConfigurationService } {
+	function createService(enterpriseUri?: string, productService: IProductService = GITHUB_PRODUCT_SERVICE): { service: AgentHostGitHubEndpointService; configService: AgentConfigurationService } {
 		const logService = new NullLogService();
 		const stateManager = disposables.add(new AgentHostStateManager(logService));
 		const configService = disposables.add(new AgentConfigurationService(stateManager, logService));
 		if (enterpriseUri !== undefined) {
 			configService.updateRootConfig({ [AgentHostConfigKey.GithubEnterpriseUri]: enterpriseUri });
 		}
-		const service = disposables.add(new AgentHostGitHubEndpointService(configService, logService));
+		const service = disposables.add(new AgentHostGitHubEndpointService(configService, logService, productService));
 		return { service, configService };
 	}
 
@@ -58,6 +66,18 @@ suite('AgentHostGitHubEndpointService', () => {
 			oauth: ['https://ghe.acme.com/login/oauth'],
 			enterpriseHost: 'ghe.acme.com',
 		});
+	});
+
+	test('resolves the VEGA protected resource when the product chat provider is vega', () => {
+		const { service } = createService(undefined, VEGA_PRODUCT_SERVICE);
+		const resource = service.getCopilotResource();
+		assert.strictEqual(resource.resource, 'https://api.vega.chat/api/v1');
+		assert.strictEqual(resource.resource_name, 'VEGA');
+		assert.deepStrictEqual(resource.authorization_servers, ['https://api.vega.chat']);
+		// GitHub endpoints still derive from the enterprise config — repository
+		// resources never point at VEGA.
+		assert.strictEqual(service.getApiBaseUri(), 'https://api.github.com');
+		assert.strictEqual(service.getRepoResource().resource, 'https://api.github.com/repos');
 	});
 
 	test('onDidChange fires only when the enterprise URI actually changes', () => {

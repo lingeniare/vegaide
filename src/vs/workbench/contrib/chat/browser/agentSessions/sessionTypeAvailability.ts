@@ -5,6 +5,7 @@
 
 import { IMarkdownString, MarkdownString } from '../../../../../base/common/htmlContent.js';
 import { localize } from '../../../../../nls.js';
+import product from '../../../../../platform/product/common/product.js';
 import { ChatEntitlement, IChatEntitlementService } from '../../../../services/chat/common/chatEntitlementService.js';
 import { IChatSessionsService, SessionType } from '../../common/chatSessionsService.js';
 import { ILanguageModelsService } from '../../common/languageModels.js';
@@ -176,7 +177,7 @@ export function getSessionTypeUnavailableHover(availability: SessionTypeAvailabi
 	switch (availability) {
 		case SessionTypeAvailability.SignInRequired: {
 			const hover = new MarkdownString('', { isTrusted: { enabledCommands: ['workbench.action.chat.triggerSetup'] }, supportThemeIcons: true });
-			hover.appendMarkdown(localize('chat.sessionType.signInHover', "[Sign in to GitHub Copilot](command:workbench.action.chat.triggerSetup) to use this agent."));
+			hover.appendMarkdown(localize('chat.sessionType.signInHover', "[Sign in to {0}](command:workbench.action.chat.triggerSetup) to use this agent.", product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot'));
 			return hover;
 		}
 		case SessionTypeAvailability.UpgradeRequired: {

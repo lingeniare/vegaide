@@ -21,6 +21,7 @@ import { IRequestLogger } from '../../requestLogger/common/requestLogger';
 import { IExperimentationService } from '../../telemetry/common/nullExperimentationService';
 import { getModelCapabilityOverride } from '../common/chatModelCapabilities';
 import { IChatModelInformation, ICompletionModelInformation, IEmbeddingModelInformation, IModelAPIResponse, isChatModelInformation, isCompletionModelInformation, isEmbeddingModelInformation } from '../common/endpointProvider';
+import { isVegaModelEntry, toVegaModelInformation } from '../common/vegaModelAdapter';
 
 export type EmbeddingsModelFamily = 'text-embedding-3-small' | 'metis';
 
@@ -294,7 +295,21 @@ export class ModelMetadataFetcher extends Disposable implements IModelMetadataFe
 
 			this._familyMap.clear();
 
-			const data: IModelAPIResponse[] = (await response.json()).data;
+			const rawData: unknown = (await response.json()).data;
+			// VEGA returns OpenRouter-shaped entries which lack the CAPI
+			// `capabilities` payload; normalize those into the CAPI shape.
+			const data: IModelAPIResponse[] = Array.isArray(rawData)
+				? rawData.map(entry => isVegaModelEntry(entry) ? toVegaModelInformation(entry) : entry as IModelAPIResponse)
+				: [];
+			if (data.length && !data.some(model => model.is_chat_fallback)) {
+				// The utility/default model must exist; VEGA listings carry no
+				// fallback flag, so the first chat model takes the role.
+				const fallback = data.find(model => model.capabilities.type === 'chat');
+				if (fallback) {
+					fallback.is_chat_fallback = true;
+					fallback.is_chat_default = true;
+				}
+			}
 			this._requestLogger.logModelListCall(requestId, requestMetadata, data);
 			for (let model of data) {
 				model = await this._hydrateResolvedModel(model);

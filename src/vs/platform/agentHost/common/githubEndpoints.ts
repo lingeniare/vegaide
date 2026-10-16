@@ -6,6 +6,28 @@
 import { IGitHubEndpoints } from '../../github/common/githubEndpoints.js';
 import { ProtectedResourceMetadata } from './state/protocol/state.js';
 
+/** OpenAI-compatible API base served by the VEGA gateway. */
+export const VEGA_API_BASE_URL = 'https://api.vega.chat/api/v1';
+
+/** The VEGA site origin; also the authorization-server URI for VEGA sessions. */
+export const VEGA_AUTH_SERVER_URL = 'https://api.vega.chat';
+
+/**
+ * The VEGA protected resource. Under the VEGA product configuration the agent
+ * host authenticates against `api.vega.chat` instead of GitHub Copilot: the
+ * `vega` authentication provider resolves a device-flow session whose access
+ * token is the `sk-apivega-...` application key.
+ */
+export function vegaChatResource(): ProtectedResourceMetadata {
+	return {
+		resource: VEGA_API_BASE_URL,
+		resource_name: 'VEGA',
+		authorization_servers: [VEGA_AUTH_SERVER_URL],
+		scopes_supported: ['api'],
+		required: true,
+	};
+}
+
 /**
  * The GitHub Copilot protected resource for the given endpoints. Shared by the
  * endpoint service and tests so the resource identity is defined once.

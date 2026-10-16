@@ -168,7 +168,7 @@ export class ChatStatusDashboard extends DomWidget {
 		let headerAdditionalSpendButton: Button | undefined;
 		let headerUpgradeButton: Button | undefined;
 		if (hasUsageSection && !this.options?.compactQuotaLayout) {
-			const planName = getChatPlanName(this.chatEntitlementService.entitlement);
+			const planName = getChatPlanName(this.chatEntitlementService.entitlement, this.chatEntitlementService.sku);
 			const headerHost = this.options?.titleHeaderContainer ?? this.element;
 			const header = this.renderHeader(headerHost, this._store, planName, toAction({
 				id: 'workbench.action.manageCopilot',
@@ -268,7 +268,7 @@ export class ChatStatusDashboard extends DomWidget {
 			const includedDescription = getIncludedDescription();
 			const includedContainer = this.element.appendChild($('div.quota-indicator.included'));
 			if (this.options?.compactQuotaLayout) {
-				const planName = getChatPlanName(this.chatEntitlementService.entitlement);
+				const planName = getChatPlanName(this.chatEntitlementService.entitlement, this.chatEntitlementService.sku);
 				includedContainer.classList.add('compact');
 				includedContainer.appendChild($('div.quota-title', undefined, planName));
 				includedContainer.appendChild($('div.description', undefined, includedDescription.compact));
@@ -296,7 +296,7 @@ export class ChatStatusDashboard extends DomWidget {
 	private renderUsageContent(container: HTMLElement, token: CancellationToken, headerAdditionalSpendButton: Button | undefined, headerUpgradeButton: Button | undefined, updatePromise: Promise<void>): void {
 		const { chat: chatQuota, completions: completionsQuota, premiumChat: premiumChatQuota } = this.chatEntitlementService.quotas;
 		const compact = !!this.options?.compactQuotaLayout;
-		const planName = compact ? getChatPlanName(this.chatEntitlementService.entitlement) : undefined;
+		const planName = compact ? getChatPlanName(this.chatEntitlementService.entitlement, this.chatEntitlementService.sku) : undefined;
 
 		if (chatQuota || premiumChatQuota || completionsQuota) {
 
@@ -794,7 +794,7 @@ export class ChatStatusDashboard extends DomWidget {
 		);
 
 		const indicatorElement = $('div.quota-indicator.included.credits-used', undefined,
-			...isCompact ? [$('div.quota-title', undefined, getChatPlanName(this.chatEntitlementService.entitlement))] : [],
+			...isCompact ? [$('div.quota-title', undefined, getChatPlanName(this.chatEntitlementService.entitlement, this.chatEntitlementService.sku))] : [],
 			$('div.quota-details', undefined,
 				quotaPercentage,
 				resetValue

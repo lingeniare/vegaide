@@ -37,17 +37,17 @@ export class ExtensionStateCommandContribution extends Disposable implements IEx
 		];
 
 		// Auth state
-		const hasAnySession = !!this._authenticationService.anyGitHubSession;
-		const hasPermissiveSession = !!this._authenticationService.permissiveGitHubSession;
+		const hasAnySession = !!this._authenticationService.anySession;
+		const hasPermissiveSession = !!this._authenticationService.permissiveSession;
 		const hasCopilotToken = !!this._authenticationService.copilotToken;
-		lines.push(`  Auth: anyGitHubSession=${hasAnySession}, repoGitHubSession=${hasPermissiveSession}, copilotToken=${hasCopilotToken}`);
+		lines.push(`  Auth: anySession=${hasAnySession}, permissiveSession=${hasPermissiveSession}, copilotToken=${hasCopilotToken}`);
 
 		// Username
-		const session = this._authenticationService.anyGitHubSession;
+		const session = this._authenticationService.anySession;
 		if (session) {
 			lines.push(`  Username: ${session.account.label}`);
 		} else {
-			lines.push('  Username: (not signed in) - check the GitHub Authentication output channel for more details');
+			lines.push('  Username: (not signed in) - check the authentication provider output channel for more details');
 		}
 
 		// Proxy setup

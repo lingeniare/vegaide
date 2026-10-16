@@ -13,6 +13,7 @@ import { authProviderId, BaseAuthenticationService, StrictAuthenticationPresenta
 import { ICopilotTokenManager } from '../common/copilotTokenManager';
 import { ICopilotTokenStore } from '../common/copilotTokenStore';
 import { authenticationSessionIdentityEquals, resolveGitHubSessionUri } from '../common/enterprise';
+import { isVegaAuthSession } from '../common/vega';
 import { getAlignedSession, getAnyAuthSession } from './session';
 
 export class AuthenticationService extends BaseAuthenticationService {
@@ -50,6 +51,11 @@ export class AuthenticationService extends BaseAuthenticationService {
 	override async getGitHubSession(kind: 'permissive' | 'any', options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
 		const providerId = authProviderId(this._configurationService);
 		const interactive = options.createIfNone || options.forceNewSession;
+		if (interactive && providerId === AuthProviderId.Vega) {
+			// GitHub REST callers must never trigger the VEGA device flow with a
+			// "Sign in to GitHub" prompt — fail before any interactive request.
+			throw new Error(l10n.t('GitHub sign-in is not available because chat in this build is provided by VEGA.'));
+		}
 		const func = async () => {
 			const session = kind === 'permissive' ? await getAlignedSession(this._configurationService, options) : await getAnyAuthSession(this._configurationService, options);
 			if (providerId !== authProviderId(this._configurationService)) {
@@ -70,7 +76,18 @@ export class AuthenticationService extends BaseAuthenticationService {
 			return session;
 		};
 		const key = JSON.stringify([kind, providerId, options]);
-		return interactive ? await func() : await this._taskSingler.getOrCreate(key, func);
+		const session = interactive ? await func() : await this._taskSingler.getOrCreate(key, func);
+		if (isVegaAuthSession(session)) {
+			// A VEGA session carries an `sk-apivega-...` application key, not a
+			// GitHub OAuth token. The caches above still tracked it so identity
+			// change detection keeps working, but callers of this GitHub API
+			// must never receive the key.
+			if (interactive) {
+				throw new Error(l10n.t('GitHub sign-in is not available because chat in this build is provided by VEGA.'));
+			}
+			return undefined;
+		}
+		return session;
 	}
 
 	protected async getAnyAdoSession(options?: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {

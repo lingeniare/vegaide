@@ -276,9 +276,15 @@ export function isProUser(chatEntitlement: ChatEntitlement): boolean {
 /**
  * Gets the full plan name for the given chat entitlement
  * @param chatEntitlement The chat entitlement to get the plan name for
+ * @param sku The resolved access-type SKU, when the entitlement alone is not
+ * specific enough to pick the brand (e.g. VEGA entitlements resolve to a
+ * paid tier but should be presented as VEGA)
  * @returns The localized full plan name (e.g., "Copilot Pro", "Copilot Free")
  */
-export function getChatPlanName(chatEntitlement: ChatEntitlement): string {
+export function getChatPlanName(chatEntitlement: ChatEntitlement, sku?: string): string {
+	if (sku === 'vega') {
+		return 'VEGA';
+	}
 	switch (chatEntitlement) {
 		case ChatEntitlement.EDU:
 			return localize('plan.eduName', 'Copilot Student');
@@ -1138,6 +1144,8 @@ export class ChatEntitlementRequests extends Disposable {
 			entitlement = ChatEntitlement.Business;
 		} else if (entitlementsData.copilot_plan === 'enterprise') {
 			entitlement = ChatEntitlement.Enterprise;
+		} else if (entitlementsData.copilot_plan === 'vega') {
+			entitlement = ChatEntitlement.Pro;
 		} else {
 			entitlement = ChatEntitlement.Unavailable;
 		}

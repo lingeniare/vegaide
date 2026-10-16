@@ -37,7 +37,9 @@ async function getAuthSession(providerId: AuthProviderId, defaultScopes: string[
 	} else {
 		session = await getSilentSession() ?? await authentication.getSession(providerId, defaultScopes, options);
 	}
-	if (session) {
+	if (session && providerId !== AuthProviderId.Vega) {
+		// VEGA sessions carry an application key rather than a GitHub OAuth
+		// token; they have no GitHub deployment URI to validate.
 		resolveGitHubSessionUri(session, providerId);
 	}
 	return session;

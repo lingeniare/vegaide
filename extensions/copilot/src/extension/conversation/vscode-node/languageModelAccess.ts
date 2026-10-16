@@ -285,7 +285,7 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 		};
 		this._register(vscode.lm.registerLanguageModelChatProvider('copilot', provider));
 		this._register(this._authenticationService.onDidAuthenticationChange(() => {
-			if (!this._authenticationService.anyGitHubSession) {
+			if (!this._authenticationService.anySession) {
 				this._currentModels = [];
 			}
 			// Auth changed which means models could've changed. Fire the event
@@ -373,7 +373,7 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 				modelTooltip = vscode.l10n.t('{0} is contributed by {1} using {2}.', sanitizedModelName, customModel.owner_name, customModel.key_name);
 			}
 
-			const session = this._authenticationService.anyGitHubSession;
+			const session = this._authenticationService.anySession;
 			const isDefault = endpoint === defaultChatEndpoint;
 
 			const model: vscode.LanguageModelChatInformation = {
@@ -437,7 +437,7 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 		models: vscode.LanguageModelChatInformation[],
 	): void {
 		this._utilityAliasEndpoints.clear();
-		const session = this._authenticationService.anyGitHubSession;
+		const session = this._authenticationService.anySession;
 		const requiresAuthorization = session ? { label: session.account.label } : undefined;
 
 		for (const family of utilityAliasFamilies) {

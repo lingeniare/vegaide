@@ -104,7 +104,7 @@ import { withSessionInitiator } from '../../common/meta/agentSessionInitiatorMet
 import { CopilotAgentStartupConfig } from './copilotAgentStartupConfig.js';
 import { ShellManager } from './copilotShellTools.js';
 import { isAgentHostTelemetryService } from '../agentHostTelemetryService.js';
-import { ICopilotApiService, type IRestrictedTelemetryContext } from '../shared/copilotApiService.js';
+import { ICopilotApiService, isVegaApiKey, type IRestrictedTelemetryContext } from '../shared/copilotApiService.js';
 import { captureCopilotTelemetryContext } from '../shared/copilotSkuTelemetry.js';
 import { AgentHostGitHubTelemetryRouter } from '../agentHostGitHubTelemetryRouter.js';
 import { AgentHostClientType } from '../../common/agentHostClientInfo.js';
@@ -3759,8 +3759,29 @@ export class CopilotAgent extends Disposable implements IAgent {
 
 	private async _listModels(gitHubToken: string): Promise<IAgentModelInfo[]> {
 		this._logService.info('[Copilot] Listing models...');
-		const client = await this._ensureClient();
-		const { models } = await client.rpc.models.list(this._getEnterpriseHost() ? {} : { gitHubToken });
+		let models: readonly CopilotModelInfo[];
+		if (isVegaApiKey(gitHubToken)) {
+			// The VEGA key is not a GitHub credential, so the runtime's own
+			// model listing (which talks to CAPI) cannot serve it — query the
+			// application-filtered VEGA catalog directly.
+			models = (await this._copilotApiService.models(gitHubToken)).map(m => ({
+				id: m.id,
+				name: m.name,
+				capabilities: {
+					supports: {
+						vision: m.capabilities?.supports?.vision,
+						toolCalls: m.capabilities?.supports?.tool_calls,
+					},
+					limits: m.capabilities?.limits,
+				},
+				policy: m.policy as CopilotModelInfo['policy'],
+				billing: m.billing as CopilotModelInfo['billing'],
+			}));
+		} else {
+			const client = await this._ensureClient();
+			const { models: listed } = await client.rpc.models.list(this._getEnterpriseHost() ? {} : { gitHubToken });
+			models = listed;
+		}
 		// Empty SDK results can also mean discovery failed, so do not replace an already loaded catalog.
 		if (!models.length && this._capiModels.some(model => model !== this._fallbackAutoModel)) {
 			throw new Error('Model refresh returned an empty catalog; retaining the previous models');
