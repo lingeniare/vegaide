@@ -6041,10 +6041,10 @@ suite('CopilotAgent', () => {
 
 		suite('exact-chat working-directory conversion', () => {
 			async function createFixture(multiRoot = false, canvasesEnabled = false) {
-				const root = await fs.mkdtemp('./.agent-session-cwd-');
-				const previous = URI.file(join(process.cwd(), root, 'previous'));
-				const next = URI.file(join(process.cwd(), root, 'next'));
-				const secondary = URI.file(join(process.cwd(), root, 'secondary'));
+				const root = await fs.mkdtemp(join(os.tmpdir(), 'agent-session-cwd-'));
+				const previous = URI.file(join(root, 'previous'));
+				const next = URI.file(join(root, 'next'));
+				const secondary = URI.file(join(root, 'secondary'));
 				await Promise.all([fs.mkdir(previous.fsPath), fs.mkdir(next.fsPath), fs.mkdir(secondary.fsPath)]);
 				const sessionDirectories = multiRoot ? [previous, secondary] : [previous];
 				const rootConfig = {

@@ -223,7 +223,11 @@ zone.js/dist/**
 
 # @github/copilot - strip unneeded binaries and files
 # Agent Host uses the runtime bundled with @github/copilot-sdk.
+# The built-in extension still ships the SDK entry points; the packaging step
+# materializes target-platform prebuilds and ripgrep on top of them.
 @github/copilot/**
+!@github/copilot/package.json
+!@github/copilot/sdk/**
 
 # Standalone Copilot CLI platform packages are not product dependencies.
 @github/copilot-darwin-arm64/**

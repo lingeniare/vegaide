@@ -1,2 +1,8 @@
 @anthropic-ai/claude-agent-sdk/vendor/audio-capture/*-darwin/**
 @anthropic-ai/claude-agent-sdk/vendor/audio-capture/*-linux/**
+
+# node-pty ships prebuilds for every platform. Non-Windows .node files are ELF
+# binaries that rcedit cannot patch, so only win32 prebuilds may be packaged.
+node-pty/prebuilds/darwin-*/**
+node-pty/prebuilds/linux-*/**
+node-pty/prebuilds/linuxmusl-*/**
