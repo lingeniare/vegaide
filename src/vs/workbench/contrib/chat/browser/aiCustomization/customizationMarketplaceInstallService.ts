@@ -12,7 +12,7 @@ import { isWeb } from '../../../../../base/common/platform.js';
 import { isEqual } from '../../../../../base/common/resources.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { localize } from '../../../../../nls.js';
-import { CopilotConnectorsError } from '../../../../../platform/copilotConnectors/common/copilotConnectorsRequestService.js';
+import { normalizePluginPath, PLUGIN_MANIFEST_PATHS } from '../../../../../platform/agentPlugins/common/pluginParsers.js';
 import { CustomizationMarketplaceInstallation, CustomizationMarketplaceMediaType, getCustomizationMarketplaceResourceKey, ICustomizationMarketplaceResource, ICustomizationMarketplaceService, isCustomizationMarketplaceIconEqual } from '../../../../../platform/customizationMarketplace/common/customizationMarketplaceService.js';
 import { normalizeMcpGalleryUrl } from '../../../../../platform/customizationMarketplace/common/mcpGalleryMarketplaceProvider.js';
 import { affectsCustomizationMarketplaceSources, CustomizationMarketplaceConfiguration, CustomizationMarketplaceSources, getVisibleCustomizationMarketplaceSources } from '../../../../../platform/customizationMarketplace/common/customizationMarketplaceSources.js';
@@ -25,16 +25,16 @@ import { ITelemetryService } from '../../../../../platform/telemetry/common/tele
 import { IStorageService } from '../../../../../platform/storage/common/storage.js';
 import { IChatEntitlementService } from '../../../../services/chat/common/chatEntitlementService.js';
 import { IMcpWorkbenchService, IWorkbenchMcpServer, McpServerInstallState } from '../../../mcp/common/mcpTypes.js';
-import { createCustomizationMarketplaceInstallationSnapshot, CustomizationMarketplaceInstallationTarget, CustomizationMarketplaceInstallState, ICustomizationMarketplaceInstallationSnapshot, ICustomizationMarketplaceInstallProvider, ICustomizationMarketplaceInstallService, IRecordedCustomizationMarketplaceResource, RecordedCustomizationMarketplaceInstallState } from '../../common/customizationMarketplaceInstallService.js';
+import { createCustomizationMarketplaceInstallationSnapshot, CustomizationMarketplaceInstallationTarget, CustomizationMarketplaceInstallOrigin, CustomizationMarketplaceInstallState, ICustomizationMarketplaceInstallationSnapshot, ICustomizationMarketplaceInstallProvider, ICustomizationMarketplaceInstallService, IRecordedCustomizationMarketplaceResource, RecordedCustomizationMarketplaceInstallState } from '../../common/customizationMarketplaceInstallService.js';
 import { ChatConfiguration } from '../../common/constants.js';
 import { getCustomizationMarketplaceInstallTelemetryContext, runCustomizationMarketplaceInstallWithTelemetry } from '../../common/customizationMarketplaceInstallTelemetry.js';
 import { ICustomizationHarnessService } from '../../common/customizationHarnessService.js';
 import { IAgentPluginService } from '../../common/plugins/agentPluginService.js';
 import { IPluginInstallService } from '../../common/plugins/pluginInstallService.js';
-import { parseMarketplaceReference } from '../../common/plugins/marketplaceReference.js';
+import { parseMarketplaceReference, parseProviderMarketplaceReference } from '../../common/plugins/marketplaceReference.js';
 import { IMarketplacePlugin, IMarketplaceReference, IPluginMarketplaceService } from '../../common/plugins/pluginMarketplaceService.js';
 import { getConnectorRowPresentation } from './connectorPresentation.js';
-import { ICopilotConnectorAccount, ICopilotConnectorsService, toCopilotConnectorMarketplaceEntry } from './copilotConnectorsService.js';
+import { CopilotConnectorsError, ICopilotConnectorAccount, ICopilotConnectorsService, toCopilotConnectorMarketplaceEntry } from './copilotConnectorsService.js';
 import { getGitHubMcpRegistryIdentity, getGitHubMcpRegistryResourceIdentity } from './githubMcpRegistryIcons.js';
 import { getPluginCustomizationMarketplaceSourceIdFromIdentifier, getPluginMarketplaceIdentifier } from './pluginCustomizationMarketplaceProvider.js';
 import { CustomizationMarketplaceInstallationAssociationCache as CustomizationMarketplaceInstallationRecordStore, CustomizationMarketplaceInstallationAssociationTarget as CustomizationMarketplaceInstallationRecordTarget, getInstallationAssociationResourceKey as getInstallationRecordResourceKey, ICustomizationMarketplaceInstallationAssociation as ICustomizationMarketplaceInstallationRecord, removeLegacyCustomizationMarketplaceInstallationRecords, toAssociatedMarketplaceResource as toRecordedMarketplaceResource } from './customizationMarketplaceInstallationAssociation.js';
@@ -113,9 +113,10 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 			this._register(this.customizationMarketplaceService.onDidChangeSources(() => this.updateEnablement()));
 		}
 		this._register(autorun(reader => {
-			this.harnessService.activeHarness.read(reader);
-			this.harnessService.activeSessionResource.read(reader);
-			this.bindInstallProvider();
+			this.harnessService.availableHarnesses.read(reader);
+			const sessionResource = this.harnessService.activeSessionResource.read(reader);
+			const descriptor = this.harnessService.getDescriptorForSession(sessionResource);
+			this.bindInstallProvider(sessionResource, descriptor?.marketplaceInstallProvider);
 		}));
 		this.updateEnablement();
 	}
@@ -140,24 +141,27 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		);
 	}
 
-	private bindInstallProvider(): void {
+	private bindInstallProvider(session: URI, provider: ICustomizationMarketplaceInstallProvider | undefined): void {
 		this.providerRequest.clear();
+		const providerChanged = this.providerBinding?.provider !== provider || !isEqual(this.providerBinding?.session, session);
 		const hadInstallations = this.providerInstallations.length > 0;
 		this.providerInstallations = [];
-		if (hadInstallations) {
-			this.emitChange();
-		}
-		const provider = this.harnessService.getActiveDescriptor().marketplaceInstallProvider;
 		if (!provider) {
 			this.providerBinding = undefined;
+			if (hadInstallations || providerChanged) {
+				this.emitChange();
+			}
 			return;
 		}
 		const binding: IInstallProviderBinding = {
 			provider,
-			session: this.harnessService.activeSessionResource.get(),
+			session,
 			refreshVersion: 0,
 		};
 		this.providerBinding = binding;
+		if (hadInstallations || providerChanged) {
+			this.emitChange();
+		}
 		const store = new DisposableStore();
 		this.providerRequest.value = store;
 		store.add(provider.onDidChange(() => void this.refreshProviderInstallations(binding)));
@@ -171,6 +175,10 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		try {
 			const installations = await binding.provider.getInstallations(binding.session, cancellation.token);
 			if (binding !== this.providerBinding || refreshVersion !== binding.refreshVersion || cancellation.token.isCancellationRequested || this._store.isDisposed) {
+				return;
+			}
+			// Providers refresh on every customization change, so most refreshes return the same installations.
+			if (JSON.stringify(installations) === JSON.stringify(this.providerInstallations)) {
 				return;
 			}
 			this.providerInstallations = installations;
@@ -245,12 +253,22 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 				&& installedSource.ref === resourceSource.ref
 				&& versionsCompatible;
 		}
+		if (installedSource?.kind === 'plugin' && resourceSource?.kind === 'providerCatalog' && resourceSource.resourceKind === 'plugin' && resourceSource.repository) {
+			return installedSource.repository.toLowerCase() === resourceSource.repository.toLowerCase()
+				&& normalizePluginPath(installedSource.path) === getCatalogPluginRoot(resourceSource.path)
+				&& (resource.version === undefined || installed.version === resource.version);
+		}
+		if (!installedSource && resourceSource?.kind === 'mcpGallery' && installed.mediaType === CustomizationMarketplaceMediaType.McpServer) {
+			return installed.identifier === resourceSource.name;
+		}
 		return false;
 	}
 
 	private getGitHubMcpRegistryIdentity(resource: ICustomizationMarketplaceResource): string | undefined {
 		const installation = resource.installation;
-		const itemUrl = installation?.kind === 'providerCatalog' ? installation.itemUrl : undefined;
+		const itemUrl = installation?.kind === 'providerCatalog'
+			? installation.itemUrl
+			: installation?.kind === 'mcpGallery' ? installation.cardUrl : undefined;
 		return getGitHubMcpRegistryResourceIdentity(resource.identifier)?.toLowerCase()
 			?? getGitHubMcpRegistryIdentity(itemUrl ?? resource.externalUrl ?? resource.url?.toString(true) ?? resource.identifier)?.toLowerCase();
 	}
@@ -666,7 +684,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 			};
 		}
 		if (source.kind === 'skill' || source.kind === 'mcp' || source.kind === 'plugin' || source.kind === 'providerPlugin' || source.kind === 'providerCatalog') {
-			if ((source.kind === 'plugin' || source.kind === 'providerPlugin') &&
+			if ((source.kind === 'plugin' || source.kind === 'providerPlugin' || source.kind === 'providerCatalog' && source.resourceKind === 'plugin') &&
 				!this.configurationService.getValue<boolean>(ChatConfiguration.PluginsEnabled)) {
 				return { kind: 'unavailable', message: localize('customizationMarketplace.pluginsDisabled', "Enable agent plugins to install this resource.") };
 			}
@@ -684,7 +702,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 			}
 			const connector = this.copilotConnectorsService.connectors.find(connector => connector.name === source.name);
 			if (!connector) {
-				return { kind: 'unavailable', message: localize('customizationMarketplace.connectorStatusUnavailable', "This connector is no longer available. Refresh Discover and try again.") };
+				return { kind: 'unavailable', message: localize('customizationMarketplace.connectorStatusUnavailable', "This connector is no longer available. Refresh Browse and try again.") };
 			}
 			if (connector.connectionStatus === 'connected') {
 				return { kind: 'installed', target };
@@ -696,7 +714,10 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		}
 		if (source.kind === 'mcpGallery') {
 			if (!this.isMcpGallerySourceCurrent(source)) {
-				return { kind: 'unavailable', message: localize('customizationMarketplace.mcpGalleryChanged', "The MCP registry changed after '{0}' was discovered. Refresh Discover and try again.", source.name) };
+				return { kind: 'unavailable', message: localize('customizationMarketplace.mcpGalleryChanged', "The MCP registry changed after '{0}' was discovered. Refresh Browse and try again.", source.name) };
+			}
+			if (providerBinding) {
+				return { kind: 'available' };
 			}
 			const installed = this.getInstalledGalleryMcpServer(source);
 			if (installed) {
@@ -735,7 +756,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		const binding = this.providerBinding;
 		const provider = binding?.provider;
 		const kind = resource.installation?.kind;
-		return binding && provider && (kind === 'skill' || kind === 'mcp' || kind === 'plugin' || kind === 'configuredPlugin' || kind === 'providerPlugin'
+		return binding && provider && (kind === 'skill' || kind === 'mcp' || kind === 'mcpGallery' || kind === 'plugin' || kind === 'configuredPlugin' || kind === 'providerPlugin'
 			|| kind === 'providerCatalog'
 			|| this.providerInstallations.some(installation => this.matchesProviderInstallation(installation.resource, resource)))
 			? binding
@@ -743,7 +764,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 	}
 
 	private isProviderManagedInstallation(installation: CustomizationMarketplaceInstallation): boolean {
-		return !!this.providerBinding && (installation.kind === 'skill' || installation.kind === 'mcp' || installation.kind === 'plugin' || installation.kind === 'configuredPlugin' || installation.kind === 'providerPlugin' || installation.kind === 'providerCatalog');
+		return !!this.providerBinding && (installation.kind === 'skill' || installation.kind === 'mcp' || installation.kind === 'mcpGallery' || installation.kind === 'plugin' || installation.kind === 'configuredPlugin' || installation.kind === 'providerPlugin' || installation.kind === 'providerCatalog');
 	}
 
 	private associateInstalledResource(resource: ICustomizationMarketplaceResource, target: Extract<CustomizationMarketplaceInstallationRecordTarget, { readonly kind: 'plugin' | 'mcp' }>): void {
@@ -779,7 +800,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		}
 	}
 
-	async install(resource: ICustomizationMarketplaceResource): Promise<void> {
+	async install(resource: ICustomizationMarketplaceResource, origin: CustomizationMarketplaceInstallOrigin = 'search'): Promise<void> {
 		const state = this.getInstallState(resource);
 		if (state.kind === 'unavailable') {
 			throw new Error(state.message);
@@ -796,17 +817,22 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		const providerBinding = this.getInstallProviderBinding(resource);
 		const operationDisposables = new DisposableStore();
 		const token = cancelOnDispose(operationDisposables);
-		const requiresMarketplaceTrust = resource.installation?.kind === 'configuredPlugin' || resource.installation?.kind === 'providerPlugin';
+		const requiresMarketplaceTrust = resource.installation?.kind === 'configuredPlugin'
+			|| resource.installation?.kind === 'providerPlugin' && resource.installation.providerManaged !== true;
 		operationDisposables.add(this.lifetimeToken.onCancellationRequested(() => operationDisposables.dispose()));
 		if (requiresMarketplaceTrust) {
 			operationDisposables.add(this.pluginMarketplaceService.onDidChangeMarketplaces(() => operationDisposables.dispose()));
 		}
+		if (this.customizationMarketplaceService.onDidChangeSources) {
+			operationDisposables.add(this.customizationMarketplaceService.onDidChangeSources(() => {
+				if (!this.isSourceEnabled(resource.sourceId)) {
+					operationDisposables.dispose();
+				}
+			}));
+		}
 		operationDisposables.add(this.configurationService.onDidChangeConfiguration(event => {
 			if (
 				!this.isSourceEnabled(resource.sourceId) ||
-				(requiresMarketplaceTrust && (
-					event.affectsConfiguration(ChatConfiguration.StrictMarketplaces)
-				)) ||
 				(resource.installation?.kind === 'mcpGallery' && resource.installation.registry === 'custom' &&
 					event.affectsConfiguration(mcpGalleryServiceUrlConfig))
 			) {
@@ -815,10 +841,10 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		}));
 		const operation = runCustomizationMarketplaceInstallWithTelemetry(
 			this.telemetryService,
-			getCustomizationMarketplaceInstallTelemetryContext('marketplace', resource.installation),
+			getCustomizationMarketplaceInstallTelemetryContext('marketplace', resource.installation, origin),
 			async () => {
 				if (providerBinding) {
-					if (resource.installation?.kind === 'configuredPlugin' || resource.installation?.kind === 'providerPlugin') {
+					if (requiresMarketplaceTrust) {
 						const marketplaceReference = resource.installation.kind === 'configuredPlugin'
 							? (await this.resolveConfiguredPlugin(resource, token)).marketplaceReference
 							: this.resolveProviderPluginMarketplaceReference(resource);
@@ -1171,7 +1197,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		}
 		const discoveredReference = source.marketplaceSource ? parseMarketplaceReference(source.marketplaceSource) : undefined;
 		if (source.marketplaceId && (!discoveredReference || discoveredReference.canonicalId !== source.marketplaceId)) {
-			throw new Error(localize('customizationMarketplace.pluginIdentityChanged', "This plugin's marketplace identity changed after discovery. Refresh Discover and try again."));
+			throw new Error(localize('customizationMarketplace.pluginIdentityChanged', "This plugin's marketplace identity changed after discovery. Refresh Browse and try again."));
 		}
 		const currentReference = source.marketplaceId
 			? this.pluginMarketplaceService.getMarketplaceReferences().find(reference => reference.canonicalId === source.marketplaceId)
@@ -1181,7 +1207,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 				!await this.pluginInstallService.ensureMarketplaceTrusted(discoveredReference, token)) {
 				throw new CancellationError();
 			}
-			throw new Error(localize('customizationMarketplace.pluginUnavailable', "This plugin is no longer available from a configured marketplace. Refresh Discover and try again."));
+			throw new Error(localize('customizationMarketplace.pluginUnavailable', "This plugin is no longer available from a configured marketplace. Refresh Browse and try again."));
 		}
 		const marketplaceIds = source.marketplaceId ? new Set([source.marketplaceId]) : undefined;
 		const plugins = await this.pluginMarketplaceService.fetchMarketplacePlugins(token, marketplaceIds);
@@ -1189,7 +1215,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		const plugin = plugins.find(plugin =>
 			getPluginMarketplaceIdentifier(plugin) === resource.identifier);
 		if (!plugin || source.name && plugin.name !== source.name || source.marketplace && plugin.marketplaceName !== source.marketplace) {
-			throw new Error(localize('customizationMarketplace.pluginUnavailable', "This plugin is no longer available from a configured marketplace. Refresh Discover and try again."));
+			throw new Error(localize('customizationMarketplace.pluginUnavailable', "This plugin is no longer available from a configured marketplace. Refresh Browse and try again."));
 		}
 		return plugin;
 	}
@@ -1199,11 +1225,9 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 		if (source?.kind !== 'providerPlugin' || !source.marketplaceSource) {
 			throw new Error(localize('customizationMarketplace.providerPluginIdentityUnavailable', "This plugin does not provide provider marketplace identity."));
 		}
-		const directReference = parseMarketplaceReference(source.marketplaceSource);
-		const githubSource = /^GitHub:\s+(?<source>.+)$/.exec(source.marketplaceSource)?.groups?.source;
-		const marketplaceReference = directReference ?? (githubSource ? parseMarketplaceReference(githubSource) : undefined);
+		const marketplaceReference = parseProviderMarketplaceReference(source.marketplaceSource);
 		if (!marketplaceReference) {
-			throw new Error(localize('customizationMarketplace.providerPluginUnavailable', "This featured plugin is no longer available from a registered marketplace. Refresh Discover and try again."));
+			throw new Error(localize('customizationMarketplace.providerPluginUnavailable', "This featured plugin is no longer available from a registered marketplace. Refresh Browse and try again."));
 		}
 		return marketplaceReference;
 	}
@@ -1257,7 +1281,7 @@ export class CustomizationMarketplaceInstallService extends Disposable implement
 			? normalizeMcpGalleryUrl(this.configurationService.getValue<string>(mcpGalleryServiceUrlConfig))
 			: sourceRegistryUrl;
 		if (!manifest || !sourceRegistryUrl || normalizeMcpGalleryUrl(manifest.url) !== sourceRegistryUrl || configuredRegistryUrl !== sourceRegistryUrl) {
-			throw new Error(localize('customizationMarketplace.mcpGalleryChanged', "The MCP registry changed after '{0}' was discovered. Refresh Discover and try again.", source.name));
+			throw new Error(localize('customizationMarketplace.mcpGalleryChanged', "The MCP registry changed after '{0}' was discovered. Refresh Browse and try again.", source.name));
 		}
 		return manifest;
 	}
@@ -1314,6 +1338,20 @@ function isConnectorAccountEqual(
 function getConnectorOperationKey(resource: ICustomizationMarketplaceResource): string {
 	const connectorName = resource.installation?.kind === 'copilotConnector' ? resource.installation.name : resource.identifier;
 	return JSON.stringify([resource.sourceId, 'copilotConnector', connectorName]);
+}
+
+function getCatalogPluginRoot(path: string | undefined): string {
+	const normalized = normalizePluginPath(path);
+	for (const descriptor of PLUGIN_MANIFEST_PATHS) {
+		if (normalized === descriptor) {
+			return '';
+		}
+		const suffix = `/${descriptor}`;
+		if (normalized.endsWith(suffix)) {
+			return normalized.slice(0, -suffix.length);
+		}
+	}
+	return normalized;
 }
 
 async function createInstallationRecordId(slot: readonly (string | null)[]): Promise<string> {

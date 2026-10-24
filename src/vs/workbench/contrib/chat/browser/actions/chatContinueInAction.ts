@@ -19,6 +19,8 @@ import { ICommandService } from '../../../../../platform/commands/common/command
 import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
 import { COPILOT_CLI_AGENT_PROVIDER_ID } from '../../../../../platform/agentHost/common/agent.js';
+import { AgentHostClientConnectionKind } from '../../../../../platform/agentHost/common/agentHostTelemetry.js';
+import { IAgentHostService } from '../../../../../platform/agentHost/common/agentService.js';
 import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
 import { IsSessionsWindowContext } from '../../../../common/contextkeys.js';
 import { IEditorService } from '../../../../services/editor/common/editorService.js';
@@ -32,7 +34,7 @@ import { ChatSendResult, IChatService } from '../../common/chatService/chatServi
 import { ResolvedChatSessionsExtensionPoint, IChatSessionsService, SessionType } from '../../common/chatSessionsService.js';
 import { ChatAgentLocation, CONTINUE_CHAT_IN_COPILOT_ACTION_ID } from '../../common/constants.js';
 import { isChatViewTitleActionContext } from '../../common/actions/chatActions.js';
-import { CHAT_DELEGATE_TO_AGENT_HOST_SESSION_COMMAND_ID, getAgentSessionProvider, getAgentSessionProviderName, IAgentHostDelegationRequest, isAgentHostTarget } from '../agentSessions/agentSessions.js';
+import { AgentSessionProviders, CHAT_DELEGATE_TO_AGENT_HOST_SESSION_COMMAND_ID, getAgentSessionProvider, getAgentSessionProviderName, IAgentHostDelegationRequest, isAgentHostTarget } from '../agentSessions/agentSessions.js';
 import { IAgentSessionsService } from '../agentSessions/agentSessionsService.js';
 import { IChatWidget, IChatWidgetService, isIChatViewViewContext } from '../chat.js';
 import { IChatRequestPasteVariableEntry, toPasteVariableEntry } from '../../common/attachments/chatVariableEntries.js';
@@ -107,8 +109,12 @@ function continueInCopilotFailedMessage(): string {
 	return localize('chat.continueInCopilot.failed', "Couldn't move this chat to Copilot. Your original conversation is still available.");
 }
 
+function continueInCopilotHistoryMissingMessage(): string {
+	return localize('chat.continueInCopilot.historyMissing', "Copilot didn't load the moved conversation. Your original conversation is still available.");
+}
+
 type ChatEnterprisePolicyRecoveryEvent = {
-	action: 'migrate' | 'newChat';
+	action: 'migrate' | 'transcript' | 'newChat';
 	location: 'panel' | 'editor';
 	outcome: 'started' | 'succeeded' | 'failed' | 'cancelled';
 };
@@ -116,7 +122,7 @@ type ChatEnterprisePolicyRecoveryEvent = {
 type ChatEnterprisePolicyRecoveryClassification = {
 	owner: 'rwoll';
 	comment: 'Tracks attempts and outcomes of the enterprise policy recovery action from Local to Copilot.';
-	action: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the action migrates a conversation or opens a new chat with an unsent draft.' };
+	action: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the action migrates a conversation, opens a new chat with the conversation attached as a transcript because the host cannot import it, or opens a new chat with an unsent draft.' };
 	location: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether recovery was initiated from the chat panel or an editor.' };
 	outcome: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'A started attempt or its success, failure, or cancellation outcome. Concurrent duplicate invocations are counted once.' };
 };
@@ -154,15 +160,21 @@ export class ContinueChatInCopilotAction extends Action2 {
 		const imports = accessor.get(IAgentHostImportConversationStore);
 		const provisional = accessor.get(IAgentHostUntitledProvisionalSessionService);
 		const folders = accessor.get(IAgentHostNewSessionFolderService);
+		const agentHostService = accessor.get(IAgentHostService);
 		const sourceModel = widget.viewModel.model;
 		const ensureSourceVisible = () => {
 			if (!widget.visible || widget.viewModel?.model !== sourceModel) {
 				throw new CancellationError();
 			}
 		};
-		const turns = importedTurnsFromChatModel(sourceModel);
+		const sourceTurns = importedTurnsFromChatModel(sourceModel);
+		// A host that cannot import history gets the conversation as an attached
+		// transcript instead. That is not a move, so the source is not archived.
+		const transcriptOnly = sourceTurns.length > 0 && !agentHostService.supportsConversationImport;
+		const turns = transcriptOnly ? [] : sourceTurns;
+		const transcript = transcriptOnly ? createDelegationTranscriptAttachment(buildDelegationTranscript(sourceModel.getRequests()), getAgentSessionProviderName(AgentSessionProviders.Local)) : undefined;
 		const input = widget.getInputState();
-		const draft = { inputText: widget.getInput(), attachments: input?.attachments ?? [], selections: input?.selections ?? [] };
+		const draft = { inputText: widget.getInput(), attachments: [...(transcript ? [transcript] : []), ...(input?.attachments ?? [])], selections: input?.selections ?? [] };
 		const sidebar = isIChatViewViewContext(widget.viewContext);
 		const openOptions = {
 			type: SessionType.AgentHostCopilot,
@@ -173,7 +185,7 @@ export class ContinueChatInCopilotAction extends Action2 {
 		const untitledResource = getResourceForNewChatSession(openOptions);
 		let sessionResource = untitledResource;
 		const logOutcome = (outcome: ChatEnterprisePolicyRecoveryEvent['outcome']) => telemetryService.publicLog2<ChatEnterprisePolicyRecoveryEvent, ChatEnterprisePolicyRecoveryClassification>('chat.enterprisePolicyRecovery', {
-			action: turns.length ? 'migrate' : 'newChat',
+			action: transcriptOnly ? 'transcript' : turns.length ? 'migrate' : 'newChat',
 			location: sidebar ? 'panel' : 'editor',
 			outcome,
 		});
@@ -190,7 +202,10 @@ export class ContinueChatInCopilotAction extends Action2 {
 					throw new Error(continueInCopilotFailedMessage());
 				}
 			}
-			if (sourceSession?.isArchived()) {
+			// A transcript-only continuation keeps the source, and remote windows allow
+			// manually moving archived chats so chats stranded by earlier remote moves can recover.
+			const canContinueArchived = transcriptOnly || agentHostService.clientConnectionKind === AgentHostClientConnectionKind.RemoteExtensionHost;
+			if (!canContinueArchived && sourceSession?.isArchived()) {
 				throw new Error(continueInCopilotFailedMessage());
 			}
 			if (!await sessions.canResolveChatSession(SessionType.AgentHostCopilot)) {
@@ -198,7 +213,7 @@ export class ContinueChatInCopilotAction extends Action2 {
 			}
 			ensureSourceVisible();
 			if (turns.length) {
-				imports.set(untitledResource, { turns });
+				imports.set(untitledResource, { turns, title: sourceModel.title });
 				try {
 					if (!await provisional.getOrCreate(untitledResource, COPILOT_CLI_AGENT_PROVIDER_ID, folders.resolveNewSessionPrimary(untitledResource))) {
 						throw new Error(continueInCopilotFailedMessage());
@@ -232,6 +247,12 @@ export class ContinueChatInCopilotAction extends Action2 {
 			const destination = opened && chatService.getSession(opened);
 			if (!opened || !destination || !widgets.getWidgetBySessionResource(opened)) {
 				throw new Error(continueInCopilotFailedMessage());
+			}
+			// Only archive the source once the destination actually holds the moved
+			// history. System-initiated requests are not moved turns: a failed load
+			// renders as one, which would otherwise satisfy a one-turn source.
+			if (destination.getRequests().filter(request => !request.isSystemInitiated).length < turns.length) {
+				throw new Error(continueInCopilotHistoryMissingMessage());
 			}
 			destination.inputModel.setState(draft);
 			if (turns.length && sourceSession) {
@@ -416,6 +437,7 @@ export class CreateRemoteAgentJobAction {
 		const chatSessionsService = accessor.get(IChatSessionsService);
 		const fileService = accessor.get(IFileService);
 		const instantiationService = accessor.get(IInstantiationService);
+		const agentHostService = accessor.get(IAgentHostService);
 
 		const remoteJobCreatingKey = ChatContextKeys.remoteJobCreating.bindTo(contextKeyService);
 
@@ -503,8 +525,9 @@ export class CreateRemoteAgentJobAction {
 				// session, instead of handing it over as a read-only transcript
 				// attachment. The turns are threaded through the normal
 				// `openChatSession` flow so the session lifecycle (model picker,
-				// config chips, etc.) is unchanged.
-				const importConversationTurns = (continuationTargetType === SessionType.AgentHostCopilot && !isSessionsWindow)
+				// config chips, etc.) is unchanged. Hosts that cannot import fall
+				// back to the transcript attachment.
+				const importConversationTurns = (continuationTargetType === SessionType.AgentHostCopilot && !isSessionsWindow && agentHostService.supportsConversationImport)
 					? importedTurnsFromChatModel(chatModel)
 					: undefined;
 				// Carry the source session's selected model so the imported session
@@ -565,7 +588,7 @@ export class CreateRemoteAgentJobAction {
 								prompt: handoffPrompt,
 								attachedContext: continuationContext,
 								initialSessionOptions: initialSessionOptions.size > 0 ? initialSessionOptions : undefined,
-								importConversation: importConversationTurns ? { turns: importConversationTurns, model: importConversationModel } : undefined,
+								importConversation: importConversationTurns ? { turns: importConversationTurns, model: importConversationModel, title: chatModel.title } : undefined,
 							}
 						));
 					}

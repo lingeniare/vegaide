@@ -233,7 +233,7 @@ export interface ISessionWorkspace {
 	/**
 	 * Optional group label for categorizing this workspace in pickers. The
 	 * workspace picker uses this to bucket entries into top-level tabs
-	 * (e.g. `"Local"`, `"Cloud"`, `"Remote"`). Providers contribute the
+	 * (e.g. `"This Computer"`, `"Cloud"`, `"Remote"`). Providers contribute the
 	 * label — the picker just renders whatever values are present.
 	 */
 	readonly group?: string;
@@ -331,7 +331,7 @@ export interface IGitHubInfo {
 		readonly uri: URI;
 		/** Last host-observed pull request state. */
 		readonly state?: 'open' | 'closed' | 'merged';
-		/** State from the live workbench pull request model, when resolved. */
+		/** Last workbench-observed state, restored from cache until the live model resolves. */
 		readonly liveState?: 'open' | 'closed' | 'merged';
 		/** Icon reflecting the PR state. */
 		readonly icon?: ThemeIcon;
@@ -363,7 +363,7 @@ export interface IGitHubPullRequestRef {
 	readonly icon?: ThemeIcon;
 	/** Last host-observed pull request state. */
 	readonly state?: 'open' | 'closed' | 'merged';
-	/** State from the live workbench pull request model, when resolved. */
+	/** Last workbench-observed state, restored from cache until the live model resolves. */
 	readonly liveState?: 'open' | 'closed' | 'merged';
 	/**
 	 * Pull request title, when the session recorded one. Absent for pull requests
@@ -651,6 +651,9 @@ export interface ISessionCanvasDefinition {
 	readonly requiresInput: boolean;
 }
 
+/** `undefined` is unsettled; an array, including an empty one, is authoritative. */
+export type SessionCanvasDefinitionSnapshot = readonly ISessionCanvasDefinition[] | undefined;
+
 /**
  * Whether a chat's model is the chat's own or one put there on its behalf. This is the only
  * question model selection asks of it: `chat.defaultModel` seeds a chat that has no model of its
@@ -932,10 +935,13 @@ export interface ISessionCapabilities {
 	readonly supportsImport?: boolean;
 	/** Whether recorded artifacts can be removed from this session. */
 	readonly supportsRemoveArtifacts?: boolean;
+	readonly supportsArtifactIntegrations?: boolean;
 	/** Whether the owning provider permits presenting server-published canvases for this session. */
 	readonly supportsCanvases?: boolean;
 	/** Whether this session supports multiple chats. */
 	readonly supportsMultipleChats: boolean;
+	/** Whether chats in this session can update their read state independently. */
+	readonly supportsIndependentChatReadState?: boolean;
 	/**
 	 * Whether this session supports forking a chat from a turn into a new peer
 	 * chat. The agents-window fork gesture gates on this flag rather than on the
@@ -984,7 +990,7 @@ export interface ISessionCapabilities {
  * `ISessionWorkspaceBrowseAction`; the picker discovers tabs from the union
  * of contributed values.
  */
-export const SESSION_WORKSPACE_GROUP_LOCAL = localize('sessionWorkspaceGroup.local', "Local");
+export const SESSION_WORKSPACE_GROUP_LOCAL = localize('sessionWorkspaceGroup.local', "This Computer");
 export const SESSION_WORKSPACE_GROUP_GITHUB = localize('sessionWorkspaceGroup.github', "GitHub");
 export const SESSION_WORKSPACE_GROUP_REMOTE = localize('sessionWorkspaceGroup.remote', "Remote");
 
@@ -1006,7 +1012,7 @@ export interface ISessionWorkspaceBrowseAction {
 	readonly description?: string;
 	/**
 	 * Optional group label used by the workspace picker to bucket browse
-	 * actions into top-level tabs (e.g. `"Local"`, `"Cloud"`, `"Remote"`).
+	 * actions into top-level tabs (e.g. `"This Computer"`, `"Cloud"`, `"Remote"`).
 	 * Providers contribute the label — the picker dynamically renders tabs
 	 * for whichever values are present and filters items accordingly.
 	 */

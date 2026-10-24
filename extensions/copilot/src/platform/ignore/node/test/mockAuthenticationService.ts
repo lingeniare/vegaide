@@ -25,6 +25,7 @@ export class MockAuthenticationService implements IAuthenticationService {
 	readonly anySession: AuthenticationSession | undefined = undefined;
 	readonly permissiveGitHubSession: AuthenticationSession | undefined = undefined;
 	readonly permissiveSession: AuthenticationSession | undefined = undefined;
+	readonly anyAdoSession: AuthenticationSession | undefined = undefined;
 	readonly hasCopilotTokenSource: boolean = false;
 
 	copilotToken: Omit<CopilotToken, 'token'> | undefined = undefined;

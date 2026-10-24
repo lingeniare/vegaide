@@ -3,42 +3,40 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { raceTimeout } from '../../../../../../base/common/async.js';
 import { CancellationToken } from '../../../../../../base/common/cancellation.js';
 import { Codicon } from '../../../../../../base/common/codicons.js';
 import { CancellationError } from '../../../../../../base/common/errors.js';
 import { Emitter, Event } from '../../../../../../base/common/event.js';
-import { Disposable, DisposableStore } from '../../../../../../base/common/lifecycle.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { ResourceMap } from '../../../../../../base/common/map.js';
 import { Schemas } from '../../../../../../base/common/network.js';
 import { URI } from '../../../../../../base/common/uri.js';
 import { localize } from '../../../../../../nls.js';
-import { IAgentCustomizationInstallation, IAgentCustomizationInstallationRequest, IAgentCustomizationInstallationReview } from '../../../../../../platform/agentHost/common/agent.js';
+import { IAgentCustomizationInstallation, IAgentCustomizationInstallationApplyResult, IAgentCustomizationInstallationRequest, IAgentCustomizationInstallationReview, IAgentPluginInstallation } from '../../../../../../platform/agentHost/common/agent.js';
 import { AMBIENT_AGENT_HOST_AUTHORITY, IAgentHostConnectionsService } from '../../../../../../platform/agentHost/common/agentHostConnectionsService.js';
 import { IAgentHostService } from '../../../../../../platform/agentHost/common/agentService.js';
 import { CustomizationMarketplaceMediaType, CustomizationMarketplaceRecoveryGroup, ICustomizationMarketplaceResource, ICustomizationMarketplaceSourcePage, ICustomizationMarketplaceSourceQuery, ICustomizationMarketplaceSourceRecoveryAction } from '../../../../../../platform/customizationMarketplace/common/customizationMarketplaceService.js';
 import { CustomizationMarketplaceSources } from '../../../../../../platform/customizationMarketplace/common/customizationMarketplaceSources.js';
 import { IDialogService } from '../../../../../../platform/dialogs/common/dialogs.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
+import type { IMcpServerConfiguration } from '../../../../../../platform/mcp/common/mcpPlatformTypes.js';
 import { IRecordedCustomizationMarketplaceResource, ICustomizationMarketplaceInstallProvider } from '../../../common/customizationMarketplaceInstallService.js';
-import { ICustomizationMarketplaceSearchProvider } from '../../../common/customizationHarnessService.js';
-import { IAgentPlugin, IAgentPluginService } from '../../../common/plugins/agentPluginService.js';
+import { ICustomizationMarketplaceInfo, ICustomizationMarketplaceManagementProvider, ICustomizationMarketplaceSearchProvider, ICustomizationMcpConfigurationProvider, ICustomizationPluginInstallProvider } from '../../../common/customizationHarnessService.js';
 import { IAgentHostCustomizationService } from './agentHostCustomizationService.js';
 import { getGitHubMcpRegistryIcon } from '../../aiCustomization/githubMcpRegistryIcons.js';
 
 const maxCachedReceiptSessions = 50;
 const maxCatalogAssociations = 1000;
-const pluginInventoryUpdateTimeoutMs = 30_000;
 const githubLoginPattern = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
+type AppliedPluginIdentity = Extract<IAgentCustomizationInstallationApplyResult, { readonly kind: 'plugin' }>;
 
-export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable implements ICustomizationMarketplaceInstallProvider, ICustomizationMarketplaceSearchProvider {
+export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable implements ICustomizationMarketplaceInstallProvider, ICustomizationMarketplaceSearchProvider, ICustomizationMarketplaceManagementProvider, ICustomizationMcpConfigurationProvider, ICustomizationPluginInstallProvider {
 	private readonly _onDidChange = this._register(new Emitter<void>());
 	private readonly receiptInstallations = new ResourceMap<readonly IRecordedCustomizationMarketplaceResource[]>();
 	private readonly unavailableCatalogItems = new Map<string, string>();
 	private readonly catalogAssociations = new Map<string, ICustomizationMarketplaceResource>();
-	private knownInstallationIds = new Set<string>();
-	private pendingCatalogInstall: { readonly resource: ICustomizationMarketplaceResource; readonly previousIds: ReadonlySet<string> } | undefined;
-	private catalogAuthenticationRequired = false;
+	private readonly pendingCatalogAssociations: { readonly identity: AppliedPluginIdentity; readonly resource: ICustomizationMarketplaceResource }[] = [];
+	private readonly catalogAuthenticationRequired = new Set<string>();
 	readonly onDidChange: Event<void>;
 
 	constructor(
@@ -47,7 +45,6 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		@IAgentHostService private readonly agentHostService: IAgentHostService,
 		@IAgentHostConnectionsService private readonly agentHostConnectionsService: IAgentHostConnectionsService,
 		@IAgentHostCustomizationService private readonly agentHostCustomizationService: IAgentHostCustomizationService,
-		@IAgentPluginService private readonly agentPluginService: IAgentPluginService,
 		@IDialogService private readonly dialogService: IDialogService,
 		@ILogService private readonly logService: ILogService,
 	) {
@@ -55,7 +52,6 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		this.onDidChange = Event.any(
 			this._onDidChange.event,
 			this.agentHostCustomizationService.onDidChangeCustomizations,
-			Event.fromObservableLight(this.agentPluginService.plugins),
 			this.agentHostService.onAgentHostStart,
 			Event.map(this.agentHostService.onAgentHostExit, () => undefined),
 		);
@@ -66,6 +62,7 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		if (installation?.kind === 'providerCatalog') {
 			return this.unavailableCatalogItems.get(installation.selectionId);
 		}
+
 		if (installation?.kind === 'plugin') {
 			return localize('agentHost.customizationInstall.directPluginUnavailable', "The SDK cannot yet install a catalog plugin at its exact pinned revision.");
 		}
@@ -75,14 +72,108 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		if (installation?.kind === 'configuredPlugin' && (!installation.name || !installation.marketplace || !installation.marketplaceId || !installation.marketplaceSource)) {
 			return localize('agentHost.customizationInstall.pluginIdentityUnavailable', "The SDK plugin installation identity is unavailable.");
 		}
+		if (installation?.kind === 'mcpGallery' && !installation.cardUrl) {
+			return localize('agentHost.customizationInstall.mcpGalleryIdentityUnavailable', "This MCP Gallery entry does not provide the server card URL required for Copilot installation.");
+		}
 		if ((installation?.kind === 'skill' || installation?.kind === 'mcp') && !resource.externalUrl && !resource.url) {
 			return localize('agentHost.customizationInstall.catalogIdentityUnavailable', "This customization does not provide the SDK catalog identity required for installation.");
 		}
 		return undefined;
 	}
 
+	async installFromSource(sessionResource: URI, source: string): Promise<void> {
+		if (!this.agentHostService.installPlugin) {
+			throw new Error(localize('agentHost.pluginInstall.unavailable', "The selected agent does not support installing plugins from source."));
+		}
+		await this.agentHostService.installPlugin(this.providerId, { source }, this.getBackendSession(sessionResource), this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+		this._onDidChange.fire();
+	}
+
+	async addGlobal(name: string, config: IMcpServerConfiguration): Promise<void> {
+		if (!this.agentHostService.addMcpServerConfiguration) {
+			throw new Error(localize('agentHost.mcpConfiguration.addUnavailable', "The selected agent does not support global MCP configuration."));
+		}
+		await this.agentHostService.addMcpServerConfiguration(this.providerId, name, config);
+	}
+
+	async list(sessionResource: URI) {
+		if (!this.agentHostService.listPluginMarketplaces) {
+			throw new Error(localize('agentHost.marketplaceManagement.listUnavailable', "The selected agent does not support marketplace management."));
+		}
+		return this.agentHostService.listPluginMarketplaces(this.providerId, this.getBackendSession(sessionResource), this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+	}
+
+	async add(sessionResource: URI, source: string) {
+		if (!this.agentHostService.addPluginMarketplace) {
+			throw new Error(localize('agentHost.marketplaceManagement.addUnavailable', "The selected agent does not support adding marketplaces."));
+		}
+		const result = await this.agentHostService.addPluginMarketplace(this.providerId, this.getBackendSession(sessionResource), source, this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+		this._onDidChange.fire();
+		return result;
+	}
+
+	async queryMarketplace(sessionResource: URI, marketplace: ICustomizationMarketplaceInfo, options: ICustomizationMarketplaceSourceQuery, token: CancellationToken): Promise<ICustomizationMarketplaceSourcePage> {
+		this.throwIfCancelled(token);
+		if (options.mediaType && options.mediaType !== CustomizationMarketplaceMediaType.CopilotPlugin) {
+			return { items: [], total: 0 };
+		}
+		if (!this.agentHostService.browsePluginMarketplace) {
+			throw new Error(localize('agentHost.marketplaceManagement.browseUnavailable', "The selected agent does not support browsing marketplaces."));
+		}
+		const plugins = await this.agentHostService.browsePluginMarketplace(this.providerId, this.getBackendSession(sessionResource), marketplace.name, this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+		this.throwIfCancelled(token);
+		const query = options.query?.trim().toLowerCase();
+		const matching = query
+			? plugins.filter(plugin => plugin.name.toLowerCase().includes(query) || plugin.description?.toLowerCase().includes(query))
+			: plugins;
+		const offset = Number(options.cursor ?? 0);
+		const start = Number.isSafeInteger(offset) && offset >= 0 ? offset : 0;
+		const pageSize = options.pageSize ?? matching.length;
+		const end = Math.min(start + pageSize, matching.length);
+		return {
+			items: matching.slice(start, end).map(plugin => ({
+				identifier: JSON.stringify([marketplace.source, marketplace.name, plugin.name]),
+				displayName: plugin.name,
+				description: plugin.description ?? '',
+				mediaType: CustomizationMarketplaceMediaType.CopilotPlugin,
+				tags: [],
+				capabilities: [],
+				representativeQueries: [],
+				installation: {
+					kind: 'providerPlugin' as const,
+					name: plugin.name,
+					marketplace: marketplace.name,
+					marketplaceSource: marketplace.source,
+					providerManaged: true,
+				},
+			})),
+			total: matching.length,
+			nextCursor: end < matching.length ? String(end) : undefined,
+		};
+	}
+
+	async remove(sessionResource: URI, name: string, force?: boolean) {
+		if (!this.agentHostService.removePluginMarketplace) {
+			throw new Error(localize('agentHost.marketplaceManagement.removeUnavailable', "The selected agent does not support removing marketplaces."));
+		}
+		const result = await this.agentHostService.removePluginMarketplace(this.providerId, this.getBackendSession(sessionResource), name, force, this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+		if (result.removed) {
+			this._onDidChange.fire();
+		}
+		return result;
+	}
+
+	async refresh(sessionResource: URI, name?: string) {
+		if (!this.agentHostService.refreshPluginMarketplaces) {
+			throw new Error(localize('agentHost.marketplaceManagement.refreshUnavailable', "The selected agent does not support refreshing marketplaces."));
+		}
+		const result = await this.agentHostService.refreshPluginMarketplaces(this.providerId, this.getBackendSession(sessionResource), name, this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+		this._onDidChange.fire();
+		return result;
+	}
+
 	getRecoveryAction(): ICustomizationMarketplaceSourceRecoveryAction | undefined {
-		if (!this.catalogAuthenticationRequired) {
+		if (this.catalogAuthenticationRequired.size === 0) {
 			return undefined;
 		}
 		return {
@@ -94,12 +185,24 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 					throw new CancellationError();
 				}
 				this.throwIfCancelled(token);
-				this.catalogAuthenticationRequired = false;
+				this.catalogAuthenticationRequired.clear();
 			},
 		};
 	}
 
 	async query(sessionResource: URI, options: ICustomizationMarketplaceSourceQuery, token: CancellationToken): Promise<ICustomizationMarketplaceSourcePage | undefined> {
+		return this.queryCatalog(sessionResource, options, token);
+	}
+
+	async getFeed(sessionResource: URI, feedId: string, token: CancellationToken): Promise<ICustomizationMarketplaceSourcePage> {
+		const page = await this.queryCatalog(sessionResource, {}, token, feedId);
+		if (!page) {
+			throw new Error(localize('agentHost.customizationFeed.unavailable', "The selected agent cannot retrieve curated customizations."));
+		}
+		return page;
+	}
+
+	private async queryCatalog(sessionResource: URI, options: ICustomizationMarketplaceSourceQuery, token: CancellationToken, feedId?: string): Promise<ICustomizationMarketplaceSourcePage | undefined> {
 		this.throwIfCancelled(token);
 		const query = options.query?.trim() ?? '';
 		if (!this.agentHostService.searchCustomizationMarketplace) {
@@ -116,11 +219,17 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 			mediaType: options.mediaType,
 			limit: options.pageSize ?? 30,
 			cursor: options.cursor,
+			...(feedId !== undefined ? { feedId } : {}),
 		});
 		const result = await search();
 		this.throwIfCancelled(token);
+		const authenticationKey = feedId ?? '';
 		if (result.kind === 'unavailable') {
-			this.catalogAuthenticationRequired = result.reason === 'authentication';
+			if (result.reason === 'authentication') {
+				this.catalogAuthenticationRequired.add(authenticationKey);
+			} else {
+				this.catalogAuthenticationRequired.delete(authenticationKey);
+			}
 			switch (result.reason) {
 				case 'authentication':
 					throw new Error(localize('agentHost.customizationSearch.authenticationRequired', "Sign in to Copilot to search the GitHub Feed."));
@@ -130,7 +239,7 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 					throw new Error(localize('agentHost.customizationSearch.unsupported', "The active Copilot runtime does not support GitHub Feed search."));
 			}
 		}
-		this.catalogAuthenticationRequired = false;
+		this.catalogAuthenticationRequired.delete(authenticationKey);
 		return {
 			items: result.items.map(item => {
 				if (item.unavailableMessage) {
@@ -147,19 +256,29 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 					? { kind: 'providerPlugin' as const, name: item.pluginName, marketplace: item.marketplace, marketplaceSource: item.marketplaceSource }
 					: undefined;
 				return {
-					identifier: providerPlugin ? JSON.stringify([providerPlugin.marketplaceSource, providerPlugin.marketplace, providerPlugin.name]) : item.itemUrl ?? item.selectionId,
+					identifier: item.identifier ?? (providerPlugin ? JSON.stringify([providerPlugin.marketplaceSource, providerPlugin.marketplace, providerPlugin.name]) : item.itemUrl ?? item.selectionId),
 					displayName: item.displayName,
 					description: item.description ?? '',
 					mediaType: getCatalogMediaType(item.kind),
-					tags: [],
+					tags: item.categories ?? [],
 					capabilities: [],
 					representativeQueries: [],
+					connectorIds: item.connectorIds,
 					version: item.version,
 					repository: item.repository ? URI.from({ scheme: Schemas.https, authority: 'github.com', path: `/${item.repository}` }) : undefined,
 					publisher: item.publisher,
 					publisherUrl: publisher?.profile,
-					icon: publisher?.avatar ?? registryIcon,
-					installation: providerPlugin ?? { kind: 'providerCatalog' as const, resourceKind: item.kind, selectionId: item.selectionId, itemUrl: item.itemUrl },
+					icon: item.iconUrl ? URI.parse(item.iconUrl) : publisher?.avatar ?? registryIcon,
+					installation: providerPlugin ?? {
+						kind: 'providerCatalog' as const,
+						resourceKind: item.kind,
+						selectionId: item.selectionId,
+						...(item.catalogIdentity ? { catalogIdentity: item.catalogIdentity } : {}),
+						itemUrl: item.itemUrl,
+						installable: item.installable,
+						...(item.repository ? { repository: item.repository } : {}),
+						...(item.path ? { path: item.path } : {}),
+					},
 				};
 			}),
 			nextCursor: result.nextCursor,
@@ -168,7 +287,7 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 
 	async getInstallations(sessionResource: URI, token: CancellationToken): Promise<readonly IRecordedCustomizationMarketplaceResource[]> {
 		this.throwIfCancelled(token);
-		const pluginInstallations = this.getPluginInstallations();
+		const pluginInstallations = await this.getPluginInstallations(sessionResource, token);
 		if (!this.agentHostService.listCustomizationInstallations) {
 			return pluginInstallations;
 		}
@@ -186,31 +305,25 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		} catch (error) {
 			this.throwIfCancelled(token);
 			this.logService.error('[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts', error);
-			return [...(this.receiptInstallations.get(backendSession) ?? []), ...pluginInstallations];
+			const receiptInstallations = this.receiptInstallations.get(backendSession) ?? [];
+			return [...receiptInstallations, ...pluginInstallations];
 		}
 		this.throwIfCancelled(token);
-		const rawReceiptInstallations = installations.map(installation => this.toRecordedInstallation(sessionResource, installation));
-		this.captureCatalogAssociation(rawReceiptInstallations);
 		const receiptInstallations = installations.map(installation => this.toRecordedInstallation(sessionResource, installation));
 		this.receiptInstallations.set(backendSession, receiptInstallations);
 		while (this.receiptInstallations.size > maxCachedReceiptSessions) {
 			this.receiptInstallations.delete(this.receiptInstallations.keys().next().value!);
 		}
-		const result = [
+		return [
 			...receiptInstallations,
 			...pluginInstallations,
 		];
-		this.knownInstallationIds = new Set(result.map(installation => installation.installationId).filter((id): id is string => !!id));
-		return result;
 	}
 
 	async install(sessionResource: URI, resource: ICustomizationMarketplaceResource, token: CancellationToken): Promise<void> {
 		this.throwIfCancelled(token);
 		const installation = resource.installation;
 		if (installation?.kind === 'providerCatalog') {
-			if (installation.resourceKind === 'plugin') {
-				throw new Error(this.getInstallUnavailableMessage(resource) ?? localize('agentHost.customizationInstall.directPluginUnavailable', "The SDK cannot yet install a catalog plugin at its exact pinned revision."));
-			}
 			if (!await this.resolveAuthentication()) {
 				throw new CancellationError();
 			}
@@ -223,10 +336,10 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 				version: resource.version,
 				itemUrl: installation.itemUrl,
 				selectionId: installation.selectionId,
+				...(installation.catalogIdentity ? { catalogIdentity: installation.catalogIdentity } : {}),
 				installation: { kind: installation.resourceKind },
 			}, token);
-			await this.confirmAndApply(review, token);
-			this.pendingCatalogInstall = { resource, previousIds: new Set(this.knownInstallationIds) };
+			await this.confirmAndApplyCatalogResource(review, resource, token);
 			return;
 		}
 		if (installation?.kind === 'configuredPlugin') {
@@ -236,8 +349,7 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 			if (!this.agentHostService.installPlugin) {
 				throw new Error(localize('agentHost.customizationInstall.pluginUnavailable', "The selected agent does not support SDK plugin installation."));
 			}
-			await this.agentHostService.installPlugin(this.providerId, { source: `${installation.name}@${installation.marketplace}` });
-			await this.waitForPluginInventory({ name: installation.name, marketplace: installation.marketplace }, true, token);
+			await this.agentHostService.installPlugin(this.providerId, { source: `${installation.name}@${installation.marketplace}` }, this.getBackendSession(sessionResource), this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
 			this.throwIfCancelled(token);
 			this._onDidChange.fire();
 			return;
@@ -246,14 +358,36 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 			if (!this.agentHostService.installPlugin) {
 				throw new Error(localize('agentHost.customizationInstall.pluginUnavailable', "The selected agent does not support SDK plugin installation."));
 			}
-			await this.agentHostService.installPlugin(this.providerId, { source: `${installation.name}@${installation.marketplace}` });
-			await this.waitForPluginInventory({ name: installation.name, marketplace: installation.marketplace }, true, token);
+			await this.agentHostService.installPlugin(this.providerId, { source: `${installation.name}@${installation.marketplace}` }, this.getBackendSession(sessionResource), this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
 			this.throwIfCancelled(token);
 			this._onDidChange.fire();
 			return;
 		}
 		if (installation?.kind === 'plugin') {
 			throw new Error(this.getInstallUnavailableMessage(resource)!);
+		}
+		if (installation?.kind === 'mcpGallery') {
+			if (!installation.cardUrl) {
+				throw new Error(this.getInstallUnavailableMessage(resource)!);
+			}
+			if (!await this.resolveAuthentication()) {
+				throw new CancellationError();
+			}
+			this.throwIfCancelled(token);
+			const review = await this.prepare(sessionResource, {
+				mediaType: resource.mediaType,
+				identifier: resource.identifier,
+				displayName: resource.displayName,
+				description: resource.description,
+				version: resource.version,
+				itemUrl: installation.cardUrl,
+				installation: {
+					kind: 'mcp',
+					source: { kind: 'url', mediaType: CustomizationMarketplaceMediaType.McpServer, url: installation.cardUrl },
+				},
+			}, token);
+			await this.confirmAndApplyCatalogResource(review, resource, token);
+			return;
 		}
 		if (installation?.kind !== 'skill' && installation?.kind !== 'mcp') {
 			throw new Error(localize('agentHost.customizationInstall.unsupported', "The selected agent does not support installing this customization through its SDK."));
@@ -291,21 +425,19 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 	async uninstall(sessionResource: URI, installation: IRecordedCustomizationMarketplaceResource, token: CancellationToken): Promise<void> {
 		this.throwIfCancelled(token);
 		if (installation.state.target.kind === 'plugin') {
-			const target = installation.state.target;
-			const plugin = target.uri
-				? this.agentPluginService.plugins.get().find(candidate => candidate.uri.toString() === target.uri?.toString())
-				: undefined;
-			const identity = plugin?.copilotCliInstallation;
-			if (!identity || !this.agentHostService.uninstallPlugin) {
+			const plugins = await this.listPluginInstallations(sessionResource, token);
+			const matches = plugins.filter(candidate => getPluginInstallationId(candidate) === installation.installationId);
+			const identity = matches.length === 1 ? matches[0] : undefined;
+			if (!identity || !identity.marketplace && !identity.directSourceId || !this.agentHostService.uninstallPlugin) {
 				throw new Error(localize('agentHost.customizationInstall.pluginRemovalUnavailable', "The SDK plugin installation identity is unavailable."));
 			}
 			await this.agentHostService.uninstallPlugin(this.providerId, {
 				name: identity.name,
 				marketplace: identity.marketplace,
 				directSourceId: identity.directSourceId,
-			});
-			await this.waitForPluginInventory(identity, false, token);
+			}, this.getBackendSession(sessionResource), this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
 			this.throwIfCancelled(token);
+			this.catalogAssociations.delete(getPluginInstallationId(identity));
 			this._onDidChange.fire();
 			return;
 		}
@@ -325,7 +457,11 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		return review;
 	}
 
-	private async confirmAndApply(review: IAgentCustomizationInstallationReview, token: CancellationToken): Promise<void> {
+	private async confirmAndApply(
+		review: IAgentCustomizationInstallationReview,
+		token: CancellationToken,
+		beforeChange?: (result: IAgentCustomizationInstallationApplyResult | undefined) => Promise<void> | void,
+	): Promise<void> {
 		const confirmation = await this.dialogService.confirm({
 			type: 'question',
 			message: review.action === 'install'
@@ -344,9 +480,30 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		if (!this.agentHostService.applyCustomizationInstallation) {
 			throw new Error(localize('agentHost.customizationInstall.applyUnavailable', "The selected agent cannot apply this SDK installation."));
 		}
-		await this.agentHostService.applyCustomizationInstallation(this.providerId, review.operationId);
+		const result = await this.agentHostService.applyCustomizationInstallation(this.providerId, review.operationId);
+		this.throwIfCancelled(token);
+		await beforeChange?.(result);
 		this.throwIfCancelled(token);
 		this._onDidChange.fire();
+	}
+
+	private async confirmAndApplyCatalogResource(review: IAgentCustomizationInstallationReview, resource: ICustomizationMarketplaceResource, token: CancellationToken): Promise<void> {
+		await this.confirmAndApply(review, token, result => {
+			const installation = resource.installation;
+			if (installation?.kind !== 'providerCatalog' && installation?.kind !== 'mcpGallery') {
+				return;
+			}
+			if (result?.kind === 'receipt') {
+				this.rememberCatalogAssociation(result.installationId, resource);
+				return;
+			}
+			if (result?.kind === 'plugin') {
+				this.pendingCatalogAssociations.push({ identity: result, resource });
+				while (this.pendingCatalogAssociations.length > maxCatalogAssociations) {
+					this.pendingCatalogAssociations.shift();
+				}
+			}
+		});
 	}
 
 	private getReviewDetail(review: IAgentCustomizationInstallationReview): string {
@@ -357,6 +514,15 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 			return review.action === 'install'
 				? localize('agentHost.customizationInstall.skillInstallDetail', "Skills can supply instructions and scripts that an agent may run. Only install resources from sources you trust.\n\nSource: {0}\nDestination: {1}\nFiles: {2}\nSize: {3} bytes", review.source, review.target, review.fileCount, review.totalBytes)
 				: localize('agentHost.customizationInstall.skillUninstallDetail', "The SDK will remove {0} owned files ({1} bytes) from {2}.{3}", review.fileCount, review.totalBytes, review.target, modifiedDetail);
+		}
+		if (review.kind === 'plugin') {
+			const status = review.installsDisabled
+				? localize('agentHost.customizationInstall.pluginDisabled', "The plugin will be installed disabled.")
+				: localize('agentHost.customizationInstall.pluginEnabled', "The plugin will be installed enabled.");
+			const mcpServers = review.mcpServerCount
+				? localize('agentHost.customizationInstall.pluginMcpServers', "\nDeclared MCP servers: {0}", review.mcpServerCount)
+				: '';
+			return localize('agentHost.customizationInstall.pluginInstallDetail', "Plugins can supply agents, skills, hooks, and MCP servers. Only install resources from sources you trust.\n\nSource: {0}\nDestination: {1}\nFiles: {2}\nSize: {3} bytes\n\n{4}{5}", review.source, review.target, review.fileCount, review.totalBytes, status, mcpServers);
 		}
 		if (review.action === 'install') {
 			return localize('agentHost.customizationInstall.mcpInstallDetail', "MCP servers can run tools and access external services. Only install resources from sources you trust.\n\nServer: {0}\nDestination: {1}\nEndpoint: {2}\nConfiguration fields: {3}", review.serverName, review.target, review.endpoint ?? localize('agentHost.customizationInstall.notApplicable', "Not applicable"), review.configurationFields.join(', ') || localize('agentHost.customizationInstall.none', "None"));
@@ -378,7 +544,7 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		const registryIcon = installation.kind === 'mcp' ? getGitHubMcpRegistryIcon(catalogue?.itemUrl, catalogue?.resourceId) : undefined;
 		return {
 			sourceId: this.getSourceId(catalogue?.source),
-			identifier: catalogue?.resourceId ?? catalogue?.itemUrl ?? installation.installationId,
+			identifier: catalogue?.resourceId ?? catalogue?.itemUrl ?? (installation.kind === 'mcp' ? installation.serverName : installation.installationId),
 			displayName: catalogue?.displayName ?? (installation.kind === 'skill' ? installation.name : installation.serverName),
 			description: catalogue?.description ?? '',
 			mediaType: installation.mediaType,
@@ -394,25 +560,10 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		};
 	}
 
-	private captureCatalogAssociation(installations: readonly IRecordedCustomizationMarketplaceResource[]): void {
-		const pending = this.pendingCatalogInstall;
-		const pendingInstallation = pending?.resource.installation;
-		if (!pending || pendingInstallation?.kind !== 'providerCatalog') {
-			return;
-		}
-		const candidates = installations.filter(installation =>
-			!!installation.installationId
-			&& !pending.previousIds.has(installation.installationId)
-			&& installation.state.target.kind === pendingInstallation.resourceKind
-		);
-		if (candidates.length === 1 && candidates[0].installationId) {
-			this.catalogAssociations.set(candidates[0].installationId, pending.resource);
-			while (this.catalogAssociations.size > maxCatalogAssociations) {
-				this.catalogAssociations.delete(this.catalogAssociations.keys().next().value!);
-			}
-			this.pendingCatalogInstall = undefined;
-		} else if (candidates.length > 1) {
-			this.pendingCatalogInstall = undefined;
+	private rememberCatalogAssociation(installationId: string, resource: ICustomizationMarketplaceResource): void {
+		this.catalogAssociations.set(installationId, resource);
+		while (this.catalogAssociations.size > maxCatalogAssociations) {
+			this.catalogAssociations.delete(this.catalogAssociations.keys().next().value!);
 		}
 	}
 
@@ -424,18 +575,44 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		return { kind: 'skill' as const, uri: installation.targetUri, name: installation.name };
 	}
 
-	private getPluginInstallations(): readonly IRecordedCustomizationMarketplaceResource[] {
-		const result: IRecordedCustomizationMarketplaceResource[] = [];
-		for (const plugin of this.agentPluginService.plugins.get()) {
-			const installation = plugin.copilotCliInstallation;
-			if (!installation) {
-				continue;
+	private async listPluginInstallations(sessionResource: URI, token: CancellationToken): Promise<readonly IAgentPluginInstallation[]> {
+		const backendSession = this.getBackendSession(sessionResource);
+		if (!this.agentHostService.listPluginInstallations) {
+			return [];
+		}
+		const installations = await this.agentHostService.listPluginInstallations(this.providerId, backendSession, this.agentHostCustomizationService.getBackendChatResource?.(sessionResource));
+		this.throwIfCancelled(token);
+		return installations;
+	}
+
+	private async getPluginInstallations(sessionResource: URI, token: CancellationToken): Promise<readonly IRecordedCustomizationMarketplaceResource[]> {
+		const installations = await this.listPluginInstallations(sessionResource, token);
+		const matchCounts = new Map<string, number>();
+		for (const installation of installations) {
+			const key = getAppliedPluginInstallationKey(installation);
+			if (key) {
+				matchCounts.set(key, (matchCounts.get(key) ?? 0) + 1);
 			}
-			const resource = toPluginMarketplaceResource(plugin);
+		}
+		const result: IRecordedCustomizationMarketplaceResource[] = [];
+		for (const installation of installations) {
+			const installationId = getPluginInstallationId(installation);
+			let resource = this.catalogAssociations.get(installationId);
+			if (!resource) {
+				const key = getAppliedPluginInstallationKey(installation);
+				const pendingIndex = this.pendingCatalogAssociations.findIndex(candidate =>
+					key === getVerifiedPluginKey(candidate.identity.name, candidate.identity.repository, candidate.identity.ref)
+					// SDK list metadata has no plugin root, so never guess between same-revision sources.
+					&& matchCounts.get(key) === 1);
+				if (pendingIndex !== -1) {
+					resource = this.pendingCatalogAssociations.splice(pendingIndex, 1)[0].resource;
+					this.rememberCatalogAssociation(installationId, resource);
+				}
+			}
 			result.push({
-				installationId: getPluginInstallationId(installation),
-				resource,
-				state: { kind: 'installed', target: { kind: 'plugin', uri: plugin.uri, name: installation.name } },
+				installationId,
+				resource: resource ?? toPluginMarketplaceResource(installation, this.logService),
+				state: { kind: 'installed', target: { kind: 'plugin', name: installation.name } },
 			});
 		}
 		return result;
@@ -475,71 +652,58 @@ export class AgentHostCustomizationMarketplaceInstallProvider extends Disposable
 		return identity.backendSession;
 	}
 
-	private async waitForPluginInventory(identity: NonNullable<IAgentPlugin['copilotCliInstallation']>, present: boolean, token: CancellationToken): Promise<void> {
-		const operation = new DisposableStore();
-		try {
-			const inventoryUpdated = new Promise<boolean>((resolve, reject) => {
-				const checkInventory = () => {
-					if (this.agentPluginService.plugins.get().some(plugin => isPluginInstallation(plugin.copilotCliInstallation, identity)) === present) {
-						resolve(true);
-					}
-				};
-				operation.add(Event.fromObservableLight(this.agentPluginService.plugins)(checkInventory));
-				operation.add(token.onCancellationRequested(() => reject(new CancellationError())));
-				checkInventory();
-			});
-			if (await raceTimeout(inventoryUpdated, pluginInventoryUpdateTimeoutMs) !== true) {
-				throw new Error(localize('agentHost.customizationInstall.pluginInventoryTimeout', "The SDK completed the plugin operation, but its installation inventory did not update."));
-			}
-			this.throwIfCancelled(token);
-		} finally {
-			operation.dispose();
-		}
-	}
 }
 
-function isPluginInstallation(
-	candidate: IAgentPlugin['copilotCliInstallation'],
-	expected: NonNullable<IAgentPlugin['copilotCliInstallation']>,
-): boolean {
-	return candidate?.name === expected.name
-		&& candidate.marketplace === expected.marketplace
-		&& candidate.directSourceId === expected.directSourceId;
+function getAppliedPluginInstallationKey(installation: IAgentPluginInstallation): string | undefined {
+	const source = installation.verifiedSource;
+	return !installation.marketplace && installation.directSourceId && source
+		? getVerifiedPluginKey(installation.name, source.repository, source.revision)
+		: undefined;
 }
 
-function toPluginMarketplaceResource(plugin: IAgentPlugin): ICustomizationMarketplaceResource {
-	const installation = plugin.copilotCliInstallation!;
-	const version = plugin.version?.get();
-	const source = installation.source;
+function getVerifiedPluginKey(name: string, repository: string, revision: string): string {
+	return JSON.stringify([name, repository.toLowerCase(), revision]);
+}
+
+function toPluginMarketplaceResource(installation: IAgentPluginInstallation, logService: ILogService): ICustomizationMarketplaceResource {
+	const source = installation.verifiedSource;
 	const configured = installation.marketplace
 		? { kind: 'configuredPlugin' as const, name: installation.name, marketplace: installation.marketplace }
 		: undefined;
-	const direct = source?.kind === 'github'
-		? {
-			kind: 'plugin' as const,
-			repository: source.repository,
-			ref: source.sha ?? source.ref ?? 'HEAD',
-			path: source.path ?? '',
-		}
-		: undefined;
 	return {
 		sourceId: configured ? CustomizationMarketplaceSources.PluginMarketplaces.id : CustomizationMarketplaceSources.AgentFinderPublicFeed.id,
-		identifier: configured ? JSON.stringify([installation.marketplace, installation.name]) : installation.directSourceId ?? plugin.uri.toString(),
-		displayName: plugin.label,
-		description: '',
+		identifier: configured ? JSON.stringify([installation.marketplace, installation.name]) : installation.directSourceId ?? installation.name,
+		displayName: installation.name,
+		description: installation.description ?? '',
 		mediaType: CustomizationMarketplaceMediaType.CopilotPlugin,
 		tags: [],
 		capabilities: [],
 		representativeQueries: [],
-		version,
-		installation: configured ?? direct,
+		version: installation.version,
+		icon: getPluginIcon(installation.iconUrl, logService),
+		repository: source
+			? URI.from({ scheme: Schemas.https, authority: 'github.com', path: `/${source.repository}` })
+			: undefined,
+		installation: configured,
 	};
 }
 
-function getPluginInstallationId(installation: NonNullable<IAgentPlugin['copilotCliInstallation']>): string {
-	return installation.marketplace
-		? `plugin:${installation.marketplace}:${installation.name}`
-		: `plugin:direct:${installation.directSourceId ?? installation.name}`;
+function getPluginIcon(value: string | undefined, logService: ILogService): URI | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+	if (URL.canParse(value)) {
+		const url = new URL(value);
+		if (url.protocol === `${Schemas.https}:` && url.hostname && !url.username && !url.password) {
+			return URI.parse(url.href);
+		}
+	}
+	logService.warn('[AgentHostCustomizationMarketplace] Ignoring an invalid SDK plugin icon URL');
+	return undefined;
+}
+
+function getPluginInstallationId(installation: IAgentPluginInstallation): string {
+	return JSON.stringify(['plugin', installation.marketplace, installation.name, installation.directSourceId]);
 }
 
 function getCatalogMediaType(kind: 'skill' | 'mcp' | 'plugin'): CustomizationMarketplaceMediaType {

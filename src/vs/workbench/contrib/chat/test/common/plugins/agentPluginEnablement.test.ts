@@ -13,15 +13,43 @@ import { ContributionEnablementState, IEnablementModel, isContributionEnabled } 
 import { AgentPluginCollisionEnablementModel, AgentPluginEnablementService, getCanonicalAgentPluginCollisionGroups, getSortedAgentPlugins, IDiscoveredAgentPlugins, isAgentPluginBlockedByPolicy, isAgentPluginForceEnabledByPolicy } from '../../../common/plugins/agentPluginEnablement.js';
 import { AgentPluginDiscoveryPriority, IAgentPlugin } from '../../../common/plugins/agentPluginService.js';
 import { IMarketplacePlugin, MarketplaceType, parseMarketplaceReference, PluginSourceKind } from '../../../common/plugins/pluginMarketplaceService.js';
+import { TestUserDataProfileService } from '../../../../../test/common/workbenchTestServices.js';
 
 suite('AgentPlugin enablement', () => {
 	const store = ensureNoDisposablesAreLeakedInTestSuite();
 
+	test('layers stored decisions over discovered defaults', () => {
+		const service = store.add(new AgentPluginEnablementService(store.add(new InMemoryStorageService()), new TestUserDataProfileService()));
+		const plugin = URI.file('/plugins/copilot-cli').toString();
+
+		service.setDefaultEnabled(plugin, false);
+		const disabledByDefault = service.readEnabled(plugin);
+		service.setEnabled(plugin, ContributionEnablementState.EnabledWorkspace);
+		service.setDefaultEnabled(plugin, true);
+		const workspaceOverride = service.readEnabled(plugin);
+		service.setDefaultEnabled(plugin, false);
+		const workspaceOverrideAfterDefaultChange = service.readEnabled(plugin);
+		service.setEnabled(plugin, ContributionEnablementState.EnabledProfile);
+		const profileOverride = service.readEnabled(plugin);
+
+		assert.deepStrictEqual({
+			disabledByDefault,
+			workspaceOverride,
+			workspaceOverrideAfterDefaultChange,
+			profileOverride,
+		}, {
+			disabledByDefault: ContributionEnablementState.DisabledProfile,
+			workspaceOverride: ContributionEnablementState.EnabledWorkspace,
+			workspaceOverrideAfterDefaultChange: ContributionEnablementState.EnabledWorkspace,
+			profileOverride: ContributionEnablementState.EnabledProfile,
+		});
+	});
+
 	test('preserves another workspace override through multiple updates and reopening', () => {
 		const storageA = store.add(new InMemoryStorageService());
 		const storageB = store.add(new InMemoryStorageService());
-		const workspaceA = store.add(new AgentPluginEnablementService(storageA));
-		const workspaceB = store.add(new AgentPluginEnablementService(storageB));
+		const workspaceA = store.add(new AgentPluginEnablementService(storageA, new TestUserDataProfileService()));
+		const workspaceB = store.add(new AgentPluginEnablementService(storageB, new TestUserDataProfileService()));
 		const original = URI.file('/plugins/original');
 		const intermediate = URI.file('/plugins/intermediate');
 		const current = URI.file('/plugins/current');
@@ -29,10 +57,10 @@ suite('AgentPlugin enablement', () => {
 
 		workspaceA.copyEnablement(original, intermediate);
 		workspaceA.copyEnablement(intermediate, current);
-		for (const key of storageA.keys(StorageScope.PROFILE, StorageTarget.MACHINE)) {
-			storageB.store(key, storageA.get(key, StorageScope.PROFILE), StorageScope.PROFILE, StorageTarget.MACHINE);
+		for (const key of storageA.keys(StorageScope.APPLICATION, StorageTarget.MACHINE)) {
+			storageB.store(key, storageA.get(key, StorageScope.APPLICATION), StorageScope.APPLICATION, StorageTarget.MACHINE);
 		}
-		const reopenedB = store.add(new AgentPluginEnablementService(storageB));
+		const reopenedB = store.add(new AgentPluginEnablementService(storageB, new TestUserDataProfileService()));
 		const before = reopenedB.readEnabled(current.toString());
 		reopenedB.setEnabled(current.toString(), ContributionEnablementState.EnabledWorkspace);
 		reopenedB.copyEnablement(current, original);
@@ -58,14 +86,14 @@ suite('AgentPlugin enablement', () => {
 	]) {
 		test(`persists enablement across install location changes (${state})`, () => {
 			const storage = store.add(new InMemoryStorageService());
-			const service = store.add(new AgentPluginEnablementService(storage));
+			const service = store.add(new AgentPluginEnablementService(storage, new TestUserDataProfileService()));
 			const oldUri = URI.file('/plugins/old-revision');
 			const newUri = URI.file('/plugins/new-revision');
 			service.setEnabled(oldUri.toString(), ContributionEnablementState.DisabledProfile);
 			service.setEnabled(oldUri.toString(), state);
 
 			service.copyEnablement(oldUri, newUri);
-			const restored = store.add(new AgentPluginEnablementService(storage));
+			const restored = store.add(new AgentPluginEnablementService(storage, new TestUserDataProfileService()));
 
 			assert.deepStrictEqual({
 				profileEnabled: restored.readProfileEnabled(newUri.toString()),
@@ -73,6 +101,48 @@ suite('AgentPlugin enablement', () => {
 			}, {
 				profileEnabled: state === ContributionEnablementState.EnabledProfile,
 				effective: state,
+			});
+		});
+	}
+
+	for (const state of [ContributionEnablementState.DisabledProfile, ContributionEnablementState.DisabledWorkspace]) {
+		test(`keeps copied identities when stored identities are cleared (${state})`, () => {
+			const storage = store.add(new class extends InMemoryStorageService {
+				clearIdentities(): void {
+					this.getStorage(StorageScope.APPLICATION).delete('agentPlugins.enablementIdentities', true);
+				}
+			}());
+			const service = store.add(new AgentPluginEnablementService(storage, new TestUserDataProfileService()));
+			const original = URI.file('/plugins/original');
+			const intermediate = URI.file('/plugins/intermediate');
+			const current = URI.file('/plugins/current');
+			service.setEnabled(original.toString(), state);
+			service.copyEnablement(original, intermediate);
+			service.copyEnablement(intermediate, current);
+			const reopened = store.add(new AgentPluginEnablementService(storage, new TestUserDataProfileService()));
+			reopened.copyEnablement(current, original);
+
+			storage.clearIdentities();
+			const afterSwitch = service.readEnabled(current.toString());
+			const originalAfterSwitch = reopened.readEnabled(original.toString());
+			const profileEnabled = service.readProfileEnabled(current.toString());
+			service.setEnabled(current.toString(), ContributionEnablementState.EnabledProfile);
+			const afterEnable = service.readEnabled(original.toString());
+			service.setEnabled(current.toString(), state);
+			service.remove(current.toString());
+
+			assert.deepStrictEqual({
+				afterSwitch,
+				originalAfterSwitch,
+				profileEnabled,
+				afterEnable,
+				afterRemove: service.readEnabled(original.toString()),
+			}, {
+				afterSwitch: state,
+				originalAfterSwitch: state,
+				profileEnabled: state !== ContributionEnablementState.DisabledProfile,
+				afterEnable: ContributionEnablementState.EnabledProfile,
+				afterRemove: ContributionEnablementState.EnabledProfile,
 			});
 		});
 	}
