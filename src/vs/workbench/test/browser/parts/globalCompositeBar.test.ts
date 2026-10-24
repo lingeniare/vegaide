@@ -251,12 +251,14 @@ suite('AccountsActivityActionViewItem - account tiers', () => {
 		const github = disposables.add(new Action('github', 'Sign in with GitHub'));
 		const manage = disposables.add(new Action('manage', 'Manage Language Model Access'));
 		const menu = { getActions: () => [[ACCOUNTS_SHARED_SIGN_IN_GROUP, [github]], ['z_manage', [manage]]] };
-		const actions = await resolveMainMenuActions.call(createHarness(true), menu, actionDisposables);
+		const harness = createHarness(true);
+		harness.codexAccountService.account = { status: 'signedIn' };
+		const actions = await resolveMainMenuActions.call(harness, menu, actionDisposables);
 
 		assert.deepStrictEqual(actions.map(action => action instanceof Separator ? 'separator' : action.label), [
 			'Sign in with GitHub',
 			'separator',
-			'Sign in to ChatGPT',
+			'ChatGPT',
 			'separator',
 			'Manage Language Model Access',
 		]);

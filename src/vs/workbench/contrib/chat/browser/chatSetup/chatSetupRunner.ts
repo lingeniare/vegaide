@@ -38,7 +38,6 @@ import { IHostService } from '../../../../services/host/browser/host.js';
 import { IExtensionService } from '../../../../services/extensions/common/extensions.js';
 import { ExtensionIdentifier } from '../../../../../platform/extensions/common/extensions.js';
 import { raceTimeout } from '../../../../../base/common/async.js';
-import { IChatMicrosoftSignInProbeService } from './chatSetupMicrosoftProbe.js';
 
 type ChatSetupDialogShownEvent = {
 	source: ChatSetupSource;
@@ -254,25 +253,14 @@ function offersProviderSignIn(entitlement: ChatEntitlement, options: IChatSetupR
 	return !options?.forceAnonymous && (entitlement === ChatEntitlement.Unknown || !!options?.forceSignInDialog);
 }
 
-export function getChatSetupDialogButtons(entitlement: ChatEntitlement, options: IChatSetupRunOptions | undefined, enterpriseAuthentication: boolean, showMicrosoftProvider: boolean, providers: IChatSetupDialogProviders = defaultChat.provider): IChatSetupDialogButton[] {
+export function getChatSetupDialogButtons(entitlement: ChatEntitlement, options: IChatSetupRunOptions | undefined, providers: IChatSetupDialogProviders = defaultChat.provider): IChatSetupDialogButton[] {
 	const button = (label: string, strategy: ChatSetupStrategy, ...classes: string[]): IChatSetupDialogButton => ({ label, strategy, classes });
 
 	if (offersProviderSignIn(entitlement, options)) {
 		const defaultProviderButton = button(localize('continueWith', "Continue with {0}", providers.default.name), ChatSetupStrategy.SetupWithoutEnterpriseProvider, 'continue-button', 'default');
-		const defaultProviderLink = button(defaultProviderButton.label, defaultProviderButton.strategy, 'link-button');
-		const enterpriseProviderButton = button(localize('continueWith', "Continue with {0}", providers.enterprise.name), ChatSetupStrategy.SetupWithEnterpriseProvider, 'continue-button', 'default');
-		const enterpriseProviderLink = button(enterpriseProviderButton.label, enterpriseProviderButton.strategy, 'link-button');
-		const googleProviderButton = button(localize('continueWith', "Continue with {0}", providers.google.name), ChatSetupStrategy.SetupWithGoogleProvider, 'continue-button', 'google');
-		const appleProviderButton = button(localize('continueWith', "Continue with {0}", providers.apple.name), ChatSetupStrategy.SetupWithAppleProvider, 'continue-button', 'apple');
-		const microsoftProviderButton = button(localize('continueWith', "Continue with {0}", providers.microsoft.name), ChatSetupStrategy.SetupWithMicrosoftProvider, 'continue-button', 'microsoft');
-
-		const socialProviderButtons = [googleProviderButton, appleProviderButton, ...(showMicrosoftProvider ? [microsoftProviderButton] : [])];
-		const providerButtons = enterpriseAuthentication
-			? [enterpriseProviderButton, ...socialProviderButtons, defaultProviderLink]
-			: [defaultProviderButton, ...socialProviderButtons, enterpriseProviderLink];
 		return options?.allowContinueWithoutSignIn
-			? [...providerButtons, button(localize('continueWithoutSigningIn', "Continue Without Signing In"), ChatSetupStrategy.Canceled, 'link-button')]
-			: providerButtons;
+			? [defaultProviderButton, button(localize('continueWithoutSigningIn', "Continue Without Signing In"), ChatSetupStrategy.Canceled, 'link-button')]
+			: [defaultProviderButton];
 	}
 
 	return [button(localize('setupAIButton', "Use AI Features"), ChatSetupStrategy.DefaultSetup)];
@@ -329,7 +317,6 @@ export class ChatSetup {
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IWorkspaceTrustManagementService private readonly workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IChatMicrosoftSignInProbeService private readonly microsoftSignInProbeService: IChatMicrosoftSignInProbeService,
 	) { }
 
 	skipDialog(): void {
@@ -505,14 +492,8 @@ export class ChatSetup {
 		if (options?.cancellationToken?.isCancellationRequested) {
 			return ChatSetupStrategy.Canceled;
 		}
-		const enterpriseAuthentication = this.defaultAccountService.getDefaultAccountAuthenticationProvider().enterprise;
 		const entitlement = this.context.state.entitlement;
-		let showMicrosoftProvider = false;
-		if (offersProviderSignIn(entitlement, options)) {
-			this.microsoftSignInProbeService.notifySignInShown();
-			showMicrosoftProvider = this.microsoftSignInProbeService.offerMicrosoftSignIn.get();
-		}
-		const buttons = getChatSetupDialogButtons(entitlement, options, enterpriseAuthentication, showMicrosoftProvider);
+		const buttons = getChatSetupDialogButtons(entitlement, options);
 		const dialog = this.instantiationService.createInstance(ChatSetupDialog, this.layoutService.activeContainer, {
 			title: this.getDialogTitle(options),
 			buttons,
@@ -548,7 +529,7 @@ export class ChatSetup {
 		}
 
 		if (this.context.state.entitlement === ChatEntitlement.Unknown || options?.forceSignInDialog) {
-			return localize('signIn', "Sign in to use GitHub Copilot");
+			return localize('signIn', "Sign in to use {0}", defaultChat.provider.default.name);
 		}
 
 		return localize('startUsing', "Start using AI Features");

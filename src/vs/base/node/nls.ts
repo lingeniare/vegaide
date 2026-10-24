@@ -5,6 +5,7 @@
 
 import { join } from '../common/path.js';
 import { promises } from 'fs';
+import { createHash } from 'crypto';
 import { mark } from '../common/performance.js';
 import { ILanguagePacks, INLSConfiguration } from '../../nls.js';
 import { Promises } from './pfs.js';
@@ -42,9 +43,16 @@ export interface IResolveNLSConfigurationContext {
 	 * Locale as defined by the OS (e.g. `app.getPreferredSystemLanguages()`).
 	 */
 	readonly osLocale: string;
+
+	/**
+	 * Location of the extensions shipped with the product. Used to discover
+	 * language packs bundled into the product when `languagepacks.json` does
+	 * not exist yet (first launch).
+	 */
+	readonly builtinExtensionsPath?: string;
 }
 
-export async function resolveNLSConfiguration({ userLocale, osLocale, userDataPath, commit, nlsMetadataPath, nlsMetadataHash }: IResolveNLSConfigurationContext): Promise<INLSConfiguration> {
+export async function resolveNLSConfiguration({ userLocale, osLocale, userDataPath, commit, nlsMetadataPath, nlsMetadataHash, builtinExtensionsPath }: IResolveNLSConfigurationContext): Promise<INLSConfiguration> {
 	mark('code/willGenerateNls');
 
 	if (
@@ -58,7 +66,8 @@ export async function resolveNLSConfiguration({ userLocale, osLocale, userDataPa
 	}
 
 	try {
-		const languagePacks = await getLanguagePackConfigurations(userDataPath);
+		const languagePacks = await getLanguagePackConfigurations(userDataPath)
+			?? await getBuiltinLanguagePackConfigurations(builtinExtensionsPath);
 		if (!languagePacks) {
 			return defaultNLSConfiguration(userLocale, osLocale, nlsMetadataPath);
 		}
@@ -180,6 +189,100 @@ async function getLanguagePackConfigurations(userDataPath: string): Promise<ILan
 	} catch (err) {
 		return undefined; // Do nothing. If we can't read the file we have no language pack config.
 	}
+}
+
+interface IMutableLanguagePack {
+	hash: string;
+	label: string | undefined;
+	extensions: { extensionIdentifier: { id: string }; version: string }[];
+	translations: Record<string, string | undefined>;
+}
+
+interface IBundledExtensionManifest {
+	publisher?: string;
+	name?: unknown;
+	version?: unknown;
+	contributes?: {
+		localizations?: {
+			languageId?: unknown;
+			languageName?: unknown;
+			localizedLanguageName?: unknown;
+			translations?: { id?: unknown; path?: unknown }[];
+		}[];
+	};
+}
+
+/**
+ * `languagepacks.json` is written by the shared process at runtime, so it
+ * does not exist on the very first launch of the product. To still resolve
+ * a language provided by a language pack that ships inside the product,
+ * scan the built-in extensions folder for localization contributions.
+ */
+async function getBuiltinLanguagePackConfigurations(builtinExtensionsPath: string | undefined): Promise<ILanguagePacks | undefined> {
+	if (!builtinExtensionsPath) {
+		return undefined;
+	}
+
+	let extensionFolderNames: string[];
+	try {
+		extensionFolderNames = await promises.readdir(builtinExtensionsPath);
+	} catch (error) {
+		return undefined;
+	}
+
+	const languagePacks: Record<string, IMutableLanguagePack> = {};
+	for (const extensionFolderName of extensionFolderNames) {
+		const extensionPath = join(builtinExtensionsPath, extensionFolderName);
+		let manifest: IBundledExtensionManifest;
+		try {
+			manifest = JSON.parse(await promises.readFile(join(extensionPath, 'package.json'), 'utf-8'));
+		} catch (error) {
+			continue;
+		}
+		if (typeof manifest.name !== 'string' || typeof manifest.version !== 'string' || !Array.isArray(manifest.contributes?.localizations)) {
+			continue;
+		}
+
+		const extensionIdentifierId = `${manifest.publisher ?? 'undefined_publisher'}.${manifest.name}`.toLowerCase();
+		for (const localization of manifest.contributes.localizations) {
+			if (typeof localization.languageId !== 'string' || !Array.isArray(localization.translations)) {
+				continue;
+			}
+			const translations = localization.translations.filter((t): t is { id: string; path: string } => typeof t.id === 'string' && typeof t.path === 'string');
+			if (!translations.length) {
+				continue;
+			}
+
+			const languagePack = languagePacks[localization.languageId] ??= {
+				hash: '',
+				label: typeof localization.localizedLanguageName === 'string' ? localization.localizedLanguageName
+					: typeof localization.languageName === 'string' ? localization.languageName : undefined,
+				extensions: [],
+				translations: {}
+			};
+			if (!languagePack.extensions.some(e => e.extensionIdentifier.id === extensionIdentifierId)) {
+				languagePack.extensions.push({ extensionIdentifier: { id: extensionIdentifierId }, version: manifest.version });
+			}
+			for (const translation of translations) {
+				languagePack.translations[translation.id] = join(extensionPath, translation.path);
+			}
+		}
+	}
+
+	const languages = Object.keys(languagePacks);
+	if (!languages.length) {
+		return undefined;
+	}
+	for (const language of languages) {
+		const languagePack = languagePacks[language];
+		const md5 = createHash('md5');
+		for (const extension of languagePack.extensions) {
+			md5.update(extension.extensionIdentifier.id).update(extension.version);
+		}
+		languagePack.hash = md5.digest('hex');
+	}
+
+	return languagePacks;
 }
 
 function resolveLanguagePackLanguage(languagePacks: ILanguagePacks, locale: string | undefined): string | undefined {

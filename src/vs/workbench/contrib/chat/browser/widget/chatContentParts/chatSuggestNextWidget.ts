@@ -17,7 +17,7 @@ import { ChatConfiguration } from '../../../common/constants.js';
 import { IChatMode } from '../../../common/chatModes.js';
 import { IChatSessionsService } from '../../../common/chatSessionsService.js';
 import { IHandOff } from '../../../common/promptSyntax/promptFileParser.js';
-import { getAgentCanContinueIn, getAgentSessionProvider, getAgentSessionProviderIcon, getAgentSessionProviderName } from '../../agentSessions/agentSessions.js';
+import { AgentSessionProviders, getAgentSessionProvider, getAgentSessionProviderIcon, getAgentSessionProviderName } from '../../agentSessions/agentSessions.js';
 
 export interface INextPromptSelection {
 	readonly handoff: IHandOff;
@@ -138,9 +138,9 @@ export class ChatSuggestNextWidget extends Disposable {
 		// Optional showContinueOn behaves like send: only present if specified
 		const showContinueOn = handoff.showContinueOn ?? true;
 
-		// Get chat session contributions to show in chevron dropdown
-		// Filter to only first-party providers that support "continue in".
-		// TODO: Expand later to any agent with `canDelegate` === true.
+		// Get chat session contributions to show in chevron dropdown.
+		// Only the local (in-place) target is offered; remote and agent host
+		// delegation targets are removed from the picker.
 		const currentSessionType = this.contextKeyService.getContextKeyValue<string>(ChatContextKeys.chatSessionType.key);
 		const contributions = this.chatSessionsService.getAllChatSessionContributions();
 		const availableContributions = contributions.filter(c => {
@@ -151,7 +151,7 @@ export class ChatSuggestNextWidget extends Disposable {
 				return false;
 			}
 			const provider = getAgentSessionProvider(c.type);
-			return provider !== undefined && getAgentCanContinueIn(provider);
+			return provider === AgentSessionProviders.Local;
 		});
 
 		if (showContinueOn && availableContributions.length > 0) {

@@ -84,6 +84,7 @@ suite('DelegationSessionPickerActionItem', () => {
 		let activeProvider = sessionType;
 		let pendingTarget: AgentSessionTarget | undefined;
 		let showCount = 0;
+		let lastItemLabels: string[] = [];
 		const telemetryEvents: { readonly name: string; readonly data: unknown }[] = [];
 		let selectItem: (label: string) => void = () => assert.fail('Picker has not opened');
 
@@ -99,6 +100,7 @@ suite('DelegationSessionPickerActionItem', () => {
 		const actionWidgetService = new class extends mock<IActionWidgetService>() {
 			override show<T>(_user: string, _supportsPreview: boolean, items: readonly IActionListItem<T>[], delegate: IActionListDelegate<T>): void {
 				showCount++;
+				lastItemLabels = items.map(item => `${item.kind}:${item.label}`);
 				selectItem = label => {
 					const item = items.find(item => item.label === label);
 					assert.ok(item?.item);
@@ -164,6 +166,7 @@ suite('DelegationSessionPickerActionItem', () => {
 		return {
 			picker, element, container, compact, instantiationService,
 			getShowCount: () => showCount,
+			getItemLabels: () => lastItemLabels,
 			getPendingTarget: () => pendingTarget,
 			telemetryEvents,
 			selectItem: (label: string) => selectItem(label),
@@ -264,41 +267,15 @@ suite('DelegationSessionPickerActionItem', () => {
 		assert.strictEqual(getShowCount(), 0);
 	});
 
-	test('preserves delegation from Local to an Agent Host harness', () => {
-		const { picker, element, selectItem, getPendingTarget } = createPicker(AgentSessionProviders.Local);
+	test('offers only the local target next to the new chat session action', () => {
+		const { picker, getItemLabels } = createPicker(AgentSessionProviders.Local);
 		picker.show();
-		selectItem('Claude');
-		assert.deepStrictEqual({
-			enabled: picker.isEnabled(),
-			label: element.textContent,
-			ariaDisabled: element.getAttribute('aria-disabled'),
-			tooltip: picker.getTooltip(),
-			pendingTarget: getPendingTarget(),
-		}, {
-			enabled: true,
-			label: 'Claude',
-			ariaDisabled: 'false',
-			tooltip: 'Delegate Session',
-			pendingTarget: AgentSessionProviders.AgentHostClaude,
-		});
-	});
 
-	test('reports post-request delegation into the Copilot harness', () => {
-		const { picker, selectItem, telemetryEvents } = createPicker(AgentSessionProviders.Local);
-		picker.show();
-		selectItem('Copilot');
-
-		assert.deepStrictEqual(telemetryEvents, [{
-			name: 'copilotHarnessTargetChanged',
-			data: {
-				mode: CopilotHarnessIntroductionMode.AfterRequest,
-				fromHarness: 'local',
-				toHarness: 'copilot',
-				surface: 'editor',
-				chatSessionId: undefined,
-				sessionType: undefined,
-				harness: undefined,
-			},
-		}]);
+		assert.deepStrictEqual(getItemLabels(), [
+			'action:New Chat Session',
+			'separator:',
+			'header:Continue In',
+			'action:Local',
+		]);
 	});
 });

@@ -6,6 +6,7 @@
 import assert from 'assert';
 import * as dom from '../../../../../../../../base/browser/dom.js';
 import { DeferredPromise, timeout } from '../../../../../../../../base/common/async.js';
+import { bufferToStream, VSBuffer } from '../../../../../../../../base/common/buffer.js';
 import { IStringDictionary } from '../../../../../../../../base/common/collections.js';
 import { Codicon } from '../../../../../../../../base/common/codicons.js';
 import { Emitter, Event } from '../../../../../../../../base/common/event.js';
@@ -13,7 +14,9 @@ import { AnchorPosition } from '../../../../../../../../base/common/layout.js';
 import { errorHandler, setUnexpectedErrorHandler } from '../../../../../../../../base/common/errors.js';
 import { MutableDisposable, toDisposable } from '../../../../../../../../base/common/lifecycle.js';
 import { constObservable, observableValue } from '../../../../../../../../base/common/observable.js';
+import { IDefaultChatAgent } from '../../../../../../../../base/common/product.js';
 import { ThemeIcon } from '../../../../../../../../base/common/themables.js';
+import { IRequestContext } from '../../../../../../../../base/parts/request/common/request.js';
 import { upcastPartial } from '../../../../../../../../base/test/common/mock.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../../base/test/common/utils.js';
 import { IAccessibilityService } from '../../../../../../../../platform/accessibility/common/accessibility.js';
@@ -27,10 +30,14 @@ import { TestInstantiationService } from '../../../../../../../../platform/insta
 import { IKeybindingService } from '../../../../../../../../platform/keybinding/common/keybinding.js';
 import { MockKeybindingService } from '../../../../../../../../platform/keybinding/test/common/mockKeybindingService.js';
 import { ILayoutService } from '../../../../../../../../platform/layout/browser/layoutService.js';
+import { ILogService, NullLogService } from '../../../../../../../../platform/log/common/log.js';
 import { IOpenerService } from '../../../../../../../../platform/opener/common/opener.js';
 import { NullOpenerService } from '../../../../../../../../platform/opener/test/common/nullOpenerService.js';
+import { IProductService } from '../../../../../../../../platform/product/common/productService.js';
+import { IRequestService } from '../../../../../../../../platform/request/common/request.js';
 import { InMemoryStorageService, IStorageService } from '../../../../../../../../platform/storage/common/storage.js';
 import { StateType } from '../../../../../../../../platform/update/common/update.js';
+import { AuthenticationSession, IAuthenticationService } from '../../../../../../../services/authentication/common/authentication.js';
 import { ChatEntitlement, IChatEntitlementService } from '../../../../../../../services/chat/common/chatEntitlementService.js';
 import { ITabbedModelPickerContext, TabbedModelPicker } from '../../../../../browser/widget/input/modelPicker/modelPickerTabbedWidget.js';
 import { ILanguageModelChatMetadata, ILanguageModelChatMetadataAndIdentifier, ILanguageModelProviderDescriptor, ILanguageModelsService, IModelConfigurationAccess, IModelControlEntry, IModelsControlManifest } from '../../../../../common/languageModels.js';
@@ -115,6 +122,7 @@ function createHydraFusionMaxModel(): ILanguageModelChatMetadataAndIdentifier {
 suite('TabbedModelPicker', () => {
 	const disposables = ensureNoDisposablesAreLeakedInTestSuite();
 	const models = [model('First'), model('Second'), model('Fixed', false)];
+	let vegaApiKeyCounter = 0;
 
 	function createPicker(options: {
 		models?: ILanguageModelChatMetadataAndIdentifier[];
@@ -136,6 +144,12 @@ suite('TabbedModelPicker', () => {
 		providerPlaceholders?: ITabbedModelPickerContext['providerPlaceholders'];
 		beforeSave?: (values: IStringDictionary<unknown>) => Promise<void>;
 		workflow?: IModelPickerWorkflow;
+		/** Identifies the product's chat provider as VEGA. */
+		vega?: boolean;
+		/** Signs a VEGA session in, so the picker loads pricing. */
+		vegaSession?: boolean;
+		/** The payload the pricing request returns, `{ data: [...] }` by default. */
+		vegaPricingResponse?: unknown;
 	} = {}) {
 		const container = dom.append(document.body, dom.$('.monaco-workbench.monaco-reduce-motion'));
 		container.style.cssText = '--vscode-spacing-size60: 6px; --vscode-spacing-size280: 28px;';
@@ -184,6 +198,25 @@ suite('TabbedModelPicker', () => {
 			getContainer: () => container, mainContainer: container, onDidChangeActiveContainer: Event.None,
 		}));
 		instantiationService.set(IStorageService, disposables.add(new InMemoryStorageService()));
+		instantiationService.set(IProductService, upcastPartial<IProductService>({
+			defaultChatAgent: options.vega ? upcastPartial<IDefaultChatAgent>({
+				provider: upcastPartial<IDefaultChatAgent['provider']>({ default: { id: 'vega', name: 'VEGA' } }),
+			}) : undefined,
+		}));
+		// A unique key per picker keeps the pricing cache from leaking between tests.
+		const vegaApiKey = `sk-apivega-test-${++vegaApiKeyCounter}`;
+		instantiationService.set(IAuthenticationService, upcastPartial<IAuthenticationService>({
+			getSessions: async (providerId: string) => providerId === 'vega' && options.vegaSession
+				? [upcastPartial<AuthenticationSession>({ id: 'vega', accessToken: vegaApiKey, account: upcastPartial<AuthenticationSession['account']>({ id: 'user', label: 'User' }), scopes: ['api'] })]
+				: [],
+		}));
+		instantiationService.set(IRequestService, upcastPartial<IRequestService>({
+			request: async () => upcastPartial<IRequestContext>({
+				res: upcastPartial<IRequestContext['res']>({ statusCode: 200, headers: {} }),
+				stream: bufferToStream(VSBuffer.fromString(JSON.stringify(options.vegaPricingResponse ?? { data: [] }))),
+			}),
+		}));
+		instantiationService.set(ILogService, new NullLogService());
 		let entitlement = options.entitlement ?? ChatEntitlement.Pro;
 		const entitlementChanged = disposables.add(new Emitter<void>());
 		instantiationService.set(IChatEntitlementService, upcastPartial<IChatEntitlementService>({
@@ -1672,6 +1705,54 @@ suite('TabbedModelPicker', () => {
 		assert.deepStrictEqual({ before, firstValues, secondValues, selections: result.selections }, {
 			before: { first: {}, second: { context: 64000 } },
 			firstValues: { effort: 'high' }, secondValues: { context: 64000 }, selections: [models[1].identifier],
+		});
+	});
+
+	test('the VEGA product names its tab, lists no routing row, and prices models in dollars', async () => {
+		const priced = model('Priced');
+		priced.metadata = { ...priced.metadata, pricing: '1x', multiplierNumeric: 1 };
+		const result = createPicker({
+			vega: true,
+			vegaSession: true,
+			models: [createAutoModel(), priced, ...models],
+			vegaPricingResponse: { data: [{ id: 'priced', prompt_usd_per_1m: 12.34, completion_usd_per_1m: 56.78, request_usd: 0.05, currency: 'RUB' }] },
+		});
+		await timeout(0);
+		const tabs = Array.from(result.popup.querySelectorAll('.chat-model-picker-tabbar [role="radio"]'), tab => tab.getAttribute('aria-label'));
+		const rows = listRows(result.popup);
+		const pricedRow = Array.from(result.popup.querySelectorAll<HTMLElement>('.chat-model-picker-model'))
+			.find(row => row.querySelector('.title')?.textContent === 'Priced');
+		openDetails(result.popup, 'Priced');
+		const card = element(result.popup, '.chat-model-card');
+		const pricingBody = card.querySelector<HTMLElement>('.chat-model-card-pricing-body');
+		assert.deepStrictEqual({
+			tabs, rows,
+			multiplierInRow: pricedRow?.textContent?.includes('1x'),
+			detailsLabel: pricedRow?.querySelector('.action-list-item-toolbar .action-label')?.textContent,
+			pricingCaption: card.querySelector('.chat-model-card-pricing-caption')?.textContent,
+			pricing: Array.from(card.querySelectorAll('.chat-model-card-pricing-row'), row => ({
+				label: row.querySelector('.chat-model-card-pricing-label')?.textContent,
+				value: row.querySelector('.chat-model-card-pricing-value')?.textContent,
+			})),
+			pricingExpanded: pricingBody?.classList.contains('expanded') && !pricingBody.inert,
+			multiplierInCard: card.textContent?.includes('1x'),
+			maxContextInCard: card.textContent?.includes('Max context'),
+			selections: result.selections,
+		}, {
+			tabs: ['VEGA'],
+			rows: ['First', 'Fixed', 'Priced', 'Second'],
+			multiplierInRow: false,
+			detailsLabel: '',
+			pricingCaption: '$ per 1M tokens',
+			pricing: [
+				{ label: 'Input', value: '$12.34' },
+				{ label: 'Output', value: '$56.78' },
+				{ label: 'Per request', value: '$0.05' },
+			],
+			pricingExpanded: true,
+			multiplierInCard: false,
+			maxContextInCard: false,
+			selections: [],
 		});
 	});
 });

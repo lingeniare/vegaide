@@ -5,11 +5,14 @@
 
 import { addDisposableListener, EventHelper, EventType } from '../../../../../base/browser/dom.js';
 import { toAction } from '../../../../../base/common/actions.js';
+import { bufferToStream, VSBuffer } from '../../../../../base/common/buffer.js';
 import { IStringDictionary } from '../../../../../base/common/collections.js';
 import { Emitter, Event } from '../../../../../base/common/event.js';
 import { DisposableStore } from '../../../../../base/common/lifecycle.js';
 import { constObservable, observableValue } from '../../../../../base/common/observable.js';
+import { IDefaultChatAgent } from '../../../../../base/common/product.js';
 import { extUri } from '../../../../../base/common/resources.js';
+import { IRequestContext } from '../../../../../base/parts/request/common/request.js';
 import { InMemoryStorageService, IStorageService } from '../../../../../platform/storage/common/storage.js';
 import { upcastPartial } from '../../../../../base/test/common/mock.js';
 import { localize } from '../../../../../nls.js';
@@ -27,8 +30,10 @@ import { HoverService } from '../../../../../platform/hover/browser/hoverService
 import { IMarkdownRendererService, MarkdownRendererService } from '../../../../../platform/markdown/browser/markdownRenderer.js';
 import { NullOpenerService } from '../../../../../platform/opener/test/common/nullOpenerService.js';
 import { IProductService } from '../../../../../platform/product/common/productService.js';
+import { IRequestService } from '../../../../../platform/request/common/request.js';
 import { IUpdateService, StateType } from '../../../../../platform/update/common/update.js';
 import { IUriIdentityService } from '../../../../../platform/uriIdentity/common/uriIdentity.js';
+import { AuthenticationSession, IAuthenticationService } from '../../../../services/authentication/common/authentication.js';
 import { ChatEntitlement, IChatEntitlementService } from '../../../../services/chat/common/chatEntitlementService.js';
 import { ILanguageModelChatMetadata, ILanguageModelChatMetadataAndIdentifier, ILanguageModelProviderDescriptor, ILanguageModelsService, IModelControlEntry } from '../../../../contrib/chat/common/languageModels.js';
 import { ChatConfiguration } from '../../../../contrib/chat/common/constants.js';
@@ -40,7 +45,7 @@ import { IModelPickerWorkflow } from '../../../../contrib/chat/browser/widget/in
 import { IModelPickerProviderPlaceholder } from '../../../../contrib/chat/browser/widget/input/modelPicker/modelPickerTabs.js';
 import { NullLanguageModelsService } from '../../../../contrib/chat/test/common/languageModels.js';
 import { TestChatEntitlementService } from '../../../common/workbenchTestServices.js';
-import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup, registerWorkbenchServices } from '../fixtureUtils.js';
+import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup, registerWorkbenchServices, ServiceRegistration } from '../fixtureUtils.js';
 
 import '../../../../contrib/chat/browser/widget/media/chat.css';
 import '../../../../contrib/chat/browser/widget/input/modelPicker/media/modelPicker.css';
@@ -336,6 +341,43 @@ interface IPickerFixtureOptions {
 	/** Settings to apply per model identifier, so rows can show what they were tuned to. */
 	readonly configured?: IStringDictionary<IStringDictionary<unknown>>;
 	readonly workflow?: IModelPickerWorkflow;
+	/** Stands the product up as VEGA, with a signed-in session and live pricing. */
+	readonly vega?: boolean;
+}
+
+/**
+ * The services the picker consults for branding and live pricing: the product's chat
+ * provider, the signed-in session whose key authorizes pricing requests, and the
+ * request pipeline. VEGA fixtures answer `/pricing` with ruble and dollar fields.
+ */
+function registerPickerServices(registration: ServiceRegistration, vega?: boolean): void {
+	registration.defineInstance(IProductService, upcastPartial<IProductService>({
+		defaultChatAgent: vega ? upcastPartial<IDefaultChatAgent>({
+			provider: upcastPartial<IDefaultChatAgent['provider']>({ default: { id: 'vega', name: 'VEGA' } }),
+		}) : undefined,
+	}));
+	registration.defineInstance(IAuthenticationService, upcastPartial<IAuthenticationService>({
+		getSessions: async (providerId: string) => providerId === 'vega' && vega
+			? [upcastPartial<AuthenticationSession>({ id: 'vega', accessToken: 'sk-apivega-fixture', account: upcastPartial<AuthenticationSession['account']>({ id: 'user', label: 'User' }), scopes: ['api'] })]
+			: [],
+	}));
+	// `/pricing` serves each entry with both `*_rub_*` and `*_usd_*` fields.
+	const pricing = {
+		data: vega ? ALL_MODELS.map((model, index) => ({
+			id: model.metadata.id,
+			prompt_rub_per_1m: 20 + index * 30,
+			completion_rub_per_1m: 80 + index * 120,
+			prompt_usd_per_1m: 0.25 + index * 0.35,
+			completion_usd_per_1m: 0.9 + index * 1.3,
+			currency: 'RUB',
+		})) : [],
+	};
+	registration.defineInstance(IRequestService, upcastPartial<IRequestService>({
+		request: async () => upcastPartial<IRequestContext>({
+			res: { statusCode: 200, headers: {} },
+			stream: bufferToStream(VSBuffer.fromString(JSON.stringify(pricing))),
+		}),
+	}));
 }
 
 export async function renderPicker(context: ComponentFixtureContext, options: IPickerFixtureOptions = {}): Promise<void> {
@@ -394,6 +436,7 @@ export async function renderPicker(context: ComponentFixtureContext, options: IP
 			}));
 			// The shared harness discards writes, so the picker cannot remember anything.
 			registration.defineInstance(IStorageService, disposableStore.add(new InMemoryStorageService()));
+			registerPickerServices(registration, options.vega);
 		},
 	});
 
@@ -550,6 +593,7 @@ function renderInputPicker(context: ComponentFixtureContext, initialModel = COPI
 			entitlement.entitlement = ChatEntitlement.Pro;
 			registration.defineInstance(IChatEntitlementService, entitlement);
 			registration.defineInstance(IProductService, upcastPartial<IProductService>({ version: '1.140.0' }));
+			registerPickerServices(registration);
 			registration.defineInstance(IUpdateService, upcastPartial<IUpdateService>({ state: { type: StateType.Uninitialized } }));
 			registration.defineInstance(IUriIdentityService, upcastPartial<IUriIdentityService>({ extUri }));
 			registration.defineInstance(IStorageService, disposableStore.add(new InMemoryStorageService()));
@@ -627,6 +671,16 @@ export default defineThemedFixtureGroup({ path: 'chat/input/tabbedModelPicker' }
 	}),
 	Picker: defineComponentFixture({ render: context => renderPicker(context, { models: COPILOT_ONLY_MODELS }) }),
 	PickerWithAddedModels: defineComponentFixture({ render: context => renderPicker(context) }),
+	/** The VEGA product: the tab and prices are VEGA's, and there is no routing row. */
+	PickerVega: defineComponentFixture({
+		additionalThemes: ['darkHighContrast', 'lightHighContrast'],
+		render: context => renderPicker(context, { anchored: true, vega: true }),
+	}),
+	/** VEGA's model details, priced in rubles rather than credits. */
+	PickerVegaDetails: defineComponentFixture({
+		additionalThemes: ['darkHighContrast', 'lightHighContrast'],
+		render: context => renderPicker(context, { vega: true, pricingExpanded: true }),
+	}),
 	...Object.fromEntries(Object.entries({
 		PickerWithManagedDefault: { managedDefaultModel: 'gpt-5-5' },
 		PickerWithManagedDefaultOverride: { managedDefaultModel: 'gpt-5-5', selectedModelId: 'copilot/claude-sonnet-5' },

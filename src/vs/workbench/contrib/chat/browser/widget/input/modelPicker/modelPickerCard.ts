@@ -24,6 +24,7 @@ import { formatModelCost, getCreditsPerMillionTokensLabel, getMaxContextLabel, g
 import { createMessageBanner, HYDRA_FUSION_LEARN_MORE_URL } from './modelPickerHover.js';
 import { getChangedModelConfigProperties, getModelConfigChoices, getModelConfigProperty, IModelConfigProperty, IModelConfigurationAccess, isExtendedContext, MODEL_CONFIG_GROUP_CONTEXT, MODEL_CONFIG_GROUP_EFFORT, ModelConfigChangeListener, setModelConfigValues } from './modelPickerModelConfig.js';
 import { getCategoryLabel, getPriceCategoryLabel, isAutoModel, isHighCostCategory, isHydraFusionModel, isMultiplierPricing } from './modelPickerPresentation.js';
+import { formatVegaPrice, IVegaModelPricing, VegaPricingCurrency } from './modelPickerVegaPricing.js';
 import { IModelSpeedVariants } from './modelPickerVariants.js';
 import { getOrganizationDefaultDescription } from './modelPickerBadges.js';
 
@@ -43,6 +44,10 @@ export interface IModelCardOptions {
 	readonly configurationAccess: IModelConfigurationAccess;
 	/** Whether the account is billed by credits, which is when cost numbers are shown. */
 	readonly isUBB: boolean;
+	/** Resolves the model's VEGA ruble pricing; when set, it replaces the multiplier cost line. */
+	readonly vegaPricing?: (model: ILanguageModelChatMetadataAndIdentifier) => IVegaModelPricing | undefined;
+	/** The currency `vegaPricing` was loaded in; defaults to rubles. */
+	readonly vegaPricingCurrency?: VegaPricingCurrency;
 	readonly openerService: IOpenerService;
 	/** Called after a configuration value changes so the caller can report it and refresh its own label. */
 	readonly onDidChangeConfiguration?: ModelConfigChangeListener;
@@ -127,6 +132,8 @@ export class ModelCard extends DisposableStore {
 	private _pricingToggle: HTMLElement | undefined;
 	private _pricingChevron: HTMLElement | undefined;
 	private _pricingBody: HTMLElement | undefined;
+	/** The disclosure the rendered section actually follows; an always-expanded one has none. */
+	private _activePricingDisclosure: IPricingDisclosure | undefined;
 
 	constructor(private _options: IModelCardOptions) {
 		super();
@@ -292,7 +299,8 @@ export class ModelCard extends DisposableStore {
 		}
 		if (context) {
 			this._renderContextSection(context);
-		} else if (!isRoutingModel) {
+		} else if (!isRoutingModel && !this._options.vegaPricing) {
+			// VEGA's whole catalog shares one context window, so it isn't worth a line.
 			this._renderContextWindow(metadata);
 		}
 		// After the settings every model has, so those keep one position whether or not
@@ -300,9 +308,15 @@ export class ModelCard extends DisposableStore {
 		if (!isAuto) {
 			this._renderSpeedSection();
 		}
-		if (!isAuto && isUBB) {
+		const vegaPricing = this._options.vegaPricing?.(model);
+		// On a VEGA product multipliers are meaningless; while its catalog loads the
+		// cost line stays out rather than flashing "1x".
+		const suppressMultiplier = !!this._options.vegaPricing;
+		if (!isAuto && vegaPricing) {
+			this._renderVegaCost(vegaPricing);
+		} else if (!isAuto && isUBB && !suppressMultiplier) {
 			this._renderCost(context);
-		} else if (!isAuto && metadata.pricing && isMultiplierPricing(model)) {
+		} else if (!isAuto && metadata.pricing && isMultiplierPricing(model) && !suppressMultiplier) {
 			this._renderSection(localize('models.cost', "Cost: {0}", metadata.pricing));
 		}
 	}
@@ -383,7 +397,11 @@ export class ModelCard extends DisposableStore {
 
 	private _showsPriceBadgeInPricing(): boolean {
 		const metadata = this._options.model.metadata;
-		return this._options.isUBB && !!getPriceCategoryLabel(metadata.priceCategory) && getModelCostMetrics(metadata).length > 0;
+		if (!getPriceCategoryLabel(metadata.priceCategory)) {
+			return false;
+		}
+		// The pricing heading carries the category badge when it shows numbers of its own.
+		return (this._options.isUBB && getModelCostMetrics(metadata).length > 0) || !!this._options.vegaPricing?.(this._options.model);
 	}
 
 	private _renderBadge(container: HTMLElement, label: string, highCost: boolean): HTMLElement {
@@ -631,7 +649,51 @@ export class ModelCard extends DisposableStore {
 		}
 
 		const useExtended = !!context && isExtendedContext(context);
-		const disclosure = this._options.pricingDisclosure;
+		this._renderPricingSection(
+			getCreditsPerMillionTokensLabel(),
+			metrics.map(metric => ({
+				label: metric.label,
+				value: formatModelCost(useExtended ? metric.extended ?? metric.standard : metric.standard),
+			})),
+			getPriceCategoryLabel(metadata.priceCategory),
+		);
+	}
+
+	/**
+	 * VEGA's pricing, rendered like the credit breakdown: token rows share one
+	 * per-1M-tokens caption, while flat request and image fees name their unit.
+	 * VEGA users always see the numbers, so the section never folds away.
+	 */
+	private _renderVegaCost(pricing: IVegaModelPricing): void {
+		const currency = this._options.vegaPricingCurrency ?? 'rub';
+		const rows: { label: string; value: string }[] = [];
+		if (pricing.promptPer1M !== undefined) {
+			rows.push({ label: localize('models.inputCostLabel', "Input"), value: formatVegaPrice(pricing.promptPer1M, currency) });
+		}
+		if (pricing.completionPer1M !== undefined) {
+			rows.push({ label: localize('models.outputCostLabel', "Output"), value: formatVegaPrice(pricing.completionPer1M, currency) });
+		}
+		if (pricing.imagePer1M !== undefined) {
+			rows.push({ label: localize('models.imageCostLabel', "Image"), value: formatVegaPrice(pricing.imagePer1M, currency) });
+		}
+		if (pricing.requestFee !== undefined) {
+			rows.push({ label: localize('models.requestCostLabel', "Per request"), value: formatVegaPrice(pricing.requestFee, currency) });
+		}
+		if (pricing.imageFee !== undefined) {
+			rows.push({ label: localize('models.perImageCostLabel', "Per image"), value: formatVegaPrice(pricing.imageFee, currency) });
+		}
+		if (rows.length) {
+			this._renderPricingSection(
+				localize('models.vegaPricePerMillionTokens', "{0} per 1M tokens", currency === 'rub' ? '₽' : '$'),
+				rows,
+				getPriceCategoryLabel(this._options.model.metadata.priceCategory),
+				true,
+			);
+		}
+	}
+
+	private _renderPricingSection(caption: string, rows: readonly { label: string; value: string }[], badge?: string, alwaysExpanded = false): void {
+		const disclosure = this._activePricingDisclosure = alwaysExpanded ? undefined : this._options.pricingDisclosure;
 		const section = dom.append(this.element, dom.$('.chat-model-card-section.chat-model-card-pricing'));
 		section.classList.toggle('collapsible', !!disclosure);
 		const bodyId = `chat-model-card-pricing-${this._options.model.identifier.replace(/[^\w-]/g, '-')}`;
@@ -650,9 +712,8 @@ export class ModelCard extends DisposableStore {
 			}));
 		}
 		dom.append(heading, dom.$('span.chat-model-card-section-title', undefined, localize('models.pricingDetails', "Pricing details")));
-		const priceBadgeLabel = getPriceCategoryLabel(metadata.priceCategory);
-		if (priceBadgeLabel) {
-			this._renderBadge(heading, priceBadgeLabel, isHighCostCategory(metadata.priceCategory));
+		if (badge) {
+			this._renderBadge(heading, badge, isHighCostCategory(this._options.model.metadata.priceCategory));
 		}
 		const body = dom.append(section, dom.$('.chat-model-card-pricing-body'));
 		this._pricingBody = body;
@@ -660,18 +721,17 @@ export class ModelCard extends DisposableStore {
 		const clip = dom.append(body, dom.$('.chat-model-card-pricing-body-clip'));
 		const content = dom.append(clip, dom.$('.chat-model-card-pricing-body-content'));
 		// The unit is stated once, so each row can be read as a plain name and number.
-		dom.append(content, dom.$('.chat-model-card-pricing-caption', undefined, getCreditsPerMillionTokensLabel()));
-		for (const metric of metrics) {
-			const cost = useExtended ? metric.extended ?? metric.standard : metric.standard;
+		dom.append(content, dom.$('.chat-model-card-pricing-caption', undefined, caption));
+		for (const { label, value } of rows) {
 			const row = dom.append(content, dom.$('.chat-model-card-pricing-row'));
-			dom.append(row, dom.$('span.chat-model-card-pricing-label', undefined, metric.label));
-			dom.append(row, dom.$('span.chat-model-card-pricing-value', undefined, formatModelCost(cost)));
+			dom.append(row, dom.$('span.chat-model-card-pricing-label', undefined, label));
+			dom.append(row, dom.$('span.chat-model-card-pricing-value', undefined, value));
 		}
 		this._updatePricingDisclosure();
 	}
 
 	private _updatePricingDisclosure(): void {
-		const expanded = this._options.pricingDisclosure?.isExpanded() ?? true;
+		const expanded = this._activePricingDisclosure?.isExpanded() ?? true;
 		this._pricingToggle?.setAttribute('aria-expanded', String(expanded));
 		if (this._pricingChevron) {
 			this._pricingChevron.className = `chat-model-card-pricing-chevron ${ThemeIcon.asClassName(expanded ? Codicon.chevronDown : Codicon.chevronRight)}`;

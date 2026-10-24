@@ -194,6 +194,28 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 	}
 }
 
+const CONTEXT7_MCP_URL = 'https://mcp.context7.com/mcp';
+
+/**
+ * Definition provider for the built-in Context7 documentation server
+ * (`io.github.upstash/context7`). The remote HTTP endpoint works without
+ * credentials on a rate-limited tier; when a `CONTEXT7_API_KEY` environment
+ * variable is present it is attached as a bearer token when the server starts.
+ */
+class Context7McpDefinitionProvider implements vscode.McpServerDefinitionProvider<vscode.McpHttpServerDefinition> {
+	provideMcpServerDefinitions(): vscode.McpHttpServerDefinition[] {
+		return [new vscode.McpHttpServerDefinition('Context7', vscode.Uri.parse(CONTEXT7_MCP_URL))];
+	}
+
+	resolveMcpServerDefinition(server: vscode.McpHttpServerDefinition): vscode.McpHttpServerDefinition {
+		const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+		if (env?.CONTEXT7_API_KEY) {
+			server.headers['Authorization'] = `Bearer ${env.CONTEXT7_API_KEY}`;
+		}
+		return server;
+	}
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	const logger = vscode.window.createOutputChannel('VEGA Authentication', { log: true });
 	context.subscriptions.push(logger);
@@ -204,4 +226,5 @@ export function activate(context: vscode.ExtensionContext) {
 		supportsMultipleAccounts: false,
 		supportedAuthorizationServers: [vscode.Uri.parse(VEGA_API_ORIGIN)],
 	}));
+	context.subscriptions.push(vscode.lm.registerMcpServerDefinitionProvider('context7', new Context7McpDefinitionProvider()));
 }

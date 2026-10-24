@@ -35,6 +35,12 @@
 					"https://api.vega.chat"
 				]
 			}
+		],
+		"mcpServerDefinitionProviders": [
+			{
+				"id": "context7",
+				"label": "Context7"
+			}
 		]
 	},
 	"main": "./out/extension.js",

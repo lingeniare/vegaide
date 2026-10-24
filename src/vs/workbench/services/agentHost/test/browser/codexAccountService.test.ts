@@ -24,15 +24,14 @@ import { CodexAccountService, ICodexAccountService, createCodexAccountMenuAction
 suite('CodexAccountService', () => {
 	const disposables = ensureNoDisposablesAreLeakedInTestSuite();
 
-	function service(status: ICodexAccountService['account']['status'], email?: string): ICodexAccountService & { signInCalls: number; signOutCalls: number } {
+	function service(status: ICodexAccountService['account']['status'], email?: string): ICodexAccountService & { signOutCalls: number } {
 		return {
 			_serviceBrand: undefined,
 			agent: CODEX_AGENT_PROVIDER_ID,
 			account: { status, email },
 			onDidChangeAccount: Event.None,
-			signInCalls: 0,
 			signOutCalls: 0,
-			signIn() { this.signInCalls++; },
+			signIn() { },
 			signOut() { this.signOutCalls++; },
 		};
 	}
@@ -68,26 +67,15 @@ suite('CodexAccountService', () => {
 		assert.strictEqual(hasSignedInCodexChatGPTAccount(service('error').account), false);
 	});
 
-	test('keeps the passive unknown account hidden and offers sign-in after resolution', async () => {
-		const signedOut = service('signedOut');
-		const error = service('error');
-		const signedOutActions = createCodexAccountMenuActions(signedOut);
-		const errorActions = createCodexAccountMenuActions(error);
-		disposables.add(signedOutActions[0] as Action);
-		disposables.add(errorActions[0] as Action);
-		await signedOutActions[0].run();
-		await errorActions[0].run();
-
+	test('keeps unresolved accounts out of shared account chrome', () => {
 		assert.deepStrictEqual({
 			unknown: createCodexAccountMenuActions(service('unknown')),
-			signedOut: signedOutActions.map(action => action.label),
-			error: errorActions.map(action => action.label),
-			signInCalls: [signedOut.signInCalls, error.signInCalls],
+			signedOut: createCodexAccountMenuActions(service('signedOut')),
+			error: createCodexAccountMenuActions(service('error')),
 		}, {
 			unknown: [],
-			signedOut: ['Sign in to ChatGPT'],
-			error: ['Sign in to ChatGPT'],
-			signInCalls: [1, 1],
+			signedOut: [],
+			error: [],
 		});
 	});
 

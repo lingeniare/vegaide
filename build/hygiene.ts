@@ -93,8 +93,13 @@ export function hygiene(some: NodeJS.ReadWriteStream | string[] | undefined, run
 		const product = JSON.parse(file.contents!.toString('utf8'));
 
 		if (product.extensionsGallery) {
-			console.error(`product.json: Contains 'extensionsGallery'`);
-			errorCount++;
+			// The Visual Studio Marketplace endpoints must not be committed to this
+			// repository — the product is configured to use the Open VSX registry.
+			const microsoftGalleryHosts = ['visualstudio.com', 'vscode-unpkg.net', 'vscode-cdn.net', 'msecnd.net', 'vsallin.net', 'trafficmanager.net'];
+			if (microsoftGalleryHosts.some(host => JSON.stringify(product.extensionsGallery).includes(host))) {
+				console.error(`product.json: 'extensionsGallery' points to a Visual Studio Marketplace host`);
+				errorCount++;
+			}
 		}
 
 		this.emit('data', file);

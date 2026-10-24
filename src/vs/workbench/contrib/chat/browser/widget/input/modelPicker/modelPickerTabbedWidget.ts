@@ -10,11 +10,13 @@ import { SelectBox } from '../../../../../../../base/browser/ui/selectBox/select
 import type { IModelPickerOpenOptions } from './modelPickerWidget.js';
 import { ActionBar } from '../../../../../../../base/browser/ui/actionbar/actionbar.js';
 import { IAction, toAction } from '../../../../../../../base/common/actions.js';
+import { CancellationToken } from '../../../../../../../base/common/cancellation.js';
 import { IStringDictionary } from '../../../../../../../base/common/collections.js';
 import { Codicon } from '../../../../../../../base/common/codicons.js';
 import { Emitter } from '../../../../../../../base/common/event.js';
 import { AnchorPosition } from '../../../../../../../base/common/layout.js';
 import { Disposable, DisposableMap, DisposableStore, MutableDisposable, toDisposable } from '../../../../../../../base/common/lifecycle.js';
+import { language } from '../../../../../../../base/common/platform.js';
 import { ThemeIcon } from '../../../../../../../base/common/themables.js';
 import { localize } from '../../../../../../../nls.js';
 import { ActionListItemKind, IActionListHeaderLink, IActionListItem } from '../../../../../../../platform/actionWidget/browser/actionList.js';
@@ -25,11 +27,15 @@ import type { AutoModeTier } from '../../../../../../../platform/agentHost/commo
 import { IConfigurationService } from '../../../../../../../platform/configuration/common/configuration.js';
 import { IInstantiationService } from '../../../../../../../platform/instantiation/common/instantiation.js';
 import { IContextViewService } from '../../../../../../../platform/contextview/browser/contextView.js';
+import { ILogService } from '../../../../../../../platform/log/common/log.js';
 import { defaultButtonStyles, defaultSelectBoxStyles } from '../../../../../../../platform/theme/browser/defaultStyles.js';
 import { IOpenerService } from '../../../../../../../platform/opener/common/opener.js';
+import { IProductService } from '../../../../../../../platform/product/common/productService.js';
+import { IRequestService } from '../../../../../../../platform/request/common/request.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../../../platform/storage/common/storage.js';
 import { StateType } from '../../../../../../../platform/update/common/update.js';
 import { URI } from '../../../../../../../base/common/uri.js';
+import { IAuthenticationService } from '../../../../../../services/authentication/common/authentication.js';
 import { ChatEntitlement, IChatEntitlementService } from '../../../../../../services/chat/common/chatEntitlementService.js';
 import { ILanguageModelChatMetadataAndIdentifier, ILanguageModelsService, IModelControlEntry, isUserProvidedModel } from '../../../../common/languageModels.js';
 import { ChatConfiguration } from '../../../../common/constants.js';
@@ -43,12 +49,14 @@ import { getModelPickerAccessibilityProvider, getModelPickerControlModels } from
 import { filterModelPickerControlModelsForEntitlement, filterModelPickerModelsForEntitlement, getEnsembleTierLabel, getHydraFusionTierLabel, isAutoModel, isHydraFusionModel, isHydraFusionUpgradeOnly } from './modelPickerPresentation.js';
 import { buildModelPickerDestinations, buildModelPickerSections, getModelProviderLabel, hasPromotedModels, IModelPickerDestination, IModelPickerProviderPlaceholder, IModelPickerSections, IModelPickerUnavailableEntry, MODEL_PICKER_BUILT_IN_DESTINATION } from './modelPickerTabs.js';
 import { ModelPickerWelcome } from './modelPickerWelcome.js';
+import { getVegaPricing, vegaPricingForModel, IVegaModelPricing } from './modelPickerVegaPricing.js';
 import { createMessageBanner, HYDRA_FUSION_LEARN_MORE_URL } from './modelPickerHover.js';
 import { IModelPickerWorkflow } from './modelPickerWorkflow.js';
 
 /** The collapsible section holding models that are neither pinned, recommended nor recent. */
 const OTHER_MODELS_SECTION = 'other';
 const PICKER_WIDTH = 320;
+const VEGA_PICKER_WIDTH = 280;
 const PRICING_EXPANDED_STORAGE_KEY = 'chat.modelPicker.pricingExpanded';
 const MODEL_DETAILS_ACTION_ID = 'chat.modelPicker.details';
 
@@ -125,6 +133,7 @@ export class TabbedModelPicker extends Disposable {
 	private _preferredHydraFusionTier: string | undefined;
 	private _selectionVersion = 0;
 	private _models: readonly ILanguageModelChatMetadataAndIdentifier[] = [];
+	private _vegaPricing: ReadonlyMap<string, IVegaModelPricing> | undefined;
 
 	get isVisible(): boolean {
 		return this._widget.isVisible;
@@ -138,6 +147,10 @@ export class TabbedModelPicker extends Disposable {
 		@IStorageService private readonly _storageService: IStorageService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IContextViewService private readonly _contextViewService: IContextViewService,
+		@IProductService private readonly _productService: IProductService,
+		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
+		@IRequestService private readonly _requestService: IRequestService,
+		@ILogService private readonly _logService: ILogService,
 	) {
 		super();
 		this._widget = this._register(instantiationService.createInstance(TabbedActionListWidget));
@@ -188,7 +201,35 @@ export class TabbedModelPicker extends Disposable {
 
 	openWithFilter(options: IModelPickerOpenOptions): void {
 		this._searchVisible = true;
+		this._ensureVegaPricing();
 		this._showCurrent(options.initialFilterValue, options.initialFocusItemId);
+	}
+
+	/**
+	 * Whether the product's chat provider is VEGA. VEGA lists its OpenRouter
+	 * catalog directly: no routing row, no multiplier pricing, and the tab and
+	 * costs are branded and priced for the VEGA gateway instead.
+	 */
+	private get _isVegaProduct(): boolean {
+		return this._productService.defaultChatAgent?.provider?.default?.id === 'vega';
+	}
+
+	/** The currency VEGA prices are requested in: rubles for the Russian UI, dollars otherwise. */
+	private get _vegaCurrency(): 'rub' | 'usd' {
+		return language === 'ru' ? 'rub' : 'usd';
+	}
+
+	/** Starts the one-time pricing fetch; cards re-render once the catalog lands. */
+	private _ensureVegaPricing(): void {
+		if (!this._isVegaProduct || this._vegaPricing) {
+			return;
+		}
+		void getVegaPricing(this._authenticationService, this._requestService, this._logService, CancellationToken.None, this._vegaCurrency).then(pricing => {
+			if (!this._store.isDisposed && pricing?.size) {
+				this._vegaPricing = pricing;
+				this.refresh();
+			}
+		});
 	}
 
 	show(anchor: HTMLElement, context: ITabbedModelPickerContext, detailsModelId?: string, focusConfiguration = false, contextViewLayer?: number, options?: IModelPickerOpenOptions): void {
@@ -198,6 +239,7 @@ export class TabbedModelPicker extends Disposable {
 				context.workflow.start();
 			}
 		}
+		this._ensureVegaPricing();
 		this._anchor = anchor;
 		this._selectionVersion++;
 		this._models = context.models;
@@ -318,7 +360,7 @@ export class TabbedModelPicker extends Disposable {
 			],
 			tabLabels: 'active',
 			filterInTabBar: true,
-			width: PICKER_WIDTH,
+			width: this._isVegaProduct ? VEGA_PICKER_WIDTH : PICKER_WIDTH,
 			createActionList: (activeTab, forSizing) => {
 				const current = this._context ?? context;
 				const currentDestinations = this._buildDestinations(current);
@@ -362,7 +404,7 @@ export class TabbedModelPicker extends Disposable {
 						}
 					},
 					linkHandler: uri => current.onUnavailableLinkClick(uri),
-					maxWidth: PICKER_WIDTH,
+					maxWidth: this._isVegaProduct ? VEGA_PICKER_WIDTH : PICKER_WIDTH,
 					hideDefaultKeybindingTooltip: true,
 					reserveSubmenuSpace: false,
 				});
@@ -408,7 +450,7 @@ export class TabbedModelPicker extends Disposable {
 		const hydraFusionModels = this._hydraFusionModels(context);
 		// Ensemble's HydraFusion is never a row of its own, even when Ensemble does not offer it.
 		const ensembleHydraFusion = (model: ILanguageModelChatMetadataAndIdentifier) => !!autoModel?.metadata.autoModelEnsemble && isHydraFusionModel(model) && !isUserProvidedModel(model, this._languageModelsService);
-		return buildModelPickerDestinations(context.models, this._languageModelsService, context.providerPlaceholders, model => model === autoModel || hydraFusionModels.includes(model) || ensembleHydraFusion(model), this._hasBuiltInUpsells(context));
+		return buildModelPickerDestinations(context.models, this._languageModelsService, context.providerPlaceholders, model => model === autoModel || hydraFusionModels.includes(model) || ensembleHydraFusion(model), this._hasBuiltInUpsells(context), this._isVegaProduct ? this._productService.defaultChatAgent?.provider?.default?.name : undefined);
 	}
 
 	/**
@@ -691,6 +733,7 @@ export class TabbedModelPicker extends Disposable {
 					unavailableContext.manageSettingsUrl,
 					unavailableContext.updateStateType,
 					this._entitlementService,
+					this._productService.defaultChatAgent?.provider?.default?.name,
 				));
 			}
 		};
@@ -740,7 +783,7 @@ export class TabbedModelPicker extends Disposable {
 	 */
 	private _buildSearchItems(destination: IModelPickerDestination, sections: IModelPickerSections, context: ITabbedModelPickerContext): IActionListItem<IActionWidgetDropdownAction>[] {
 		const routingModels = destination.id === MODEL_PICKER_BUILT_IN_DESTINATION
-			? [this._autoModel(context), ...this._hydraFusionRowModels(context)].filter((model): model is ILanguageModelChatMetadataAndIdentifier => !!model)
+			? [this._isVegaProduct ? undefined : this._autoModel(context), ...this._hydraFusionRowModels(context)].filter((model): model is ILanguageModelChatMetadataAndIdentifier => !!model)
 			: [];
 		return [...sections.pinned, ...sections.suggested, ...sections.other, ...routingModels]
 			.sort((left, right) => this._getRowLabel(left, context).localeCompare(this._getRowLabel(right, context)))
@@ -767,7 +810,8 @@ export class TabbedModelPicker extends Disposable {
 	private _buildRoutingItems(context: ITabbedModelPickerContext): IActionListItem<IActionWidgetDropdownAction>[] {
 		const items: IActionListItem<IActionWidgetDropdownAction>[] = [];
 		const auto = this._autoModel(context);
-		if (auto) {
+		// VEGA has no routing tier to configure, so its catalog leads with the models.
+		if (auto && !this._isVegaProduct) {
 			items.push(this._createModelItem(auto, context));
 		}
 		if (this._hostsHydraFusion(context)) {
@@ -813,7 +857,7 @@ export class TabbedModelPicker extends Disposable {
 			const { action, ariaDescription } = createModelAction(model, undefined, () => {
 				workflow.select(model.identifier);
 				this._showCurrent(this._filterValue, model.identifier);
-			}, section, true);
+			}, section, true, this._isVegaProduct);
 			return {
 				item: { ...action, checked, enabled: !disabled },
 				kind: ActionListItemKind.Action,
@@ -839,7 +883,7 @@ export class TabbedModelPicker extends Disposable {
 				? getPreferredSpeedVariant(pair, this._context?.selectedModelId, this._preferredSpeedVariants.get(pair.standard.identifier))
 				: next;
 			this._applyModelSelection(selected, this._context ?? context);
-		}, section, true);
+		}, section, true, this._isVegaProduct);
 		const routingModel = isAutoModel(model) || isHydraFusionModel(model);
 		const modelBadge = getModelBadge(model, { providerLabel });
 		// A routing model's detail, e.g. Auto's discount, is its badge when nothing outranks it.
@@ -885,7 +929,8 @@ export class TabbedModelPicker extends Disposable {
 	private _createDetailsAction(model: ILanguageModelChatMetadataAndIdentifier, name: string, summary?: string): IAction {
 		return toAction({
 			id: MODEL_DETAILS_ACTION_ID,
-			label: summary ?? localize('chat.modelPicker.details', "Details"),
+			// VEGA's rows are unconfigured, so the button is its chevron alone.
+			label: this._isVegaProduct ? '' : (summary ?? localize('chat.modelPicker.details', "Details")),
 			tooltip: summary
 				? localize('chat.modelPicker.configurationDetails', "{0} Details, {1}", name, summary)
 				: localize('chat.modelPicker.modelDetails', "{0} Details", name),
@@ -918,6 +963,8 @@ export class TabbedModelPicker extends Disposable {
 			description: ownTiers[0]?.metadata.tooltip,
 			configurationAccess: context.configurationAccess,
 			isUBB: context.isUBB,
+			vegaPricing: this._isVegaProduct ? candidate => vegaPricingForModel(this._vegaPricing, candidate) : undefined,
+			vegaPricingCurrency: this._vegaCurrency,
 			openerService: this._openerService,
 			isPinned: this._pinnedVariantIds(model.identifier, context).length > 0,
 			organizationDefaultModel: this._getOrganizationDefaultForModel(model, context),

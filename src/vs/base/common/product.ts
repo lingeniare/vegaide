@@ -134,6 +134,8 @@ export interface IProductConfiguration {
 	readonly nlsCoreBaseUrl?: string;
 	/** Build-time hash of the commit and core NLS tables used to identify translated-message caches. */
 	readonly nlsMetadataHash?: string;
+	/** Default display language applied when the user has not explicitly chosen a locale. */
+	readonly defaultLocale?: string;
 
 	readonly settingsSearchBuildId?: number;
 	readonly settingsSearchUrl?: string;
@@ -146,6 +148,8 @@ export interface IProductConfiguration {
 
 	readonly extensionsGallery?: {
 		readonly serviceUrl: string;
+		readonly itemUrl?: string;
+		readonly publisherUrl?: string;
 		readonly controlUrl: string;
 		readonly extensionUrlTemplate: string;
 		readonly resourceUrlTemplate: string;

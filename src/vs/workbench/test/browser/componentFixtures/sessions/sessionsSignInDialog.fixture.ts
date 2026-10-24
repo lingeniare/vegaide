@@ -16,40 +16,32 @@ import { createSessionsSignInDialogOptions, SessionsSigningInDialog } from '../.
 import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup } from '../fixtureUtils.js';
 
 const providers = {
-	default: { name: 'GitHub' },
-	enterprise: { name: 'GHE' },
+	default: { name: 'VEGA' },
+	enterprise: { name: 'VEGA' },
 	google: { name: 'Google' },
 	apple: { name: 'Apple' },
 	microsoft: { name: 'Microsoft' },
 };
 
 const footerContent = {
-	providerName: 'GitHub',
-	termsStatementUrl: 'https://example.com/terms',
-	privacyStatementUrl: 'https://example.com/privacy',
+	providerName: 'VEGA',
+	termsStatementUrl: 'https://vega.codes/offer',
+	privacyStatementUrl: 'https://vega.codes/privacy',
 	publicCodeMatchesUrl: 'https://example.com/public-code',
 };
 
 export default defineThemedFixtureGroup({ path: 'sessions/signInDialog/' }, {
 	SignIn: defineComponentFixture({
 		labels: { kind: 'screenshot' },
-		render: context => renderSignInDialog(context, false, true, true),
+		render: context => renderSignInDialog(context, true, true),
 	}),
 	SignInWithEditorWindowOpen: defineComponentFixture({
 		labels: { kind: 'screenshot' },
-		render: context => renderSignInDialog(context, false, false, true),
+		render: context => renderSignInDialog(context, false, true),
 	}),
 	SignInRequired: defineComponentFixture({
 		labels: { kind: 'screenshot' },
-		render: context => renderSignInDialog(context, false, true, false),
-	}),
-	EnterpriseSignIn: defineComponentFixture({
-		labels: { kind: 'screenshot' },
-		render: context => renderSignInDialog(context, true, true, true),
-	}),
-	SignInWithMicrosoft: defineComponentFixture({
-		labels: { kind: 'screenshot' },
-		render: context => renderSignInDialog(context, false, true, true, true),
+		render: context => renderSignInDialog(context, true, false),
 	}),
 	SigningIn: defineComponentFixture({
 		labels: { kind: 'screenshot' },
@@ -57,12 +49,12 @@ export default defineThemedFixtureGroup({ path: 'sessions/signInDialog/' }, {
 	}),
 });
 
-function renderSignInDialog(context: ComponentFixtureContext, enterpriseAuthentication: boolean, showReturnToVSCodeEditor: boolean, allowContinueWithoutSignIn: boolean, showMicrosoftProvider = false): void {
+function renderSignInDialog(context: ComponentFixtureContext, showReturnToVSCodeEditor: boolean, allowContinueWithoutSignIn: boolean): void {
 	const instantiationService = createDialogServices(context);
 	const presentation = createSessionsSignInDialogOptions(instantiationService.get(ICommandService), showReturnToVSCodeEditor, allowContinueWithoutSignIn);
 	const dialog = context.disposableStore.add(instantiationService.createInstance(ChatSetupDialog, context.container, {
 		title: presentation.dialogTitle,
-		buttons: getChatSetupDialogButtons(ChatEntitlement.Unknown, presentation, enterpriseAuthentication, showMicrosoftProvider, providers),
+		buttons: getChatSetupDialogButtons(ChatEntitlement.Unknown, presentation, providers),
 		icon: presentation.dialogIcon,
 		disableCloseButton: presentation.disableCloseButton,
 		footer: getChatSetupDialogFooter(undefined, TelemetryLevel.USAGE, 'https://github.com/settings/copilot/features', footerContent),

@@ -216,6 +216,80 @@ suite('NLS configuration', () => {
 		});
 	});
 
+	test('resolves a language pack bundled with the product on first launch', async () => {
+		const builtinExtensionsPath = join(testDir, 'builtin-extensions');
+		const bundledPackPath = join(builtinExtensionsPath, 'MS-CEINTL.vscode-language-pack-ru');
+		await promises.mkdir(join(bundledPackPath, 'translations'), { recursive: true });
+		await Promise.all([
+			promises.writeFile(join(bundledPackPath, 'package.json'), JSON.stringify({
+				name: 'vscode-language-pack-ru',
+				publisher: 'MS-CEINTL',
+				version: '1.131.0',
+				contributes: {
+					localizations: [{
+						languageId: 'ru',
+						languageName: 'Russian',
+						localizedLanguageName: 'русский',
+						translations: [{ id: 'vscode', path: './translations/main.i18n.json' }]
+					}]
+				}
+			})),
+			promises.writeFile(join(bundledPackPath, 'translations', 'main.i18n.json'), JSON.stringify({
+				contents: { 'vs/base/test': { first: 'Первая', second: 'Вторая' } }
+			}))
+		]);
+		await promises.rm(join(userDataPath, 'languagepacks.json'), { force: true });
+
+		const metadata = await writeMetadata('bundled', [['vs/base/test', ['first', 'second']]], ['First', 'Second']);
+		const configuration = await resolveNLSConfiguration({
+			userLocale: 'ru',
+			osLocale: 'ru',
+			userDataPath,
+			commit,
+			builtinExtensionsPath,
+			...metadata
+		});
+
+		assert.strictEqual(configuration.resolvedLanguage, 'ru');
+		assert.ok(configuration.languagePack);
+		const messages: string[] = JSON.parse(await promises.readFile(configuration.languagePack.messagesFile, 'utf8'));
+		assert.deepStrictEqual(messages, ['Первая', 'Вторая']);
+	});
+
+	test('ignores bundled language packs that do not match the locale', async () => {
+		const builtinExtensionsPath = join(testDir, 'builtin-extensions');
+		const bundledPackPath = join(builtinExtensionsPath, 'MS-CEINTL.vscode-language-pack-ru');
+		await promises.mkdir(join(bundledPackPath, 'translations'), { recursive: true });
+		await Promise.all([
+			promises.writeFile(join(bundledPackPath, 'package.json'), JSON.stringify({
+				name: 'vscode-language-pack-ru',
+				publisher: 'MS-CEINTL',
+				version: '1.131.0',
+				contributes: {
+					localizations: [{
+						languageId: 'ru',
+						translations: [{ id: 'vscode', path: './translations/main.i18n.json' }]
+					}]
+				}
+			})),
+			promises.writeFile(join(bundledPackPath, 'translations', 'main.i18n.json'), JSON.stringify({ contents: {} }))
+		]);
+		await promises.rm(join(userDataPath, 'languagepacks.json'), { force: true });
+
+		const metadata = await writeMetadata('bundled', [['vs/base/test', ['first']]], ['First']);
+		const configuration = await resolveNLSConfiguration({
+			userLocale: 'fr',
+			osLocale: 'fr',
+			userDataPath,
+			commit,
+			builtinExtensionsPath,
+			...metadata
+		});
+
+		assert.strictEqual(configuration.resolvedLanguage, 'en');
+		assert.strictEqual(configuration.languagePack, undefined);
+	});
+
 	test('does not require NLS metadata for the default locale', async () => {
 		const nlsMetadataPath = join(testDir, 'missing');
 		const result = await resolveNLSConfiguration({ userLocale: 'en', osLocale: 'en', userDataPath, commit, nlsMetadataPath });

@@ -567,11 +567,12 @@ export class ModelPickerWidget extends Disposable {
 		}
 		const entitlement = this._entitlementService.entitlement;
 		const canUpgrade = entitlement === ChatEntitlement.Free || entitlement === ChatEntitlement.EDU;
+		const providerName = this._productService.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot';
 		return [{
 			vendor,
 			label,
 			message: canUpgrade
-				? localize('chat.modelPicker.noModelsUpgradeMessage', "No models are available. Upgrade to GitHub Copilot Pro to use the best models.")
+				? localize('chat.modelPicker.noModelsUpgradeMessage', "No models are available. Upgrade to {0} Pro to use the best models.", providerName)
 				: localize('chat.modelPicker.noModelsMessage', "No models are available."),
 			action: canUpgrade ? {
 				label: localize('chat.modelPicker.upgrade', "Upgrade"),
@@ -805,7 +806,7 @@ export class ModelPickerWidget extends Disposable {
 		const ariaLabel = restrictedMode
 			? localize('chat.modelPicker.ariaLabelRestricted', "Models, unavailable while in Restricted mode")
 			: setupRequired
-				? localize('chat.modelPicker.ariaLabelSetupRequired', "Models, sign in to use Copilot")
+				? localize('chat.modelPicker.ariaLabelSetupRequired', "Models, sign in to use {0}", this._productService.defaultChatAgent?.provider?.default?.name ?? 'Copilot')
 				: localize('chat.modelPicker.ariaLabel', "Models, {0}", modelLabel);
 		this._domNode.ariaLabel = ariaLabel;
 		this._nameButton.ariaLabel = ariaLabel;

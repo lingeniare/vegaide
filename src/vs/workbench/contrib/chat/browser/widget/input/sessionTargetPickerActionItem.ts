@@ -223,7 +223,8 @@ export class SessionTypePickerActionItem extends ChatInputPickerActionViewItem {
 
 		const actionBarActionProvider: IActionProvider = {
 			getActions: () => {
-				return [this._getLearnMore()];
+				const learnMore = this._getLearnMore();
+				return learnMore ? [learnMore] : [];
 			}
 		};
 
@@ -349,7 +350,7 @@ export class SessionTypePickerActionItem extends ChatInputPickerActionViewItem {
 		return [];
 	}
 
-	protected _getLearnMore(): IAction {
+	protected _getLearnMore(): IAction | undefined {
 		const learnMoreUrl = 'https://aka.ms/vscode-concept-harnesses';
 		return {
 			id: 'workbench.action.chat.agentOverview.learnMore',

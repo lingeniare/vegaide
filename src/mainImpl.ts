@@ -148,7 +148,7 @@ let nlsConfigurationPromise: Promise<INLSConfiguration> | undefined = undefined;
 perf.mark('code/willGetPreferredSystemLanguages');
 const osLocale = processZhLocale((app.getPreferredSystemLanguages()?.[0] ?? 'en').toLowerCase());
 perf.mark('code/didGetPreferredSystemLanguages');
-const userLocale = getUserDefinedLocale(argvConfig);
+const userLocale = getUserDefinedLocale(argvConfig) ?? product.defaultLocale?.toLowerCase();
 if (userLocale) {
 	nlsConfigurationPromise = resolveNLSConfiguration({
 		userLocale,
@@ -156,7 +156,8 @@ if (userLocale) {
 		commit: product.commit,
 		nlsMetadataHash: product.nlsMetadataHash,
 		userDataPath,
-		nlsMetadataPath: import.meta.dirname
+		nlsMetadataPath: import.meta.dirname,
+		builtinExtensionsPath: path.join(import.meta.dirname, '..', 'extensions')
 	});
 }
 
@@ -748,7 +749,8 @@ async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 			commit: product.commit,
 			nlsMetadataHash: product.nlsMetadataHash,
 			userDataPath,
-			nlsMetadataPath: import.meta.dirname
+			nlsMetadataPath: import.meta.dirname,
+			builtinExtensionsPath: path.join(import.meta.dirname, '..', 'extensions')
 		});
 	} finally {
 		perf.mark('code/didResolveNlsConfiguration');

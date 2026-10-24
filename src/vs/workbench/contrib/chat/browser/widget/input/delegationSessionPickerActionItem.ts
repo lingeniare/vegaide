@@ -27,7 +27,7 @@ import { ICodexAccountService } from '../../../../../services/agentHost/browser/
 import { IChatSessionsService } from '../../../common/chatSessionsService.js';
 import { ILanguageModelsService } from '../../../common/languageModels.js';
 import { ACTION_ID_NEW_CHAT } from '../../actions/chatActions.js';
-import { AgentSessionProviders, AgentSessionTarget, getAgentCanContinueIn, getAgentSessionProvider, isAgentHostTarget, isFirstPartyAgentSessionProvider } from '../../agentSessions/agentSessions.js';
+import { AgentSessionProviders, AgentSessionTarget, getAgentSessionProvider, isAgentHostTarget, isFirstPartyAgentSessionProvider } from '../../agentSessions/agentSessions.js';
 import { ISessionTypePickerDelegate } from '../../chat.js';
 import { IChatHarnessSwitchFeedbackSurveyService } from '../../feedbackSurvey/chatHarnessSwitchFeedbackSurveyService.js';
 import { IChatInputPickerOptions } from './chatInputPickerActionItem.js';
@@ -128,25 +128,12 @@ export class DelegationSessionPickerActionItem extends SessionTypePickerActionIt
 	}
 
 	protected override _isVisible(type: AgentSessionTarget): boolean {
-		// In the sessions window, never offer the plain Local (in-place) target;
-		// agent host and remote targets remain available via getAgentCanContinueIn.
-		if (this._isSessionsWindow && type === AgentSessionProviders.Local) {
+		// Only the local (in-place) target is offered; remote and agent host
+		// delegation targets are removed from the picker.
+		if (this._isSessionsWindow || type !== AgentSessionProviders.Local) {
 			return false;
 		}
-
-		if (this.delegate.getActiveSessionProvider() === type) {
-			return true; // Always show active session type
-		}
-		if (this._isSessionsWindow && type === AgentSessionProviders.Background && this.chatSessionsService.getChatSessionContribution(AgentSessionProviders.AgentHostCopilot)) {
-			return false;
-		}
-
-		// Apply the same visibility guards as the new-session picker.
-		if (!super._isVisible(type)) {
-			return false;
-		}
-
-		return getAgentCanContinueIn(type);
+		return super._isVisible(type);
 	}
 
 	protected override _getSessionCategory(sessionTypeItem: ISessionTypeItem) {
@@ -160,18 +147,8 @@ export class DelegationSessionPickerActionItem extends SessionTypePickerActionIt
 		return undefined;
 	}
 
-	protected override _getLearnMore(): IAction {
-		const learnMoreUrl = 'https://aka.ms/vscode-agent-handoff';
-		return {
-			id: 'workbench.action.chat.agentOverview.learnMoreHandOff',
-			label: localize('chat.learnMoreAgentHandOff', "Learn about agent handoff..."),
-			tooltip: learnMoreUrl,
-			class: undefined,
-			enabled: true,
-			run: async () => {
-				await this.openerService.open(URI.parse(learnMoreUrl));
-			}
-		};
+	protected override _getLearnMore(): IAction | undefined {
+		return undefined;
 	}
 
 	protected override _getAdditionalActions(): IActionWidgetDropdownAction[] {

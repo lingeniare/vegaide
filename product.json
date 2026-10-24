@@ -31,12 +31,24 @@
 	"linuxDesktopName": "com.visualstudio.CodeOSS",
 	"linuxIconName": "code-oss",
 	"licenseFileName": "LICENSE.txt",
+	"defaultLocale": "ru",
 	"reportIssueUrl": "https://github.com/microsoft/vscode/issues/new",
 	"nodejsArtifactFeed": "",
 	"electronArtifactFeed": "",
 	"urlProtocol": "code-oss",
 	"agentsTelemetryAppName": "agents",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
+	"extensionsGallery": {
+		"serviceUrl": "https://open-vsx.org/vscode/gallery",
+		"itemUrl": "https://open-vsx.org/vscode/item",
+		"publisherUrl": "https://open-vsx.org/namespace",
+		"resourceUrlTemplate": "https://open-vsx.org/vscode/unpkg/{publisher}/{name}/{version}/{path}",
+		"extensionUrlTemplate": "https://open-vsx.org/vscode/gallery/{publisher}/{name}/latest",
+		"controlUrl": "https://raw.githubusercontent.com/EclipseFdn/publish-extensions/refs/heads/master/extension-control/extensions.json"
+	},
+	"linkProtectionTrustedDomains": [
+		"https://open-vsx.org"
+	],
 	"builtInExtensions": [
 		{
 			"name": "ms-vscode.js-debug-companion",
@@ -85,6 +97,22 @@
 				},
 				"publisherDisplayName": "Microsoft"
 			}
+		},
+		{
+			"name": "MS-CEINTL.vscode-language-pack-ru",
+			"version": "1.131.0",
+			"sha256": "39d55eefdf2e2ff6222859c63ab851740065ac8aedbaded45e3a1b988d3178b5",
+			"repo": "https://github.com/Microsoft/vscode-loc",
+			"metadata": {
+				"id": "392df454-688b-4d61-8dba-a12956ac6448",
+				"publisherId": {
+					"publisherId": "0b0882c3-aee3-4d7c-b5f9-872f9be0a115",
+					"publisherName": "MS-CEINTL",
+					"displayName": "Microsoft",
+					"flags": "verified"
+				},
+				"publisherDisplayName": "Microsoft"
+			}
 		}
 	],
 	"defaultChatAgent": {
@@ -93,8 +121,8 @@
 		"chatExtensionOutputId": "GitHub.copilot-chat.GitHub Copilot Chat.log",
 		"chatExtensionOutputExtensionStateCommand": "github.copilot.debug.extensionState",
 		"documentationUrl": "https://api.vega.chat",
-		"termsStatementUrl": "https://api.vega.chat",
-		"privacyStatementUrl": "https://api.vega.chat",
+		"termsStatementUrl": "https://vega.codes/offer",
+		"privacyStatementUrl": "https://vega.codes/privacy",
 		"skusDocumentationUrl": "https://api.vega.chat/dashboard",
 		"optimizeUsageDocumentationUrl": "https://api.vega.chat/dashboard",
 		"publicCodeMatchesUrl": "https://api.vega.chat",

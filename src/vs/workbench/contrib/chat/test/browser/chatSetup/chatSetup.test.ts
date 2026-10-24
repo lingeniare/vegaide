@@ -32,7 +32,7 @@ import { ChatContextKeys } from '../../../common/actions/chatContextKeys.js';
 import { ChatSetupFromAccountsWhen } from '../../../browser/chatSetup/chatSetupContributions.js';
 import { buildUpgradeUrlWithRedirect, ChatSetupAnonymous, ChatSetupSource, ChatSetupStrategy, IChatSetupRunOptions } from '../../../browser/chatSetup/chatSetup.js';
 import { ChatSetupController } from '../../../browser/chatSetup/chatSetupController.js';
-import { ChatMicrosoftSignInProbeService, IChatMicrosoftSignInProbeService, MicrosoftSignInProbeOutcome, probeMicrosoftSignIn } from '../../../browser/chatSetup/chatSetupMicrosoftProbe.js';
+import { ChatMicrosoftSignInProbeService, MicrosoftSignInProbeOutcome, probeMicrosoftSignIn } from '../../../browser/chatSetup/chatSetupMicrosoftProbe.js';
 import { ChatSetup, ChatSetupDialog, getChatSetupDialogButtons, getChatSetupDialogFooter, IChatSetupDialogProviders, showChatSetupDialogWithCancellation } from '../../../browser/chatSetup/chatSetupRunner.js';
 
 /**
@@ -126,12 +126,12 @@ suite('Chat setup dialog presentation', () => {
 		microsoft: { name: 'Microsoft' },
 	};
 
-	function buttonLabels(options: IChatSetupRunOptions, enterpriseAuthentication: boolean, showMicrosoftProvider: boolean): string[] {
-		return getChatSetupDialogButtons(ChatEntitlement.Unknown, options, enterpriseAuthentication, showMicrosoftProvider, providers).map(button => button.label);
+	function buttonLabels(options: IChatSetupRunOptions): string[] {
+		return getChatSetupDialogButtons(ChatEntitlement.Unknown, options, providers).map(button => button.label);
 	}
 
 	test('places signed-out continuation after providers', () => {
-		const buttons = getChatSetupDialogButtons(ChatEntitlement.Unknown, { allowContinueWithoutSignIn: true }, false, false, providers);
+		const buttons = getChatSetupDialogButtons(ChatEntitlement.Unknown, { allowContinueWithoutSignIn: true }, providers);
 		const footer = getChatSetupDialogFooter(undefined, TelemetryLevel.USAGE, 'https://example.com/settings', {
 			providerName: 'GitHub',
 			termsStatementUrl: 'https://example.com/terms',
@@ -144,7 +144,7 @@ suite('Chat setup dialog presentation', () => {
 			lastButton: buttons.at(-1),
 			footer,
 		}, {
-			buttonLabels: ['Continue with GitHub', 'Continue with Google', 'Continue with Apple', 'Continue with GHE', 'Continue Without Signing In'],
+			buttonLabels: ['Continue with GitHub', 'Continue Without Signing In'],
 			lastButton: {
 				label: 'Continue Without Signing In',
 				strategy: ChatSetupStrategy.Canceled,
@@ -165,17 +165,13 @@ suite('Chat setup dialog presentation', () => {
 		assert.strictEqual(footer, 'By continuing, you agree to GitHub\'s [Terms](https://example.com/terms) and [Privacy Statement](https://example.com/privacy). GitHub Copilot may show [public code](https://example.com/public-code) suggestions and use your data to improve the product. You can change these settings anytime.');
 	});
 
-	test('places Microsoft after the other providers and before the signed-out continuation', () => {
+	test('offers only the default provider for sign-in', () => {
 		assert.deepStrictEqual({
-			withMicrosoft: buttonLabels({ allowContinueWithoutSignIn: true }, false, true),
-			withoutMicrosoft: buttonLabels({ allowContinueWithoutSignIn: true }, false, false),
-			// The enterprise dialog offers the same social providers, in the same order, because
-			// every one of them signs in against whichever host the default account points at.
-			enterprise: buttonLabels({}, true, true),
+			withContinuation: buttonLabels({ allowContinueWithoutSignIn: true }),
+			withoutContinuation: buttonLabels({}),
 		}, {
-			withMicrosoft: ['Continue with GitHub', 'Continue with Google', 'Continue with Apple', 'Continue with Microsoft', 'Continue with GHE', 'Continue Without Signing In'],
-			withoutMicrosoft: ['Continue with GitHub', 'Continue with Google', 'Continue with Apple', 'Continue with GHE', 'Continue Without Signing In'],
-			enterprise: ['Continue with GHE', 'Continue with Google', 'Continue with Apple', 'Continue with Microsoft', 'Continue with GitHub'],
+			withContinuation: ['Continue with GitHub', 'Continue Without Signing In'],
+			withoutContinuation: ['Continue with GitHub'],
 		});
 	});
 
@@ -581,7 +577,6 @@ suite('Chat setup strategy', () => {
 			undefined as never,
 			{ isWorkspaceTrusted: () => true } as never,
 			undefined as never,
-			undefined as never,
 		);
 
 		const result = await setup.run({ setupStrategy: ChatSetupStrategy.SetupWithMicrosoftProvider, additionalScopes: ['repo'] });
@@ -679,7 +674,6 @@ suite('Chat setup dialog cancellation', () => {
 			undefined as never,
 			{ isWorkspaceTrusted: () => true } as never,
 			undefined as never,
-			undefined as never,
 		);
 
 		const result = setup.run({ setupStrategy: ChatSetupStrategy.DefaultSetup, cancellationToken: cancellation.token });
@@ -701,7 +695,6 @@ suite('Chat setup dialog telemetry', () => {
 		const impressions: (ITelemetryData | undefined)[] = [];
 		const dialogShown = new DeferredPromise<void>();
 		const dialogResult = new DeferredPromise<ChatSetupStrategy>();
-		let microsoftSignInAsked = 0;
 		const context = upcastPartial<ChatEntitlementContext>({
 			state: { entitlement, sku: undefined, organisations: undefined, isStaff: undefined, copilotTrackingId: undefined },
 			update: async () => { },
@@ -723,10 +716,6 @@ suite('Chat setup dialog telemetry', () => {
 			getDefaultAccountAuthenticationProvider: () => ({ id: 'github', name: 'GitHub', enterprise: false }),
 			resolveGitHubUrl: path => `https://github.com/${path}`,
 		});
-		instantiationService.stub(IChatMicrosoftSignInProbeService, {
-			offerMicrosoftSignIn: constObservable(false),
-			notifySignInShown: () => { microsoftSignInAsked++; },
-		});
 		instantiationService.stub(ILayoutService, {});
 		instantiationService.stubInstance(ChatSetupDialog, {
 			show: () => {
@@ -736,7 +725,7 @@ suite('Chat setup dialog telemetry', () => {
 			dispose: () => { void dialogResult.complete(ChatSetupStrategy.Canceled); },
 		});
 		const setup = instantiationService.createInstance(ChatSetup, context, controller);
-		return { setup, impressions, dialogShown, dialogResult, microsoftSignInAsked: () => microsoftSignInAsked };
+		return { setup, impressions, dialogShown, dialogResult };
 	}
 
 	test('records one impression while concurrent callers share an open dialog', async () => {
@@ -811,26 +800,6 @@ suite('Chat setup dialog telemetry', () => {
 			assert.deepStrictEqual(impressions, []);
 		});
 	}
-
-	test('asks whether to offer Microsoft sign-in only for dialogs with sign-in buttons', async () => {
-		async function askedAfterTwoDialogs(entitlement: ChatEntitlement, accountAvailable: boolean): Promise<number> {
-			const { setup, dialogResult, microsoftSignInAsked } = createSetup(entitlement, accountAvailable);
-			const first = setup.run();
-			await dialogResult.complete(ChatSetupStrategy.Canceled);
-			await first;
-			await setup.run();
-			return microsoftSignInAsked();
-		}
-
-		assert.deepStrictEqual({
-			signIn: await askedAfterTwoDialogs(ChatEntitlement.Unknown, false),
-			// Asking logs the experiment trigger, so a dialog without sign-in buttons must not ask.
-			setupOnly: await askedAfterTwoDialogs(ChatEntitlement.Unresolved, true),
-		}, {
-			signIn: 2,
-			setupOnly: 0,
-		});
-	});
 
 	test('does not report a dialog canceled before showing', async () => {
 		const calls: string[] = [];

@@ -1,4 +1,4 @@
-c/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -13,6 +13,7 @@ import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../ba
 import { AgentHostAllowSignedOutWhenUsableSettingId } from '../../../../../../../platform/agentHost/common/agentService.js';
 import { IConfigurationService } from '../../../../../../../platform/configuration/common/configuration.js';
 import { TestConfigurationService } from '../../../../../../../platform/configuration/test/common/testConfigurationService.js';
+import product from '../../../../../../../platform/product/common/product.js';
 import { ITelemetryService } from '../../../../../../../platform/telemetry/common/telemetry.js';
 import { IAgentSdkSetupService } from '../../../../../../services/agentHost/browser/agentSdkSetupService.js';
 import { ICodexAccountService } from '../../../../../../services/agentHost/browser/codexAccountService.js';
@@ -383,6 +384,7 @@ suite('SessionTypePickerActionItem', () => {
 			() => { },
 		);
 
+		const providerName = product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot';
 		assert.deepStrictEqual({
 			label: action.label,
 			checked: action.checked,
@@ -395,8 +397,8 @@ suite('SessionTypePickerActionItem', () => {
 			checked: false,
 			enabled: false,
 			description: '[Sign in](command:workbench.action.chat.triggerSetup)',
-			ariaDescription: 'Sign in. Sign in to VEGA to use this agent.',
-			hover: '[Sign in to VEGA](command:workbench.action.chat.triggerSetup) to use this agent.',
+			ariaDescription: `Sign in. Sign in to ${providerName} to use this agent.`,
+			hover: `[Sign in to ${providerName}](command:workbench.action.chat.triggerSetup) to use this agent.`,
 		});
 	});
 });
