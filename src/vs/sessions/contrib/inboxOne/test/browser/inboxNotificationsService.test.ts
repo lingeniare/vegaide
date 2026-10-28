@@ -563,6 +563,31 @@ suite('InboxNotificationsService', () => {
 		assert.ok(!JSON.stringify(event!.data).includes('waiting for user answer'));
 	});
 
+	test('publishes the description fallback after a failed shared utility request and does not retry each render', async () => {
+		const expectedError = new Error('Rate limited');
+		const previousHandler = errorHandler.getUnexpectedErrorHandler();
+		const errors: Error[] = [];
+		setUnexpectedErrorHandler(error => errors.push(error));
+		try {
+			let requests = 0;
+			const fixture = createFixture([createSession({ id: 'preview-failure', status: SessionStatus.NeedsInput, updatedAt: 200, description: 'Approve the request' })],
+				undefined, undefined, undefined, undefined, true, [], true, {
+				utilityRequest: async request => {
+					assert.strictEqual(request.purpose, 'inboxPreview');
+					requests++;
+					throw expectedError;
+				},
+			});
+			const item = fixture.service.notifications.get()[0];
+			fixture.service.requestPreview(item);
+			await waitForState(fixture.service.isLoading, loading => !loading);
+			fixture.service.requestPreview(item);
+			assert.deepStrictEqual({ preview: fixture.service.previews.get().get(item.previewSignature!), requests, errors }, { preview: item.description, requests: 1, errors: [expectedError] });
+		} finally {
+			setUnexpectedErrorHandler(previousHandler);
+		}
+	});
+
 	test('logs item lifecycle and routing-plan telemetry when an item enters the inbox', () => {
 		const fixture = createFixture([
 			createSession({ id: 'input', status: SessionStatus.NeedsInput, updatedAt: 200, description: 'waiting for user answer' }),
