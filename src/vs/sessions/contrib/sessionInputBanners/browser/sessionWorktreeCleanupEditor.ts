@@ -1106,8 +1106,8 @@ export class SessionWorktreeCleanupEditor extends EditorPane {
 			&& (worktree.unlinkedWorktree
 				? !!worktree.unlinkedWorktree.branch && !worktree.cleanupStatusError && !worktree.worktreeCheckError && worktree.cleanupStatus?.state !== 'inUse' && !this.hasPendingCleanup(worktree)
 				: worktree.cleanupState === 'archived'
-				? !!worktree.cleanupStatus && !this.hasPendingCleanup(worktree)
-				: !worktree.session.isArchived.get() && worktree.sizeBytes !== undefined && (worktree.cleanupState === 'eligible' || worktree.cleanupState === 'active' || worktree.cleanupState === 'needsInput'));
+					? !!worktree.cleanupStatus && !this.hasPendingCleanup(worktree)
+					: !worktree.session.isArchived.get() && worktree.sizeBytes !== undefined && (worktree.cleanupState === 'eligible' || worktree.cleanupState === 'active' || worktree.cleanupState === 'needsInput'));
 	}
 
 	private updateCleanupBatch(): void {
