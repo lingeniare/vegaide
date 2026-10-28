@@ -5,11 +5,33 @@
 
 import assert from 'assert';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../base/test/common/utils.js';
+import { AccessibleViewRegistry } from '../../../../../platform/accessibility/browser/accessibleViewRegistry.js';
+import { TestConfigurationService } from '../../../../../platform/configuration/test/common/testConfigurationService.js';
+import { ContextKeyService } from '../../../../../platform/contextkey/browser/contextKeyService.js';
+import { ChatContextKeys } from '../../../../../workbench/contrib/chat/common/actions/chatContextKeys.js';
+import { InboxCustomViewFocusContext } from '../../../../common/contextkeys.js';
 import { InboxNotificationKind, InboxNotificationPriority } from '../../common/inboxNotificationsService.js';
 import { buildInboxNotificationsAccessibleContent } from '../../browser/inboxNotificationsAccessibility.js';
 
 suite('InboxNotificationsAccessibility', () => {
-	ensureNoDisposablesAreLeakedInTestSuite();
+	const disposables = ensureNoDisposablesAreLeakedInTestSuite();
+
+	test('Inbox accessibility providers yield to Chat inside the embedded conversation', () => {
+		const configuration = new TestConfigurationService();
+		disposables.add(configuration.onDidChangeConfigurationEmitter);
+		const context = disposables.add(new ContextKeyService(configuration));
+		const providers = AccessibleViewRegistry.getImplementations().filter(provider => provider.name.startsWith('sessions-inbox-notifications-'));
+		const inboxFocused = InboxCustomViewFocusContext.bindTo(context);
+		const inChat = ChatContextKeys.inChatSession.bindTo(context);
+		const matches = () => providers.map(provider => context.contextMatchesRules(provider.when));
+		inboxFocused.set(true);
+		const inbox = matches();
+		inChat.set(true);
+		const chat = matches();
+		inChat.reset();
+		inboxFocused.reset();
+		assert.deepStrictEqual({ inbox, chat, outside: matches() }, { inbox: [true, true], chat: [false, false], outside: [false, false] });
+	});
 
 	test('builds empty accessible content', () => {
 		assert.strictEqual(
@@ -52,5 +74,15 @@ suite('InboxNotificationsAccessibility', () => {
 				'   Review and mark done.',
 			].join('\n'),
 		);
+	});
+
+	test('keeps notification descriptions separate from selected-item interpretation', () => {
+		const content = buildInboxNotificationsAccessibleContent([
+			{ kind: InboxNotificationKind.NeedsInput, priority: InboxNotificationPriority.Now, title: 'Question', description: 'Generic' },
+			{ kind: InboxNotificationKind.Completed, priority: InboxNotificationPriority.Later, title: 'Done', description: 'Fallback' },
+		]);
+		assert.deepStrictEqual({ preview: content.includes('Choose the deployment target.'), generic: content.includes('Generic'), fallback: content.includes('Fallback') }, {
+			preview: false, generic: true, fallback: true,
+		});
 	});
 });
