@@ -4466,7 +4466,7 @@ suite('Sessions - SessionsList', () => {
 		});
 	});
 
-	test('session hover links each pull request and opens it externally', () => {
+	test('session hover links each pull request and opens it through contributed external openers', () => {
 		const pullRequestUri = URI.parse('https://github.com/microsoft/vscode/pull/241533');
 		const root = URI.file('/home/user/projects/vscode');
 		const session = upcastPartial<ISession>({
@@ -4504,7 +4504,7 @@ suite('Sessions - SessionsList', () => {
 				}],
 			}),
 		});
-		const opened: { resource: URI | string; openExternal: boolean | undefined }[] = [];
+		const opened: { resource: URI | string; options: OpenInternalOptions | OpenExternalOptions | undefined }[] = [];
 		const hover = getSessionSummaryHoverData(
 			session,
 			new class extends mock<ISessionsProvidersService>() {
@@ -4512,7 +4512,7 @@ suite('Sessions - SessionsList', () => {
 			},
 			new class extends mock<IOpenerService>() {
 				override async open(resource: URI | string, options?: OpenInternalOptions | OpenExternalOptions): Promise<boolean> {
-					opened.push({ resource, openExternal: (options as OpenExternalOptions | undefined)?.openExternal });
+					opened.push({ resource, options });
 					return true;
 				}
 			},
@@ -4527,7 +4527,7 @@ suite('Sessions - SessionsList', () => {
 			opened,
 		}, {
 			pullRequests: [{ title: 'Fix the redirect loop', uri: pullRequestUri.toString() }],
-			opened: [{ resource: pullRequestUri, openExternal: true }],
+			opened: [{ resource: pullRequestUri, options: { openExternal: true, allowContributedOpeners: true, fromUserGesture: true } }],
 		});
 	});
 
