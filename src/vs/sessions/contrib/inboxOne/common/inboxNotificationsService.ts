@@ -3,12 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IObservable } from '../../../../base/common/observable.js';
+import { IObservable, IReader } from '../../../../base/common/observable.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { IMarkdownString } from '../../../../base/common/htmlContent.js';
 import { URI } from '../../../../base/common/uri.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { IChatQuestion } from '../../../../workbench/contrib/chat/common/chatService/chatService.js';
+import { AgentHostPullRequestOperationId } from '../../../../platform/agentHost/common/agentHostChangesetOperationService.js';
+import { getGitHubPullRequestRefs, getSessionOwnedGitHubPullRequestRefs, IGitHubPullRequestRef, ISession, ISessionChangeset, ISessionChangesetOperation, SessionChangesetOperationScope, SessionChangesetOperationStatus } from '../../../services/sessions/common/session.js';
+import { getSessionGitHubReferences } from '../../github/common/sessionGitHubReferences.js';
 
 export const IInboxNotificationsService = createDecorator<IInboxNotificationsService>('sessionsInboxNotificationsService');
 
@@ -96,6 +99,7 @@ export interface IInboxNotificationToolConfirmationPart {
 	readonly chatResource: URI;
 	readonly requestId: string;
 	readonly toolCallId: string;
+	readonly confirmationKind: 'execution' | 'result';
 	readonly title: string | IMarkdownString;
 	readonly message: string | IMarkdownString;
 	readonly buttons: readonly IInboxNotificationToolConfirmationButton[];
@@ -114,6 +118,8 @@ export interface IInboxNotificationItem {
 	readonly needsInputPart?: IInboxNotificationNeedsInputPart;
 	readonly timestamp: number;
 	readonly sessionResource?: URI;
+	/** The originating conversation, retained after pending input controls are removed. */
+	readonly chatResource?: URI;
 	readonly actions: readonly IInboxNotificationAction[];
 	/**
 	 * Signature under which a model-generated preview for this item is cached and
@@ -164,8 +170,7 @@ export interface IInboxNotificationsService {
 
 	publishExternalNotification(notification: IExternalInboxNotification): void;
 	removeExternalNotification(id: string): void;
-	dismissNotification(id: string): void;
-	clearDismissedNotifications(): void;
+	dismissNotification(id: string, snapshot?: IInboxNotificationItem): void;
 	setSortMode(sortMode: InboxNotificationsSortMode): void;
 
 	/** Ask the inbox view to reveal and focus the notification with the given id. */
@@ -226,6 +231,61 @@ export interface IInboxDetailSummary {
 	readonly evidence: readonly IInboxDetailEvidence[];
 }
 
+<<<<<<< HEAD
+=======
+/** Shared PR eligibility for Inbox cards and their repair actions; merge and cleanup remain ownership-gated. */
+export function getInboxPullRequestRefs(session: ISession, reader?: IReader, includeReferences = false): readonly IGitHubPullRequestRef[] {
+	const references = [
+		...getSessionGitHubReferences(session, reader).pullRequests.filter(ref => ref.createdByThisSession),
+		...(session.workspace.read(reader)?.folders ?? []).flatMap(folder => {
+			const gitHubInfo = folder.gitRepository?.gitHubInfo.read(reader);
+			return includeReferences ? getGitHubPullRequestRefs(gitHubInfo) : getSessionOwnedGitHubPullRequestRefs(gitHubInfo);
+		}),
+	];
+	const seen = new Set<string>();
+	return references.filter(ref => {
+		const key = `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.number}`;
+		if (seen.has(key)) {
+			return false;
+		}
+		seen.add(key);
+		return true;
+	});
+}
+
+/** Returns the unambiguous, provider-advertised PR merge operation; never a local branch merge. */
+export function getInboxPullRequestMergeOperation(session: ISession, reader?: IReader): { readonly changeset: ISessionChangeset; readonly operation: ISessionChangesetOperation } | undefined {
+	const pullRequests = new Set(getSessionGitHubReferences(session, reader).pullRequests.map(ref => ref.uri.toString()));
+	for (const folder of session.workspace.read(reader)?.folders ?? []) {
+		for (const ref of getGitHubPullRequestRefs(folder.gitRepository?.gitHubInfo.read(reader))) {
+			pullRequests.add(ref.uri.toString());
+		}
+	}
+	if (pullRequests.size !== 1) {
+		return undefined;
+	}
+	let candidate: { readonly changeset: ISessionChangeset; readonly operation: ISessionChangesetOperation } | undefined;
+	for (const changeset of session.mainChat.read(reader).changesets.read(reader) ?? []) {
+		if (!changeset.isEnabled.read(reader)) {
+			continue;
+		}
+		for (const operation of changeset.operations.read(reader)) {
+			if (operation.id !== AgentHostPullRequestOperationId.Merge
+				|| !operation.scopes.includes(SessionChangesetOperationScope.Changeset)
+				|| operation.status === SessionChangesetOperationStatus.Disabled
+				|| operation.status === SessionChangesetOperationStatus.Running) {
+				continue;
+			}
+			if (candidate) {
+				return undefined;
+			}
+			candidate = { changeset, operation };
+		}
+	}
+	return candidate;
+}
+
+>>>>>>> 91c8d266e5f (sessions: isolate Inbox state and deduplicate PR notifications)
 export function compareInboxNotifications(a: IInboxNotificationItem, b: IInboxNotificationItem): number {
 	if (a.priority !== b.priority) {
 		return a.priority - b.priority;

@@ -5,7 +5,7 @@
 
 import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
 import { raceCancellation, raceTimeout } from '../../../../base/common/async.js';
-import { autorun, derived, IObservable, IReader, IReaderWithStore, ISettableObservable, observableSignalFromEvent, observableValue } from '../../../../base/common/observable.js';
+import { autorun, derived, IObservable, IReader, IReaderWithStore, ISettableObservable, observableSignal, observableSignalFromEvent, observableValue } from '../../../../base/common/observable.js';
 import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { cancelOnDispose, CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
 import { Limiter } from '../../../../base/common/async.js';
@@ -26,19 +26,23 @@ import { IChatEntitlementService } from '../../../../workbench/services/chat/com
 import { ChatAgentLocation } from '../../../../workbench/contrib/chat/common/constants.js';
 import { IChatModelReference, IChatQuestion, IChatQuestionAnswerValue, IChatQuestionCarousel, IChatService, IChatToolInvocation } from '../../../../workbench/contrib/chat/common/chatService/chatService.js';
 import { IChatModel, IChatResponseModel } from '../../../../workbench/contrib/chat/common/model/chatModel.js';
+import { IChatSessionsService } from '../../../../workbench/contrib/chat/common/chatSessionsService.js';
+import { getChatSessionType } from '../../../../workbench/contrib/chat/common/model/chatUri.js';
 import { ChatMessageRole, ILanguageModelsService } from '../../../../workbench/contrib/chat/common/languageModels.js';
 import { IChatUtilityModelRequest, IChatUtilityModelService } from '../../../../workbench/contrib/chat/common/chatUtilityModelService.js';
 import { ConfirmationOptionKind } from '../../../../platform/agentHost/common/state/protocol/state.js';
 import { IGitHubService } from '../../github/browser/githubService.js';
-import { getSessionGitHubReferences } from '../../github/common/sessionGitHubReferences.js';
+import { getPullRequestKey } from '../../github/common/utils.js';
 import { computePullRequestIcon, GitHubCIOverallStatus, GitHubPullRequestState, IGitHubPRComment, IGitHubPullRequestReviewThread } from '../../github/common/types.js';
 import { type IAgentHostSessionsProvider, isAgentHostProviderId } from '../../../common/agentHostSessionsProvider.js';
 import { ISessionsProvidersService } from '../../../services/sessions/browser/sessionsProvidersService.js';
 import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
-import { getGitHubPullRequestRefs, getSessionOwnedGitHubPullRequestRefs, getSessionStatusMessage, IGitHubPullRequestRef, SessionStatus, type ISession } from '../../../services/sessions/common/session.js';
+import { getSessionStatusMessage, IGitHubPullRequestRef, SessionStatus, type ISession } from '../../../services/sessions/common/session.js';
 import {
 	compareInboxNotificationsByRecency,
 	compareInboxNotifications,
+	getInboxPullRequestMergeOperation,
+	getInboxPullRequestRefs,
 	IExternalInboxNotification,
 	IInboxDetailEvidence,
 	IInboxDetailSummary,
@@ -667,8 +671,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	private readonly _activeCompletedPreviewChatResources = new Set<string>();
 	private readonly _needsInputChatModelRefs = new Map<string, IChatModelReference>();
 	private readonly _completedPreviewChatModelRefs = new Map<string, IChatModelReference>();
-	private readonly _loadingNeedsInputChatModels = new Set<string>();
-	private readonly _loadingCompletedPreviewChatModels = new Set<string>();
+	private readonly _loadingNeedsInputChatModels = new Map<string, CancellationTokenSource>();
+	private readonly _loadingCompletedPreviewChatModels = new Map<string, CancellationTokenSource>();
+	private readonly _unregisteredChatProviders = new Set<string>();
+	private readonly _chatProvidersChanged = observableSignal(this);
 
 	/**
 	 * Per-chat-model change signals, cached by chat resource. Reading one inside the item
@@ -690,7 +696,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	 * Signatures whose published preview is a fallback (the item's own description), used because
 	 * the model could not produce one (e.g. no utility model available). Tracked so the pending
 	 * state resolves instead of hanging, and so these can be dropped and retried when language
-	 * models (re)appear — unlike a real generated preview, which is cached.
+	 * models (re)appear.
 	 */
 	private readonly _previewFallbackSignatures = new Set<string>();
 
@@ -724,6 +730,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IChatEntitlementService chatEntitlementService: IChatEntitlementService,
+		@IChatSessionsService chatSessionsService: IChatSessionsService,
 	) {
 		super();
 
@@ -747,6 +754,26 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 
 		const sessionsChanged = observableSignalFromEvent(this, this.sessionsManagementService.onDidChangeSessions);
 		const providersChanged = observableSignalFromEvent(this, this.sessionsProvidersService.onDidChangeProviders);
+		this._register(chatSessionsService.onDidChangeContentProviderSchemes(({ added, removed }) => {
+			for (const type of removed) {
+				this._unregisteredChatProviders.add(type);
+			}
+			for (const [resource, cts] of this._loadingNeedsInputChatModels) {
+				if (removed.includes(getChatSessionType(URI.parse(resource)))) {
+					cts.cancel();
+				}
+			}
+			for (const [resource, reference] of this._needsInputChatModelRefs) {
+				if (removed.includes(getChatSessionType(URI.parse(resource)))) {
+					this._needsInputChatModelRefs.delete(resource);
+					reference.dispose();
+				}
+			}
+			for (const type of added) {
+				this._unregisteredChatProviders.delete(type);
+			}
+			this._chatProvidersChanged.trigger(undefined);
+		}));
 		this._register(this.storageService.onDidChangeValue(StorageScope.APPLICATION, DISMISSED_NOTIFICATION_IDS_STORAGE_KEY, this._store)(event => {
 			if (!event.external) {
 				return;
@@ -796,6 +823,8 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			this._activeCompletedPreviewChatResources.clear();
 			if (this._enabled.read(reader)) {
 				sessionsChanged.read(reader);
+				this._chatProvidersChanged.read(reader);
+				this.chatService.chatModels.read(reader);
 				for (const session of this.sessionsManagementService.getSessions()) {
 					if (session.isArchived.read(reader)) {
 						continue;
@@ -812,6 +841,9 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					}
 				}
 			} else {
+				for (const cts of this._loadingNeedsInputChatModels.values()) {
+					cts.cancel();
+				}
 				for (const cts of this._previewCancellationSources) {
 					cts.cancel();
 				}
@@ -831,8 +863,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 
 			const itemsById = new Map<string, IInboxNotificationItem>();
 
-			for (const session of this.sessionsManagementService.getSessions()) {
-				this.collectSessionNotifications(itemsById, session, reader as IReaderWithStore);
+			const sessions = this.sessionsManagementService.getSessions();
+			const pullRequestSessions = this.getPullRequestNotificationSessions(sessions, reader);
+			for (const session of sessions) {
+				this.collectSessionNotifications(itemsById, session, pullRequestSessions, reader as IReaderWithStore);
 			}
 
 			for (const item of this._externalItems.read(reader)) {
@@ -865,6 +899,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			return liveDismissedItems
 				.map(item => ({
 					...item,
+					chatResource: item.chatResource ?? item.needsInputPart?.chatResource,
 					needsInputPart: undefined,
 					actions: item.actions.filter(action => action.kind === InboxNotificationActionKind.OpenSession),
 				}))
@@ -891,27 +926,24 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		if (this._previewFallbackSignatures.size === 0) {
 			return;
 		}
-		const current = this._previews.get();
-		const next = new Map(current);
 		for (const signature of this._previewFallbackSignatures) {
-			next.delete(signature);
+			this._previewCache.delete(signature);
 		}
 		this._previewFallbackSignatures.clear();
-		this._previews.set(next, undefined);
+		this._previews.set(new Map(this._previewCache), undefined);
 	}
 
 	private invalidateEmptyDetailSummaries(): void {
 		const current = this._detailSummaries.get();
 		let changed = false;
-		const next = new Map(current);
 		for (const [key, summary] of current) {
 			if (summary === EMPTY_DETAIL_SUMMARY) {
-				next.delete(key);
+				this._detailSummaryCache.delete(key);
 				changed = true;
 			}
 		}
 		if (changed) {
-			this._detailSummaries.set(next, undefined);
+			this._detailSummaries.set(new Map(this._detailSummaryCache), undefined);
 		}
 	}
 
@@ -935,12 +967,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		if (!signature || !inputText) {
 			return;
 		}
-		if (this._previews.get().has(signature) || this._previewInFlight.has(signature)) {
-			return;
-		}
-		const cached = this._previewCache.get(signature);
-		if (cached) {
-			this.publishPreview(signature, cached);
+		if (this._previewInFlight.has(signature) || this._previewCache.get(signature) !== undefined) {
 			return;
 		}
 		void this.generatePreview(item, signature, inputText);
@@ -948,12 +975,16 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 
 	private publishPreview(signature: string, preview: string): void {
 		const current = this._previews.get();
+		this._previewCache.set(signature, preview);
+		for (const fallback of this._previewFallbackSignatures) {
+			if (!this._previewCache.has(fallback)) {
+				this._previewFallbackSignatures.delete(fallback);
+			}
+		}
 		if (current.get(signature) === preview) {
 			return;
 		}
-		const next = new Map(current);
-		next.set(signature, preview);
-		this._previews.set(next, undefined);
+		this._previews.set(new Map(this._previewCache), undefined);
 	}
 
 	private async generatePreview(item: IInboxNotificationItem, signature: string, inputText: string): Promise<void> {
@@ -974,13 +1005,9 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				result = 'success';
 				outputLength = preview.length;
 				this._previewFallbackSignatures.delete(signature);
-				this._previewCache.set(signature, preview);
 				this.publishPreview(signature, preview);
-			} else if (item.description) {
-				// The model produced nothing (no utility model, refusal, or empty). Resolve the
-				// pending state with the item's own description so the card doesn't hang on a
-				// loading message. Not cached and tracked as a fallback, so it retries when a
-				// language model (re)appears.
+			} else {
+				// A fallback settles loading but is invalidated when language models (re)appear.
 				this._previewFallbackSignatures.add(signature);
 				this.publishPreview(signature, item.description);
 			}
@@ -1250,15 +1277,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			return;
 		}
 		const key = item.id;
-		const existing = this._detailSummaries.get().get(key);
+		const existing = this._detailSummaryCache.get(key);
 		// A transient empty result (deps not ready / model unavailable) is re-attemptable;
 		// only a real summary or an in-flight request should block regeneration.
 		if ((existing && existing !== EMPTY_DETAIL_SUMMARY) || this._detailSummaryInFlight.has(key)) {
-			return;
-		}
-		const cached = this._detailSummaryCache.get(key);
-		if (cached) {
-			this.publishDetailSummary(key, cached);
 			return;
 		}
 		void this.generateDetailSummary(key, item);
@@ -1266,12 +1288,11 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 
 	private publishDetailSummary(key: string, summary: IInboxDetailSummary): void {
 		const current = this._detailSummaries.get();
+		this._detailSummaryCache.set(key, summary);
 		if (current.get(key) === summary) {
 			return;
 		}
-		const next = new Map(current);
-		next.set(key, summary);
-		this._detailSummaries.set(next, undefined);
+		this._detailSummaries.set(new Map(this._detailSummaryCache), undefined);
 	}
 
 	private async generateDetailSummary(key: string, item: IInboxNotificationItem): Promise<void> {
@@ -1279,10 +1300,21 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		this._detailSummaryInFlight.add(key);
 		const cts = new CancellationTokenSource();
 		this._previewCancellationSources.add(cts);
+		const modelReferences = new DisposableStore();
 		const startTime = Date.now();
 		let summary: IInboxDetailSummary | undefined;
 		let hadTranscript = false;
 		try {
+			const chatResource = item.chatResource ?? item.needsInputPart?.chatResource ?? this.getMainChatResource(item);
+			if (chatResource && !this.chatService.getSession(chatResource)) {
+				const reference = await this.chatService.acquireOrLoadSession(chatResource, ChatAgentLocation.Chat, cts.token, 'InboxNotificationsService');
+				if (reference) {
+					modelReferences.add(reference);
+				}
+			}
+			if (cts.token.isCancellationRequested || this._store.isDisposed) {
+				return;
+			}
 			const transcript = this.getSessionTranscript(item);
 			const commands = collectInboxCommandEvidence(this.getSessionChatModel(item), item.needsInputPart?.requestId)
 				.filter(command => command.state !== 'running').slice(-30);
@@ -1300,16 +1332,15 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			onUnexpectedError(error);
 		} finally {
 			const cancelled = cts.token.isCancellationRequested;
+			modelReferences.dispose();
 			this._previewCancellationSources.delete(cts);
 			cts.dispose();
 			this._detailSummaryInFlight.delete(key);
 			if (!cancelled) {
 				if (summary) {
-					this._detailSummaryCache.set(key, summary);
 					this.publishDetailSummary(key, summary);
 				} else {
-					// Deps not ready or nothing usable: show the fallback but keep it
-					// re-attemptable (do not persist), and let a later request retry.
+					// Empty summaries settle loading but remain retryable.
 					this.publishDetailSummary(key, EMPTY_DETAIL_SUMMARY);
 				}
 			}
@@ -1569,9 +1600,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	}
 
 	private getSessionChatModel(item: IInboxNotificationItem) {
-		// A needs-input request may live in a secondary chat, and its part carries the exact
-		// chat resource; only fall back to the session's main chat for other item kinds.
-		const chatResource = item.needsInputPart?.chatResource ?? this.getMainChatResource(item);
+		const chatResource = item.chatResource ?? item.needsInputPart?.chatResource ?? this.getMainChatResource(item);
 		return chatResource ? this.chatService.getSession(chatResource) : undefined;
 	}
 
@@ -1615,14 +1644,15 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		}
 	}
 
-	dismissNotification(id: string): void {
+	dismissNotification(id: string, itemSnapshot?: IInboxNotificationItem): void {
 		if (this._dismissedIds.get().has(id)) {
 			return;
 		}
 		const next = new Set(this._dismissedIds.get());
 		next.add(id);
 		this._dismissedIds.set(next, undefined);
-		const snapshot = this.notifications.get().find(item => item.id === id) ?? this._allItems.get().find(item => item.id === id);
+		this.pruneDismissedSnapshots(next);
+		const snapshot = this._allItems.get().find(item => item.id === id) ?? (itemSnapshot?.id === id ? itemSnapshot : undefined);
 		if (snapshot) {
 			const nextSnapshots = new Map(this._dismissedSnapshots.get());
 			nextSnapshots.set(id, snapshot);
@@ -1653,7 +1683,30 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		}
 	}
 
-	private collectSessionNotifications(itemsById: Map<string, IInboxNotificationItem>, session: ISession, reader: IReaderWithStore): void {
+	private getPullRequestNotificationSessions(sessions: readonly ISession[], reader: IReader): ReadonlyMap<string, ISession> {
+		const candidates = new Map<string, { session: ISession; owned: boolean; updatedAt: number }>();
+		for (const session of sessions) {
+			if (session.isArchived.read(reader) || session.status.read(reader) === SessionStatus.InProgress) {
+				continue;
+			}
+			const ownedRefs = new Set(getInboxPullRequestRefs(session, reader).map(ref => getPullRequestKey(ref.owner, ref.repo, ref.number).toLowerCase()));
+			const updatedAt = session.updatedAt.read(reader).getTime();
+			for (const ref of getInboxPullRequestRefs(session, reader, true)) {
+				const key = getPullRequestKey(ref.owner, ref.repo, ref.number).toLowerCase();
+				const owned = ownedRefs.has(key);
+				const previous = candidates.get(key);
+				// Prefer the originating session over incidental references. Break ties
+				// deterministically so provider enumeration cannot flip the action target.
+				if (!previous || (owned && !previous.owned) || (owned === previous.owned
+					&& (updatedAt > previous.updatedAt || (updatedAt === previous.updatedAt && session.sessionId < previous.session.sessionId)))) {
+					candidates.set(key, { session, owned, updatedAt });
+				}
+			}
+		}
+		return new Map([...candidates].map(([key, candidate]) => [key, candidate.session]));
+	}
+
+	private collectSessionNotifications(itemsById: Map<string, IInboxNotificationItem>, session: ISession, pullRequestSessions: ReadonlyMap<string, ISession>, reader: IReaderWithStore): void {
 		if (session.isArchived.read(reader)) {
 			return;
 		}
@@ -1688,7 +1741,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 
 		const sizeBeforePullRequests = itemsById.size;
 		if (status !== SessionStatus.InProgress) {
-			this.collectPullRequestNotifications(itemsById, session, title, updatedAt, reader);
+			this.collectPullRequestNotifications(itemsById, session, title, updatedAt, pullRequestSessions, reader);
 		}
 
 		// Surface a Completed entry only when the finished session has nothing else
@@ -1718,7 +1771,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			return;
 		}
 
-		for (const pullRequestRef of this.getSessionPullRequestRefs(session, reader, true)) {
+		for (const pullRequestRef of getInboxPullRequestRefs(session, reader, true)) {
 			const pullRequestModelRef = reader.delayedStore.add(this.gitHubService.createPullRequestModelReference(
 				pullRequestRef.owner,
 				pullRequestRef.repo,
@@ -1780,15 +1833,16 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		session: ISession,
 		sessionTitle: string,
 		sessionUpdatedAt: number,
+		pullRequestSessions: ReadonlyMap<string, ISession>,
 		reader: IReaderWithStore,
 	): void {
 		const failingCandidates: IPullRequestNotificationCandidate[] = [];
 		const passingCandidates: IPullRequestNotificationCandidate[] = [];
 		const mergedCandidates: IPullRequestNotificationCandidate[] = [];
 		const reviewCommentCandidates: IPullRequestNotificationCandidate[] = [];
-		const ownedPullRequests = new Set(this.getSessionPullRequestRefs(session, reader).map(ref => ref.uri.toString()));
+		const ownedPullRequests = new Set(getInboxPullRequestRefs(session, reader).map(ref => ref.uri.toString()));
 
-		for (const pullRequestRef of this.getSessionPullRequestRefs(session, reader, true)) {
+		for (const pullRequestRef of getInboxPullRequestRefs(session, reader, true)) {
 			const isSessionOwned = ownedPullRequests.has(pullRequestRef.uri.toString());
 			const pullRequestModelRef = reader.delayedStore.add(this.gitHubService.createPullRequestModelReference(
 				pullRequestRef.owner,
@@ -1817,6 +1871,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					timestamp: mergedTimestamp,
 					identity: pullRequest?.mergedAt ?? String(mergedTimestamp),
 				});
+				continue;
+			}
+
+			if (pullRequestSessions.get(getPullRequestKey(pullRequestRef.owner, pullRequestRef.repo, pullRequestRef.number).toLowerCase()) !== session) {
 				continue;
 			}
 
@@ -2042,33 +2100,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		}
 	}
 
-	private getSessionPullRequestRefs(session: ISession, reader: IReader, includeReferences = false): readonly IGitHubPullRequestRef[] {
-		const workspace = session.workspace.read(reader);
-		const pullRequestRefs: IGitHubPullRequestRef[] = [];
-		const seen = new Set<string>();
-		const referenceGroups = [
-			getSessionGitHubReferences(session, reader).pullRequests.filter(ref => ref.createdByThisSession),
-			...(workspace?.folders ?? []).map(folder => {
-				const gitHubInfo = folder.gitRepository?.gitHubInfo.read(reader);
-				// Workspace-linked references can need fixes, but must not offer
-				// merge or session-cleanup actions unless the session owns the PR.
-				return includeReferences ? getGitHubPullRequestRefs(gitHubInfo) : getSessionOwnedGitHubPullRequestRefs(gitHubInfo);
-			}),
-		];
-		for (const references of referenceGroups) {
-			for (const pullRequest of references) {
-				const key = `${pullRequest.owner}/${pullRequest.repo}#${pullRequest.number}`;
-				if (seen.has(key)) {
-					continue;
-				}
-				seen.add(key);
-				pullRequestRefs.push(pullRequest);
-			}
-		}
-
-		return pullRequestRefs;
-	}
-
 	private sessionActions(includeOpen: boolean, additionalActions?: readonly IInboxNotificationAction[]): readonly IInboxNotificationAction[] {
 		const actions: IInboxNotificationAction[] = [];
 		if (includeOpen) {
@@ -2177,7 +2208,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				return `qc:${part.requestId}:${hash(questionsKey)}`;
 			}
 			case 'toolConfirmation':
-				return `tc:${part.requestId}:${part.toolCallId}`;
+				return `tc:${part.requestId}:${part.toolCallId}:${part.confirmationKind}`;
 			case 'confirmation':
 				return `cf:${part.requestId}:${hash(toPreviewPlainText(part.title))}`;
 		}
@@ -2236,6 +2267,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				chatResource,
 				requestId: response.requestId,
 				toolCallId: part.toolCallId,
+				confirmationKind: state.type === IChatToolInvocation.StateKind.WaitingForPostApproval ? 'result' : 'execution',
 				title,
 				message,
 				buttons: this.getToolConfirmationButtons(state),
@@ -2362,33 +2394,44 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		chatResource: URI,
 		activeChatResources: Set<string>,
 		chatModelRefs: Map<string, IChatModelReference>,
-		loadingChatResources: Set<string>,
+		loadingChatResources: Map<string, CancellationTokenSource>,
 	): void {
 		const chatResourceKey = chatResource.toString();
 		activeChatResources.add(chatResourceKey);
-		if (this.chatService.getSession(chatResource)
+		if (this._unregisteredChatProviders.has(getChatSessionType(chatResource))
+			|| this.chatService.getSession(chatResource)
 			|| chatModelRefs.has(chatResourceKey)
 			|| loadingChatResources.has(chatResourceKey)) {
 			return;
 		}
 
 		const endLoading = this.beginLoadingOperation();
-		loadingChatResources.add(chatResourceKey);
-		void this.chatService.acquireOrLoadSession(chatResource, ChatAgentLocation.Chat, this._chatLoadToken, 'InboxNotificationsService')
+		const cts = new CancellationTokenSource(this._chatLoadToken);
+		loadingChatResources.set(chatResourceKey, cts);
+		void this.chatService.acquireOrLoadSession(chatResource, ChatAgentLocation.Chat, cts.token, 'InboxNotificationsService')
 			.then(modelRef => {
 				if (!modelRef) {
 					return;
 				}
-				if (this._store.isDisposed || !activeChatResources.has(chatResourceKey)) {
+				if (cts.token.isCancellationRequested || this._store.isDisposed || !activeChatResources.has(chatResourceKey)) {
 					modelRef.dispose();
 					return;
 				}
 				chatModelRefs.set(chatResourceKey, modelRef);
 			})
-			.catch(onUnexpectedError)
+			.catch(error => {
+				if (!cts.token.isCancellationRequested) {
+					onUnexpectedError(error);
+				}
+			})
 			.finally(() => {
 				loadingChatResources.delete(chatResourceKey);
+				const cancelled = cts.token.isCancellationRequested;
+				cts.dispose();
 				endLoading();
+				if (cancelled && !this._store.isDisposed) {
+					this._chatProvidersChanged.trigger(undefined);
+				}
 			});
 	}
 
@@ -2418,7 +2461,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 
 	private getSessionRepositoryLabel(session: ISession, reader: IReader): string | undefined {
 		const labels = new Set<string>();
-		for (const pullRequestRef of this.getSessionPullRequestRefs(session, reader)) {
+		for (const pullRequestRef of getInboxPullRequestRefs(session, reader)) {
 			labels.add(`${pullRequestRef.owner}/${pullRequestRef.repo}`);
 		}
 

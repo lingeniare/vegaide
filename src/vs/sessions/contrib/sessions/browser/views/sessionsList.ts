@@ -4738,8 +4738,6 @@ export class SessionsList extends Disposable implements ISessionsList {
 					collapsedSessionIds: this.collapsedSessionIds,
 					inboxNotificationCount,
 					inboxOpenKeybindingAriaLabel,
-					customizationsCount,
-					customizationMigrationsAvailable,
 					showUnreadInCollapsedSections,
 					sessionsWithFailingCI,
 					externalApplicationBadgeMode,
