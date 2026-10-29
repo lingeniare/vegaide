@@ -8,7 +8,6 @@ import { raceCancellation, raceTimeout } from '../../../../base/common/async.js'
 import { autorun, derived, IObservable, IReader, IReaderWithStore, ISettableObservable, observableSignal, observableSignalFromEvent, observableValue } from '../../../../base/common/observable.js';
 import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { cancelOnDispose, CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
-import { Limiter } from '../../../../base/common/async.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { hash } from '../../../../base/common/hash.js';
 import { LRUCache } from '../../../../base/common/map.js';
@@ -19,8 +18,10 @@ import { ThemeIcon } from '../../../../base/common/themables.js';
 import { URI } from '../../../../base/common/uri.js';
 import { localize } from '../../../../nls.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
-import { ITelemetryService, TelemetryLevel, telemetryLevelEnabled } from '../../../../platform/telemetry/common/telemetry.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { isCopilotReviewAuthor } from '../../../../platform/github/common/pullRequestFeedback.js';
 import { observableConfigValue } from '../../../../platform/observable/common/platformObservableUtils.js';
 import { IChatEntitlementService } from '../../../../workbench/services/chat/common/chatEntitlementService.js';
 import { ChatAgentLocation } from '../../../../workbench/contrib/chat/common/constants.js';
@@ -33,8 +34,7 @@ import { IChatUtilityModelRequest, IChatUtilityModelService } from '../../../../
 import { ConfirmationOptionKind } from '../../../../platform/agentHost/common/state/protocol/state.js';
 import { IGitHubService } from '../../github/browser/githubService.js';
 import { getPullRequestKey } from '../../github/common/utils.js';
-import { computePullRequestIcon, GitHubCIOverallStatus, GitHubPullRequestState, IGitHubPRComment, IGitHubPullRequestReviewThread } from '../../github/common/types.js';
-import { type IAgentHostSessionsProvider, isAgentHostProviderId } from '../../../common/agentHostSessionsProvider.js';
+import { computePullRequestIcon, GitHubCIOverallStatus, GitHubPullRequestState, IGitHubPullRequestReviewThread } from '../../github/common/types.js';
 import { ISessionsProvidersService } from '../../../services/sessions/browser/sessionsProvidersService.js';
 import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
 import { getSessionStatusMessage, IGitHubPullRequestRef, SessionStatus, type ISession } from '../../../services/sessions/common/session.js';
@@ -43,6 +43,7 @@ import {
 	compareInboxNotifications,
 	getInboxPullRequestMergeOperation,
 	getInboxPullRequestRefs,
+	getInboxToolConfirmationDetails,
 	IExternalInboxNotification,
 	IInboxDetailEvidence,
 	IInboxDetailSummary,
@@ -53,7 +54,6 @@ import {
 	IInboxNotificationNeedsInputPart,
 	IInboxNotificationPullRequestState,
 	IInboxNotificationQuestionCarouselPart,
-	IInboxNotificationRevealRequest,
 	IInboxNotificationToolConfirmationButton,
 	IInboxNotificationToolConfirmationPart,
 	IInboxNotificationsService,
@@ -64,10 +64,12 @@ import {
 	InboxNotificationsSortMode,
 } from '../common/inboxNotificationsService.js';
 import { getSessionsTelemetryProviderId, hashSessionIdForTelemetry } from '../../../common/sessionsTelemetry.js';
+import { isAgentHostProviderId } from '../../../common/agentHostSessionsProvider.js';
 import { CHAT_INBOX_ENABLED_SETTING } from './inboxNotificationsConstants.js';
 import { collectInboxCommandEvidence, IInboxEvidenceCommand } from '../common/inboxEvidence.js';
 
 const DISMISSED_NOTIFICATION_IDS_STORAGE_KEY = 'sessions.inboxNotifications.dismissedIds';
+const MAX_DISMISSED_NOTIFICATION_IDS = 1000;
 
 /** The small, non-user-selectable utility model used for lightweight generation (same class used for chat title/goal summaries). */
 const PREVIEW_MODEL_SELECTOR = { vendor: 'copilot', id: 'copilot-utility-small' } as const;
@@ -78,17 +80,6 @@ const PREVIEW_PROMPT_VERSION = 'v8';
 const PREVIEW_MAX_INPUT_CHARS = 2000;
 const PREVIEW_MAX_OUTPUT_CHARS = 75;
 const PREVIEW_CACHE_SIZE = 200;
-
-function supportsInlineAgentMergeActions(provider: unknown): provider is Pick<IAgentHostSessionsProvider, 'getAgentMergeSessionState' | 'getAgentMergeClientStateObservable' | 'setAgentMergeEnabled' | 'setAgentMergeOverrides'> {
-	if (!provider || typeof provider !== 'object') {
-		return false;
-	}
-	const record = provider as Partial<IAgentHostSessionsProvider>;
-	return typeof record.getAgentMergeSessionState === 'function'
-		&& typeof record.getAgentMergeClientStateObservable === 'function'
-		&& typeof record.setAgentMergeEnabled === 'function'
-		&& typeof record.setAgentMergeOverrides === 'function';
-}
 
 /**
  * System prompt for the inbox card preview. The preview is the single line the user
@@ -164,6 +155,7 @@ export function cleanPreviewText(raw: string): string | undefined {
 
 /** Detail evidence-pack generation limits. */
 const DETAIL_MAX_INPUT_CHARS = 6000;
+const DETAIL_MAX_FILE_ARTIFACTS = 30;
 const DETAIL_CACHE_SIZE = 50;
 
 /** Published when generation finishes without a usable pack, so the view stops loading and falls back. */
@@ -215,44 +207,6 @@ type InboxDetailSummaryGeneratedClassification = {
 	providerId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded sessions provider category for the associated session, or none.' };
 };
 
-type InboxContentClassificationEvent = {
-	workType: string;
-	domain: string;
-	requestKind: string;
-	decisionSubject: string;
-	riskLevel: string;
-	reversibility: string;
-	environment: string;
-	evidenceState: string;
-	confidence: string;
-	ontologyVersion: number;
-	inputScope: string;
-	provenance: string;
-	notificationKind: string;
-	agentSessionId: string;
-	providerId: string;
-};
-
-type InboxContentClassificationClassification = {
-	owner: 'meganrogge';
-	comment: 'Bounded, content-derived classification of an inbox item (work type, domain, the kind and subject of any pending request, and inferred risk/reversibility/environment) produced locally by the utility model from otherwise-PII content. Only these bounded labels are emitted, declared EndUserPseudonymizedInformation (a restricted/pseudonymized classification); the raw title/transcript never leave the client. Generated on demand when the user views an item, so volume is user-paced.';
-	workType: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded primary work-type category inferred from the task content (e.g. bugfix, feature, refactor, migration, diagnosis), or unknown.' };
-	domain: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded work-domain/subsystem category inferred from the task content (e.g. frontend, backend, api, database, security), or unknown.' };
-	requestKind: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded kind of pending request the user is being asked for (e.g. approve, choose, clarify, provideInput, review), none when nothing is pending, or unknown.' };
-	decisionSubject: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded subject a pending request is about (e.g. design, scope, access, merge, release), none when nothing is pending, or unknown.' };
-	riskLevel: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded inferred risk/impact severity of the work (none, low, med, high, critical), or unknown. An inference, never an authoritative risk determination.' };
-	reversibility: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded inferred reversibility of the work (reversible, partial, irreversible), or unknown.' };
-	environment: { classification: 'EndUserPseudonymizedInformation'; purpose: 'FeatureInsight'; comment: 'Bounded inferred environment the work targets (local, isolated, shared, production, external), or unknown.' };
-	evidenceState: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded amount of evidence the context provided for the classification: absent, sparse, sufficient, conflicting, or unknown.' };
-	confidence: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded model confidence bucket for the classification: low, med, high, or unknown.' };
-	ontologyVersion: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Version of the classification ontology, so label meanings can be tracked over time.' };
-	inputScope: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded scope of the classified input: sessionContext (item title, any pending request, and the session transcript).' };
-	provenance: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'How the labels were produced: utilityModelInference.' };
-	notificationKind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded notification kind the classification was produced for.' };
-	agentSessionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'SHA-1 hash of the associated session id (or none), for correlating with the rest of the trajectory.' };
-	providerId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded sessions provider category for the associated session, or none.' };
-};
-
 type InboxItemLifecycleEvent = {
 	outcome: string;
 	notificationKind: string;
@@ -270,41 +224,7 @@ type InboxItemLifecycleClassification = {
 	notificationKind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded notification kind of the item.' };
 	priorityTier: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded importance tier of the item: now, next, later, or none.' };
 	needsInput: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the item was awaiting user input: yes or no.' };
-	msInInbox: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'For a departure, how long (ms) the item was in the inbox; 0 on entry.' };
-	agentSessionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'SHA-1 hash of the associated session id (or none), for correlating with the rest of the trajectory.' };
-	providerId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded sessions provider category for the associated session, or none.' };
-};
-
-type InboxRoutingDecisionEvent = {
-	recipientType: string;
-	ordering: string;
-	timing: string;
-	priorityTier: string;
-	evidenceScope: string;
-	autonomyLevel: string;
-	decisionRequired: string;
-	riskLevel: string;
-	routingPlanVersion: number;
-	provenance: string;
-	notificationKind: string;
-	agentSessionId: string;
-	providerId: string;
-};
-
-type InboxRoutingDecisionClassification = {
-	owner: 'meganrogge';
-	comment: 'Records the structured routing plan the inbox would produce for an item (who should handle it, in what order, when, with what evidence, and with how much agent autonomy). Today the plan is derived programmatically by an explicit rules stub; the schema is logged so a future learned meta-router can replace the derivation without changing telemetry. Emitted once per item when it first enters the inbox.';
-	recipientType: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded intended handler: human, agent, both, or none.' };
-	ordering: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded handling order when multiple handlers apply: single, sequential, or parallel.' };
-	timing: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded intended delivery timing: immediate, deferred, or scheduled.' };
-	priorityTier: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded importance tier assigned to the item: now, next, later, or none.' };
-	evidenceScope: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded evidence package that would accompany the item: none, summary, or full.' };
-	autonomyLevel: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded agent autonomy the plan allows: humanOnly, approvalRequired, or autonomous.' };
-	decisionRequired: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the item requires a human decision: yes or no.' };
-	riskLevel: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded risk level the plan assumed: low, med, or high.' };
-	routingPlanVersion: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Version of the routing-plan schema/derivation, so plan meanings can be tracked as the policy evolves.' };
-	provenance: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'How the plan was produced: ruleBasedStub today.' };
-	notificationKind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded notification kind the plan was produced for.' };
+	msInInbox: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'For a departure, milliseconds the item was observed in this enabled window; 0 on entry. Not total lifetime across reloads.' };
 	agentSessionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'SHA-1 hash of the associated session id (or none), for correlating with the rest of the trajectory.' };
 	providerId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Bounded sessions provider category for the associated session, or none.' };
 };
@@ -428,126 +348,20 @@ export function parseDetailSummary(raw: string, artifacts: readonly IInboxEviden
 	return { status, decisions, evidence };
 }
 
-/** Version of the content-classification ontology; bump when the label sets below change. */
-const CLASSIFICATION_ONTOLOGY_VERSION = 2;
-
-const CLASSIFICATION_WORK_TYPES = ['bugfix', 'feature', 'refactor', 'test', 'validation', 'docs', 'review', 'audit', 'config', 'dependency', 'migration', 'performance', 'diagnosis', 'analysis', 'planning', 'research', 'prototype', 'release', 'incident', 'chore', 'other', 'unknown'] as const;
-const CLASSIFICATION_DOMAINS = ['frontend', 'backend', 'api', 'database', 'pipeline', 'analytics', 'mobile', 'desktop', 'cli', 'integration', 'identity', 'security', 'observability', 'operations', 'infra', 'network', 'runtime', 'build', 'ci', 'scm', 'devtools', 'test', 'docs', 'ml', 'ai', 'embedded', 'accessibility', 'localization', 'compliance', 'other', 'unknown'] as const;
-const CLASSIFICATION_REQUEST_KINDS = ['approve', 'choose', 'clarify', 'provideInput', 'provideEvidence', 'review', 'performAction', 'acknowledge', 'other', 'none', 'unknown'] as const;
-const CLASSIFICATION_DECISION_SUBJECTS = ['design', 'requirements', 'scope', 'priority', 'tradeoff', 'ownership', 'access', 'resource', 'risk', 'policy', 'change', 'merge', 'release', 'target', 'conflict', 'other', 'none', 'unknown'] as const;
-const CLASSIFICATION_RISK_LEVELS = ['none', 'low', 'med', 'high', 'critical', 'unknown'] as const;
-const CLASSIFICATION_REVERSIBILITY = ['reversible', 'partial', 'irreversible', 'unknown'] as const;
-const CLASSIFICATION_ENVIRONMENTS = ['local', 'isolated', 'shared', 'production', 'external', 'unknown'] as const;
-const CLASSIFICATION_EVIDENCE_STATES = ['absent', 'sparse', 'sufficient', 'conflicting', 'unknown'] as const;
-const CLASSIFICATION_CONFIDENCE = ['low', 'med', 'high', 'unknown'] as const;
-
-/**
- * Bounded, content-derived classification of an inbox item, produced by the utility model from
- * otherwise-PII content (title, transcript, and any pending request). Only these bounded labels are
- * emitted, under a restricted EndUserPseudonymizedInformation classification; the raw content never
- * leaves the client. The axes are split (request kind vs. decision subject; risk vs. reversibility
- * vs. environment) so a meta-router can reason about who should handle an item and whether an agent
- * may act autonomously.
- */
-export interface IInboxContentClassification {
-	readonly workType: string;
-	readonly domain: string;
-	readonly requestKind: string;
-	readonly decisionSubject: string;
-	readonly riskLevel: string;
-	readonly reversibility: string;
-	readonly environment: string;
-	readonly evidenceState: string;
-	readonly confidence: string;
-}
-
-const CLASSIFICATION_SYSTEM_PROMPT = [
-	'You classify a background coding-agent task into a fixed, bounded ontology for research analytics.',
-	'Read the provided session context and respond with STRICT JSON only, no prose, using exactly these keys:',
-	'{ "workType": <one of ' + CLASSIFICATION_WORK_TYPES.join('|') + '; the primary kind of work>,',
-	'  "domain": <one of ' + CLASSIFICATION_DOMAINS.join('|') + '; the main subsystem or area>,',
-	'  "requestKind": <one of ' + CLASSIFICATION_REQUEST_KINDS.join('|') + '; what the user is being asked to do in the pending request, or none when nothing is pending>,',
-	'  "decisionSubject": <one of ' + CLASSIFICATION_DECISION_SUBJECTS.join('|') + '; what the pending request is about, or none when nothing is pending>,',
-	'  "riskLevel": <one of ' + CLASSIFICATION_RISK_LEVELS.join('|') + '; overall risk/impact severity of the work>,',
-	'  "reversibility": <one of ' + CLASSIFICATION_REVERSIBILITY.join('|') + '; how easily the work could be undone>,',
-	'  "environment": <one of ' + CLASSIFICATION_ENVIRONMENTS.join('|') + '; the environment the work targets>,',
-	'  "evidenceState": <one of ' + CLASSIFICATION_EVIDENCE_STATES.join('|') + '; how much evidence the context gave you to classify>,',
-	'  "confidence": <one of ' + CLASSIFICATION_CONFIDENCE.join('|') + '; your overall confidence in these labels> }',
-	'Use "unknown" for any field you cannot determine, and "none" for requestKind/decisionSubject when no request is pending. Do not invent categories outside the lists. Output only the JSON object.',
-].join('\n');
-
-function pickClassificationValue(value: unknown, allowed: readonly string[]): string {
-	return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? value : 'unknown';
-}
-
-export function parseContentClassification(raw: string): IInboxContentClassification | undefined {
-	const json = extractJsonObject(raw);
-	if (!json) {
-		return undefined;
-	}
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(json);
-	} catch {
-		return undefined;
-	}
-	if (!parsed || typeof parsed !== 'object') {
-		return undefined;
-	}
-	const record = parsed as Record<string, unknown>;
-	const classification: IInboxContentClassification = {
-		workType: pickClassificationValue(record.workType, CLASSIFICATION_WORK_TYPES),
-		domain: pickClassificationValue(record.domain, CLASSIFICATION_DOMAINS),
-		requestKind: pickClassificationValue(record.requestKind, CLASSIFICATION_REQUEST_KINDS),
-		decisionSubject: pickClassificationValue(record.decisionSubject, CLASSIFICATION_DECISION_SUBJECTS),
-		riskLevel: pickClassificationValue(record.riskLevel, CLASSIFICATION_RISK_LEVELS),
-		reversibility: pickClassificationValue(record.reversibility, CLASSIFICATION_REVERSIBILITY),
-		environment: pickClassificationValue(record.environment, CLASSIFICATION_ENVIRONMENTS),
-		evidenceState: pickClassificationValue(record.evidenceState, CLASSIFICATION_EVIDENCE_STATES),
-		confidence: pickClassificationValue(record.confidence, CLASSIFICATION_CONFIDENCE),
-	};
-	// Only emit if the model actually learned something about the task or the pending request.
-	const learnedTask = classification.workType !== 'unknown' || classification.domain !== 'unknown';
-	const learnedRequest = classification.requestKind !== 'unknown' && classification.requestKind !== 'none';
-	if (!learnedTask && !learnedRequest) {
-		return undefined;
-	}
-	return classification;
-}
-
-// --- Item lifecycle + routing-plan telemetry -------------------------------------------------
+// --- Item lifecycle telemetry -------------------------------------------------
 
 /** Bounded lifecycle outcomes for an inbox item, so enter/leave transitions can be reconstructed. */
 type InboxItemOutcome = 'entered' | 'reentered' | 'dismissed' | 'removed' | 'unknown';
 
 /** Cached, non-identifying state for an item while it is present, used to log its later departure. */
 interface IInboxLifecycleInfo {
+	readonly sessionResource: string | undefined;
 	readonly kind: InboxNotificationKind;
 	readonly priorityTier: 'now' | 'next' | 'later' | 'none';
 	readonly needsInput: boolean;
 	readonly agentSessionId: string;
 	readonly providerId: string;
 	readonly firstSeenMs: number;
-}
-
-/** Version of the routing-plan schema/derivation, so plan meanings can be tracked as it evolves. */
-const ROUTING_PLAN_VERSION = 1;
-
-/**
- * A structured routing plan for an inbox item: who should handle it, in what order, when, with what
- * evidence, and with how much agent autonomy. Today it is derived programmatically from the item by
- * {@link deriveRoutingPlan} (an explicit rules stub); the shape is fixed so a learned meta-router can
- * replace the derivation later without changing the telemetry schema.
- */
-export interface IInboxRoutingPlan {
-	readonly recipientType: 'human' | 'agent' | 'both' | 'none';
-	readonly ordering: 'single' | 'sequential' | 'parallel';
-	readonly timing: 'immediate' | 'deferred' | 'scheduled';
-	readonly priorityTier: 'now' | 'next' | 'later' | 'none';
-	readonly evidenceScope: 'none' | 'summary' | 'full';
-	readonly autonomyLevel: 'humanOnly' | 'approvalRequired' | 'autonomous';
-	readonly decisionRequired: boolean;
-	readonly riskLevel: 'low' | 'med' | 'high';
 }
 
 /** Maps an item's importance priority to the inbox's bounded tier id. */
@@ -558,62 +372,6 @@ function priorityTierId(priority: InboxNotificationPriority): 'now' | 'next' | '
 		case InboxNotificationPriority.Later: return 'later';
 		default: return 'none';
 	}
-}
-
-/**
- * Derives a routing plan from an inbox item using explicit rules. Each dimension is computed from the
- * item's kind, importance tier, and pending-input state rather than hardcoded per event, so swapping
- * in a learned meta-router later only means replacing this function.
- */
-export function deriveRoutingPlan(item: IInboxNotificationItem): IInboxRoutingPlan {
-	const priorityTier = priorityTierId(item.priority);
-	const decisionRequired = item.needsInputPart !== undefined
-		|| item.kind === InboxNotificationKind.ConfirmationRequested
-		|| item.kind === InboxNotificationKind.NeedsInput;
-
-	let recipientType: IInboxRoutingPlan['recipientType'];
-	let autonomyLevel: IInboxRoutingPlan['autonomyLevel'];
-	let riskLevel: IInboxRoutingPlan['riskLevel'];
-	switch (item.kind) {
-		case InboxNotificationKind.ConfirmationRequested:
-		case InboxNotificationKind.NeedsInput:
-			// A pending decision must reach a human; an agent may not answer on their behalf.
-			recipientType = 'human';
-			autonomyLevel = 'humanOnly';
-			riskLevel = 'med';
-			break;
-		case InboxNotificationKind.FailingCI:
-		case InboxNotificationKind.ReviewComments:
-			// An agent can attempt the work, but a human still owns the outcome.
-			recipientType = 'both';
-			autonomyLevel = 'approvalRequired';
-			riskLevel = 'med';
-			break;
-		case InboxNotificationKind.PassingCI:
-		case InboxNotificationKind.PullRequestMerged:
-		case InboxNotificationKind.Completed:
-			// Informational: surface to a human to read, no autonomous action.
-			recipientType = 'human';
-			autonomyLevel = 'humanOnly';
-			riskLevel = 'low';
-			break;
-		default:
-			recipientType = decisionRequired ? 'human' : 'agent';
-			autonomyLevel = decisionRequired ? 'humanOnly' : 'approvalRequired';
-			riskLevel = 'low';
-			break;
-	}
-
-	// Completed work ships with a full evidence pack; a pending decision ships a summary.
-	const evidenceScope: IInboxRoutingPlan['evidenceScope'] =
-		item.kind === InboxNotificationKind.Completed ? 'full' : decisionRequired ? 'summary' : 'none';
-	// Delivery timing follows the importance tier the inbox already assigns.
-	const timing: IInboxRoutingPlan['timing'] =
-		priorityTier === 'now' ? 'immediate' : priorityTier === 'later' ? 'scheduled' : 'deferred';
-	// Single recipient today; the schema allows sequential/parallel once multi-agent paths exist.
-	const ordering: IInboxRoutingPlan['ordering'] = recipientType === 'both' ? 'sequential' : 'single';
-
-	return { recipientType, ordering, timing, priorityTier, evidenceScope, autonomyLevel, decisionRequired, riskLevel };
 }
 
 /** Defensively extracts a file URI from a chat response part (edits, code blocks, inline references). */
@@ -662,22 +420,16 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	readonly sortMode: ISettableObservable<InboxNotificationsSortMode>;
 	private readonly _loadingOperationCount: ISettableObservable<number>;
 	readonly isLoading: IObservable<boolean>;
-	private readonly _revealRequest: ISettableObservable<IInboxNotificationRevealRequest | undefined>;
-	readonly revealRequest: IObservable<IInboxNotificationRevealRequest | undefined>;
-	private _revealToken = 0;
 	private readonly _refreshedGitHubModels = new WeakSet<object>();
 	private readonly _chatLoadToken = cancelOnDispose(this._store);
 	private readonly _activeNeedsInputChatResources = new Set<string>();
-	private readonly _activeCompletedPreviewChatResources = new Set<string>();
 	private readonly _needsInputChatModelRefs = new Map<string, IChatModelReference>();
-	private readonly _completedPreviewChatModelRefs = new Map<string, IChatModelReference>();
 	private readonly _loadingNeedsInputChatModels = new Map<string, CancellationTokenSource>();
-	private readonly _loadingCompletedPreviewChatModels = new Map<string, CancellationTokenSource>();
 	private readonly _unregisteredChatProviders = new Set<string>();
 	private readonly _chatProvidersChanged = observableSignal(this);
 
 	/**
-	 * Per-chat-model change signals, cached by chat resource. Reading one inside the item
+	 * Per-chat-model change signals, weakly cached by model. Reading one inside the item
 	 * derivation subscribes it to that model's structural changes (requests/responses added,
 	 * turns reopened). This matters on a window reload: an agent-host session that needs input
 	 * is restored with only its completed history, and the active turn's pending confirmation
@@ -685,7 +437,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	 * Without observing the model itself, the derivation only re-runs when the *set* of loaded
 	 * models changes, so the pending part would stay invisible until the user opened the session.
 	 */
-	private readonly _chatModelChangeSignals = new Map<string, { readonly model: IChatModel; readonly signal: IObservable<void> }>();
+	private readonly _chatModelChangeSignals = new WeakMap<IChatModel, IObservable<void>>();
 
 	private readonly _previews: ISettableObservable<ReadonlyMap<string, string>>;
 	readonly previews: IObservable<ReadonlyMap<string, string>>;
@@ -704,15 +456,11 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	readonly detailSummaries: IObservable<ReadonlyMap<string, IInboxDetailSummary>>;
 	private readonly _detailSummaryCache = new LRUCache<string, IInboxDetailSummary>(DETAIL_CACHE_SIZE);
 	private readonly _detailSummaryInFlight = new Set<string>();
-	/** Item keys whose content classification has already been generated this session (bounds model calls). */
-	private readonly _classifiedKeys = new Set<string>();
 	/** Per-item lifecycle state while present, so departures can be logged after the item is gone. */
 	private readonly _lifecycleState = new Map<string, IInboxLifecycleInfo>();
 	/** Item ids ever seen in the inbox, to distinguish a first entry from a reentry. */
 	private readonly _everSeenItemIds = new Set<string>();
-
-	/** Bounds concurrent utility-model calls (previews + evidence packs) to avoid bursts. */
-	private readonly _utilityLimiter = new Limiter<unknown>(3);
+	private _lifecycleInitialized = false;
 
 	readonly notifications: IObservable<readonly IInboxNotificationItem[]>;
 	readonly dismissedNotifications: IObservable<readonly IInboxNotificationItem[]>;
@@ -731,6 +479,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		@IConfigurationService configurationService: IConfigurationService,
 		@IChatEntitlementService chatEntitlementService: IChatEntitlementService,
 		@IChatSessionsService chatSessionsService: IChatSessionsService,
+		@ILogService private readonly logService: ILogService,
 	) {
 		super();
 
@@ -749,8 +498,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		this.sortMode = observableValue('sessionsInboxNotificationsSortMode', InboxNotificationsSortMode.Priority);
 		this._loadingOperationCount = observableValue('sessionsInboxNotificationsLoadingCount', 0);
 		this.isLoading = derived(this, reader => this._loadingOperationCount.read(reader) > 0);
-		this._revealRequest = observableValue('sessionsInboxNotificationsReveal', undefined);
-		this.revealRequest = this._revealRequest;
 
 		const sessionsChanged = observableSignalFromEvent(this, this.sessionsManagementService.onDidChangeSessions);
 		const providersChanged = observableSignalFromEvent(this, this.sessionsProvidersService.onDidChangeProviders);
@@ -789,23 +536,16 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			}
 			sessionsChanged.read(reader);
 			for (const session of this.sessionsManagementService.getSessions()) {
-				this.ensureGitHubModels(session, reader as IReaderWithStore);
+				this.ensureGitHubModels(session, reader);
 			}
 		}));
 		this._register(toDisposable(() => {
 			for (const modelRef of this._needsInputChatModelRefs.values()) {
 				modelRef.dispose();
 			}
-			for (const modelRef of this._completedPreviewChatModelRefs.values()) {
-				modelRef.dispose();
-			}
 			this._needsInputChatModelRefs.clear();
-			this._completedPreviewChatModelRefs.clear();
 			this._loadingNeedsInputChatModels.clear();
-			this._loadingCompletedPreviewChatModels.clear();
 			this._activeNeedsInputChatResources.clear();
-			this._activeCompletedPreviewChatResources.clear();
-			this._chatModelChangeSignals.clear();
 			for (const cts of this._previewCancellationSources) {
 				cts.cancel();
 				cts.dispose();
@@ -814,13 +554,11 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			this._previewInFlight.clear();
 			this._previewFallbackSignatures.clear();
 			this._detailSummaryInFlight.clear();
-			this._classifiedKeys.clear();
 			this._lifecycleState.clear();
 			this._everSeenItemIds.clear();
 		}));
 		this._register(autorun(reader => {
 			this._activeNeedsInputChatResources.clear();
-			this._activeCompletedPreviewChatResources.clear();
 			if (this._enabled.read(reader)) {
 				sessionsChanged.read(reader);
 				this._chatProvidersChanged.read(reader);
@@ -831,14 +569,11 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					}
 
 					if (session.status.read(reader) === SessionStatus.NeedsInput) {
-						for (const chat of session.chats.read(reader)) {
+						for (const chat of this.getNeedsInputChats(session, reader)) {
 							this.ensureChatModelLoaded(chat.resource, this._activeNeedsInputChatResources, this._needsInputChatModelRefs, this._loadingNeedsInputChatModels);
 						}
 					}
 
-					if (session.status.read(reader) === SessionStatus.Completed && !session.isRead.read(reader)) {
-						this.ensureChatModelLoaded(session.mainChat.read(reader).resource, this._activeCompletedPreviewChatResources, this._completedPreviewChatModelRefs, this._loadingCompletedPreviewChatModels);
-					}
 				}
 			} else {
 				for (const cts of this._loadingNeedsInputChatModels.values()) {
@@ -850,7 +585,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			}
 
 			this.disposeInactiveChatModels(this._activeNeedsInputChatResources, this._needsInputChatModelRefs);
-			this.disposeInactiveChatModels(this._activeCompletedPreviewChatResources, this._completedPreviewChatModelRefs);
 		}));
 
 		this._allItems = derived(this, reader => {
@@ -866,7 +600,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			const sessions = this.sessionsManagementService.getSessions();
 			const pullRequestSessions = this.getPullRequestNotificationSessions(sessions, reader);
 			for (const session of sessions) {
-				this.collectSessionNotifications(itemsById, session, pullRequestSessions, reader as IReaderWithStore);
+				this.collectSessionNotifications(itemsById, session, pullRequestSessions, reader);
 			}
 
 			for (const item of this._externalItems.read(reader)) {
@@ -915,9 +649,13 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			this.invalidatePreviewFallbacks();
 		}));
 
-		// Track items entering and leaving the inbox to emit lifecycle outcomes and the routing-plan
-		// schema, so the trajectory captures why each item appeared and disappeared.
 		this._register(autorun(reader => {
+			if (!this._enabled.read(reader)) {
+				this._lifecycleState.clear();
+				this._everSeenItemIds.clear();
+				this._lifecycleInitialized = false;
+				return;
+			}
 			this.reconcileItemLifecycle(this.notifications.read(reader));
 		}));
 	}
@@ -996,7 +734,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		let result: 'success' | 'empty' | 'cancelled' = 'empty';
 		let outputLength = 0;
 		try {
-			const preview = await this._utilityLimiter.queue(() => this.invokePreviewModel(inputText, cts.token)) as string | undefined;
+			const preview = await this.invokePreviewModel(inputText, cts.token);
 			if (cts.token.isCancellationRequested) {
 				result = 'cancelled';
 				return;
@@ -1012,6 +750,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				this.publishPreview(signature, item.description);
 			}
 		} catch (error) {
+			if (!cts.token.isCancellationRequested) {
+				this._previewFallbackSignatures.add(signature);
+				this.publishPreview(signature, item.description);
+			}
 			onUnexpectedError(error);
 		} finally {
 			this._previewCancellationSources.delete(cts);
@@ -1067,9 +809,12 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				cancellation.cancel();
 			});
 			if (timedOut) {
-				throw new Error(`Inbox utility request timed out: ${request.purpose}`);
+				this.logService.debug(`[Inbox] Utility request timed out: ${request.purpose}`);
 			}
 			return result;
+		} catch (error) {
+			this.logService.debug(`[Inbox] Utility request failed: ${request.purpose}`, error);
+			return undefined;
 		} finally {
 			cancellation.dispose();
 		}
@@ -1268,10 +1013,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		this.sortMode.set(sortMode, undefined);
 	}
 
-	requestReveal(id: string): void {
-		this._revealRequest.set({ id, token: ++this._revealToken }, undefined);
-	}
-
 	requestDetailSummary(item: IInboxNotificationItem): void {
 		if (!this._enabled.get() || this._store.isDisposed || !item.sessionResource || (item.kind !== InboxNotificationKind.Completed && !item.needsInputPart)) {
 			return;
@@ -1321,12 +1062,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			hadTranscript = !!transcript;
 			if (transcript || commands.length) {
 				const artifacts = this.collectSessionArtifacts(item);
-				summary = await this._utilityLimiter.queue(() => this.invokeDetailModel(item, transcript ?? '', artifacts, commands, cts.token)) as IInboxDetailSummary | undefined;
-				// Piggyback the restricted content classification on the same on-demand path so it
-				// reuses this transcript and adds no extra fan-out beyond what the user already viewed.
-				if (transcript && !cts.token.isCancellationRequested) {
-					void this.classifyContent(key, item, transcript);
-				}
+				summary = await this.invokeDetailModel(item, transcript ?? '', artifacts, commands, cts.token);
 			}
 		} catch (error) {
 			onUnexpectedError(error);
@@ -1363,113 +1099,52 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		});
 	}
 
-	/**
-	 * Generates a bounded content classification for an item (once per session) and emits it under a
-	 * restricted EndUserPseudonymizedInformation classification. Bounded by the utility limiter and by
-	 * the on-demand detail path that calls it, and cached per key so it runs at most once per item.
-	 */
-	private async classifyContent(key: string, item: IInboxNotificationItem, transcript: string): Promise<void> {
-		if (this._classifiedKeys.has(key)) {
-			return;
-		}
-		this._classifiedKeys.add(key);
-		const cts = new CancellationTokenSource();
-		this._previewCancellationSources.add(cts);
-		try {
-			const classification = await this._utilityLimiter.queue(() => this.invokeClassificationModel(item, transcript, cts.token)) as IInboxContentClassification | undefined;
-			if (classification && !cts.token.isCancellationRequested) {
-				this.logContentClassification(item, classification);
-			} else {
-				// Nothing usable: allow a later view to retry.
-				this._classifiedKeys.delete(key);
-			}
-		} catch (error) {
-			this._classifiedKeys.delete(key);
-			onUnexpectedError(error);
-		} finally {
-			this._previewCancellationSources.delete(cts);
-			cts.dispose();
-		}
-	}
-
-	private async invokeClassificationModel(item: IInboxNotificationItem, transcript: string, token: CancellationToken): Promise<IInboxContentClassification | undefined> {
-		if (token.isCancellationRequested || !telemetryLevelEnabled(this.telemetryService, TelemetryLevel.USAGE)) {
-			return undefined;
-		}
-		// Classify from the title and (when the agent is waiting) the pending request as well as the
-		// transcript: the pending request is the strongest signal for decisionType, and the title
-		// anchors workType/domain. This content is sent to the remote utility model; only the
-		// bounded labels, not the input, are emitted in the classification telemetry event.
-		const pendingRequest = item.needsInputPart ? this.describeItemForPreview(item).detailText : '';
-		const userText = [
-			`Session: ${item.title}`,
-			...(pendingRequest ? ['', 'Pending request the agent is waiting on:', pendingRequest] : []),
-			'',
-			'Transcript:',
-			transcript,
-		].join('\n');
-		const text = await this.requestUtilityModel({
-			purpose: 'inboxContentClassification',
-			background: true,
-			key: `inboxContentClassification:${CLASSIFICATION_ONTOLOGY_VERSION}:${hash(userText)}`,
-			messages: [
-				{ role: ChatMessageRole.System, content: [{ type: 'text', value: CLASSIFICATION_SYSTEM_PROMPT }] },
-				{ role: ChatMessageRole.User, content: [{ type: 'text', value: userText }] },
-			],
-		}, token);
-		return text === undefined || token.isCancellationRequested ? undefined : parseContentClassification(text);
-	}
-
-	private logContentClassification(item: IInboxNotificationItem, classification: IInboxContentClassification): void {
-		const context = this.getInteractionTelemetryContext(item);
-		this.telemetryService.publicLog2<InboxContentClassificationEvent, InboxContentClassificationClassification>('agents/inboxContentClassification', {
-			workType: classification.workType,
-			domain: classification.domain,
-			requestKind: classification.requestKind,
-			decisionSubject: classification.decisionSubject,
-			riskLevel: classification.riskLevel,
-			reversibility: classification.reversibility,
-			environment: classification.environment,
-			evidenceState: classification.evidenceState,
-			confidence: classification.confidence,
-			ontologyVersion: CLASSIFICATION_ONTOLOGY_VERSION,
-			inputScope: 'sessionContext',
-			provenance: 'utilityModelInference',
-			notificationKind: item.kind,
-			agentSessionId: context.agentSessionId,
-			providerId: context.providerId,
-		});
-	}
-
-	/** Diffs the current inbox against the last-seen set, emitting enter/leave lifecycle + routing telemetry. */
+	/** Diffs the inbox within this enabled window, silently seeding items restored at startup. */
 	private reconcileItemLifecycle(items: readonly IInboxNotificationItem[]): void {
 		const now = Date.now();
-		const currentIds = new Set<string>();
+		const initialized = this._lifecycleInitialized;
+		this._lifecycleInitialized = true;
+		const currentIds = new Set(items.map(item => item.id));
+		const previousItems = [...this._lifecycleState];
+		const hydratedIds = new Set<string>();
 		for (const item of items) {
-			currentIds.add(item.id);
 			if (this._lifecycleState.has(item.id)) {
 				continue;
 			}
+			// Restoring the pending part or fetching PR state refines an existing card rather
+			// than introducing a new attention request.
+			const hydrated = item.sessionResource && previousItems.find(([id, info]) =>
+				!currentIds.has(id) && info.sessionResource === item.sessionResource?.toString()
+				&& ((info.kind === InboxNotificationKind.NeedsInput && !info.needsInput && !!item.needsInputPart)
+					|| (info.kind === InboxNotificationKind.Completed && !!item.pullRequestStates?.length)));
+			if (hydrated) {
+				hydratedIds.add(hydrated[0]);
+			}
 			const context = this.getInteractionTelemetryContext(item);
 			const info: IInboxLifecycleInfo = {
+				sessionResource: item.sessionResource?.toString(),
 				kind: item.kind,
 				priorityTier: priorityTierId(item.priority),
 				needsInput: item.needsInputPart !== undefined,
 				agentSessionId: context.agentSessionId,
 				providerId: context.providerId,
-				firstSeenMs: now,
+				firstSeenMs: hydrated ? hydrated[1].firstSeenMs : now,
 			};
 			const reentered = this._everSeenItemIds.has(item.id);
 			this._everSeenItemIds.add(item.id);
 			this._lifecycleState.set(item.id, info);
-			this.logItemLifecycle(reentered ? 'reentered' : 'entered', 0, info);
-			this.logRoutingDecision(item, context);
+			if (initialized && !hydrated) {
+				this.logItemLifecycle(reentered ? 'reentered' : 'entered', 0, info);
+			}
 		}
 		for (const [id, info] of this._lifecycleState) {
 			if (currentIds.has(id)) {
 				continue;
 			}
 			this._lifecycleState.delete(id);
+			if (hydratedIds.has(id)) {
+				continue;
+			}
 			const outcome: InboxItemOutcome = this._dismissedIds.get().has(id) ? 'dismissed' : 'removed';
 			this.logItemLifecycle(outcome, now - info.firstSeenMs, info);
 		}
@@ -1484,25 +1159,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			msInInbox,
 			agentSessionId: info.agentSessionId,
 			providerId: info.providerId,
-		});
-	}
-
-	private logRoutingDecision(item: IInboxNotificationItem, context: IInboxInteractionTelemetryContext): void {
-		const plan = deriveRoutingPlan(item);
-		this.telemetryService.publicLog2<InboxRoutingDecisionEvent, InboxRoutingDecisionClassification>('agents/inboxRoutingDecision', {
-			recipientType: plan.recipientType,
-			ordering: plan.ordering,
-			timing: plan.timing,
-			priorityTier: plan.priorityTier,
-			evidenceScope: plan.evidenceScope,
-			autonomyLevel: plan.autonomyLevel,
-			decisionRequired: plan.decisionRequired ? 'yes' : 'no',
-			riskLevel: plan.riskLevel,
-			routingPlanVersion: ROUTING_PLAN_VERSION,
-			provenance: 'ruleBasedStub',
-			notificationKind: item.kind,
-			agentSessionId: context.agentSessionId,
-			providerId: context.providerId,
 		});
 	}
 
@@ -1559,16 +1215,19 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			return artifacts;
 		}
 		const seen = new Set<string>();
-		for (const request of chatModel.getRequests()) {
+		for (const request of chatModel.getRequests().toReversed()) {
 			const response = request.response;
-			if (!response) {
+			if (!response || response.isCanceled) {
 				continue;
 			}
-			for (const part of response.response.value) {
+			for (const part of response.response.value.toReversed()) {
 				const uri = getResponsePartFileUri(part);
 				if (uri && !seen.has(uri.toString())) {
 					seen.add(uri.toString());
 					artifacts.push({ kind: 'file', label: basename(uri), uri });
+					if (seen.size === DETAIL_MAX_FILE_ARTIFACTS) {
+						return artifacts;
+					}
 				}
 			}
 		}
@@ -1596,7 +1255,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		if (!text) {
 			return undefined;
 		}
-		return text.length > DETAIL_MAX_INPUT_CHARS ? `${text.slice(0, DETAIL_MAX_INPUT_CHARS)}…[truncated]` : text;
+		return text.length > DETAIL_MAX_INPUT_CHARS ? `[…truncated]\n${text.slice(-DETAIL_MAX_INPUT_CHARS)}` : text;
 	}
 
 	private getSessionChatModel(item: IInboxNotificationItem) {
@@ -1650,6 +1309,9 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		}
 		const next = new Set(this._dismissedIds.get());
 		next.add(id);
+		while (next.size > MAX_DISMISSED_NOTIFICATION_IDS) {
+			next.delete(next.values().next().value!);
+		}
 		this._dismissedIds.set(next, undefined);
 		this.pruneDismissedSnapshots(next);
 		const snapshot = this._allItems.get().find(item => item.id === id) ?? (itemSnapshot?.id === id ? itemSnapshot : undefined);
@@ -1658,13 +1320,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			nextSnapshots.set(id, snapshot);
 			this._dismissedSnapshots.set(nextSnapshots, undefined);
 		}
-		this.persistDismissedIds(next);
-	}
-
-	clearDismissedNotifications(): void {
-		const next = new Set<string>();
-		this._dismissedIds.set(next, undefined);
-		this._dismissedSnapshots.set(new Map<string, IInboxNotificationItem>(), undefined);
 		this.persistDismissedIds(next);
 	}
 
@@ -1744,13 +1399,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			this.collectPullRequestNotifications(itemsById, session, title, updatedAt, pullRequestSessions, reader);
 		}
 
-		// Surface a Completed entry only when the finished session has nothing else
-		// needing attention (e.g. no open pull request notifications). Key it by the
-		// completing turn (the latest response) rather than a per-session id, so once a
-		// completed item is dismissed a *new* turn that finishes without needing input
-		// surfaces as a fresh Later-priority item instead of inheriting the dismissal.
-		if (status === SessionStatus.Completed && itemsById.size === sizeBeforePullRequests) {
-			const turnId = this.getLatestResponseRequestId(session, reader) ?? `${updatedAt}`;
+		// Use provider state rather than a resident chat model, so loading/unloading history
+		// does not change the id or resurrect a dismissed notification.
+		if (status === SessionStatus.Completed && !session.isRead.read(reader) && itemsById.size === sizeBeforePullRequests) {
+			const turnId = session.lastTurnEnd.read(reader)?.getTime() ?? updatedAt;
 			const id = `${session.sessionId}:completed:${turnId}`;
 			itemsById.set(id, {
 				id,
@@ -1784,13 +1436,12 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					.catch(onUnexpectedError)
 					.finally(() => endLoading());
 			}
-			reader.delayedStore.add(pullRequestModelRef.object.startPolling());
-
 			const pullRequest = pullRequestModelRef.object.pullRequest.read(reader);
 			const effectiveState = pullRequest?.state ?? pullRequestRef.liveState ?? pullRequestRef.state;
 			if (effectiveState !== GitHubPullRequestState.Open) {
 				continue;
 			}
+			reader.delayedStore.add(pullRequestModelRef.object.startPolling());
 
 			const reviewThreadsModelRef = reader.delayedStore.add(this.gitHubService.createPullRequestReviewThreadsModelReference(
 				pullRequestRef.owner,
@@ -1885,7 +1536,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			));
 			const reviewThreads = reviewThreadsModelRef.object.reviewThreads.read(reader);
 			const unresolvedReviewThreads = reviewThreads.filter(thread => !thread.isResolved);
-			const unresolvedCopilotThreads = unresolvedReviewThreads.filter(thread => hasCopilotReviewComment(thread.comments));
+			const unresolvedCopilotThreads = unresolvedReviewThreads.filter(thread => isCopilotReviewAuthor(thread.comments[0]?.author.login));
 
 			let ciStatus: GitHubCIOverallStatus | undefined;
 			let ciTimestamp = sessionUpdatedAt;
@@ -1935,15 +1586,17 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				reviewCommentCandidates.push({
 					...candidateBase,
 					timestamp: reviewCommentsTimestamp,
-					identity: String(reviewCommentsTimestamp),
+					identity: String(hash(unresolvedCopilotThreads.map(thread => [
+						thread.id, ...thread.comments.map(comment => [comment.id, comment.updatedAt ?? comment.createdAt]),
+					]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))))),
 				});
 			}
 		}
 
-		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.FailingCI, failingCandidates);
-		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.PassingCI, passingCandidates);
-		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.PullRequestMerged, mergedCandidates);
-		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.ReviewComments, reviewCommentCandidates);
+		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.FailingCI, failingCandidates, reader);
+		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.PassingCI, passingCandidates, reader);
+		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.PullRequestMerged, mergedCandidates, reader);
+		this.createPullRequestNotification(itemsById, session, sessionTitle, InboxNotificationKind.ReviewComments, reviewCommentCandidates, reader);
 	}
 
 	private createPullRequestNotification(
@@ -1952,6 +1605,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		sessionTitle: string,
 		kind: InboxNotificationKind.FailingCI | InboxNotificationKind.PassingCI | InboxNotificationKind.PullRequestMerged | InboxNotificationKind.ReviewComments,
 		candidates: readonly IPullRequestNotificationCandidate[],
+		reader: IReader,
 	): void {
 		if (candidates.length === 0) {
 			return;
@@ -1986,7 +1640,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					pullRequestStates,
 					timestamp,
 					sessionResource: session.resource,
-					actions: this.pullRequestActions(session, kind),
+					actions: this.pullRequestActions(session, kind, reader),
 				});
 				return;
 			case InboxNotificationKind.PassingCI:
@@ -2004,7 +1658,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					pullRequestStates,
 					timestamp,
 					sessionResource: session.resource,
-					actions: this.pullRequestActions(session, kind),
+					actions: this.pullRequestActions(session, kind, reader),
 				});
 				return;
 			case InboxNotificationKind.ReviewComments:
@@ -2022,7 +1676,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					pullRequestStates,
 					timestamp,
 					sessionResource: session.resource,
-					actions: this.pullRequestActions(session, kind),
+					actions: this.pullRequestActions(session, kind, reader),
 				});
 				return;
 			case InboxNotificationKind.PullRequestMerged:
@@ -2040,39 +1694,37 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					pullRequestStates,
 					timestamp,
 					sessionResource: session.resource,
-					actions: this.pullRequestActions(session, kind),
+					actions: this.pullRequestActions(session, kind, reader),
 				});
 				return;
 		}
 	}
 
-	private pullRequestActions(session: ISession, kind: InboxNotificationKind): readonly IInboxNotificationAction[] {
-		const agentMergeAction = this.canSurfaceInlineAgentMergeAction(session)
-			? this.agentMergeActionForNotificationKind(kind)
-			: undefined;
+	private pullRequestActions(session: ISession, kind: InboxNotificationKind, reader: IReader): readonly IInboxNotificationAction[] {
+		const agentMergeAction: IInboxNotificationAction | undefined = kind === InboxNotificationKind.PassingCI && getInboxPullRequestMergeOperation(session, reader)
+			? {
+				id: 'agent-merge-merge-pull-request',
+				label: localize('inboxNotifications.action.agentMergeMergePullRequest', "Merge Pull Request"),
+				kind: InboxNotificationActionKind.AgentMergeMergePullRequest,
+			}
+			: kind === InboxNotificationKind.ReviewComments && !isAgentHostProviderId(session.providerId)
+				? undefined
+				: this.agentMergeActionForNotificationKind(kind);
 		if (kind === InboxNotificationKind.PullRequestMerged) {
 			return this.sessionActions(true, [
 				{
 					id: 'archive-session',
-					label: localize('inboxNotifications.action.markAsDone', "Mark as Done"),
+					label: localize('inboxNotifications.action.archiveSession', "Archive Session"),
 					kind: InboxNotificationActionKind.ArchiveSession,
 				},
-				{
+				...(session.capabilities.read(reader).supportsDelete ? [{
 					id: 'delete-session',
 					label: localize('inboxNotifications.action.deleteSession', "Delete Session"),
 					kind: InboxNotificationActionKind.DeleteSession,
-				},
+				}] : []),
 			]);
 		}
 		return this.sessionActions(true, agentMergeAction ? [agentMergeAction] : undefined);
-	}
-
-	private canSurfaceInlineAgentMergeAction(session: ISession): boolean {
-		const sessionProvider = this.sessionsProvidersService.getProvider(session.providerId);
-		if (supportsInlineAgentMergeActions(sessionProvider) || isAgentHostProviderId(session.providerId)) {
-			return true;
-		}
-		return this.sessionsProvidersService.getProviders().some(provider => supportsInlineAgentMergeActions(provider));
 	}
 
 	private agentMergeActionForNotificationKind(kind: InboxNotificationKind): IInboxNotificationAction | undefined {
@@ -2088,12 +1740,6 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 					id: 'agent-merge-address-reviews',
 					label: localize('inboxNotifications.action.agentMergeAddressReviews', "Address Reviews"),
 					kind: InboxNotificationActionKind.AgentMergeAddressReviews,
-				};
-			case InboxNotificationKind.PassingCI:
-				return {
-					id: 'agent-merge-merge-pull-request',
-					label: localize('inboxNotifications.action.agentMergeMergePullRequest', "Merge Pull Request"),
-					kind: InboxNotificationActionKind.AgentMergeMergePullRequest,
 				};
 			default:
 				return undefined;
@@ -2131,9 +1777,15 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		}];
 	}
 
+	private getNeedsInputChats(session: ISession, reader: IReader) {
+		const chats = session.chats.read(reader);
+		const waitingChats = chats.filter(chat => chat.status.read(reader) === SessionStatus.NeedsInput);
+		return waitingChats.length ? waitingChats : chats;
+	}
+
 	private getNeedsInputPart(session: ISession, reader: IReaderWithStore): IInboxNotificationNeedsInputPart | undefined {
 		let bestCandidate: INeedsInputPartCandidate | undefined;
-		for (const chat of session.chats.read(reader)) {
+		for (const chat of this.getNeedsInputChats(session, reader)) {
 			const chatModel = this.chatService.getSession(chat.resource);
 			if (!chatModel) {
 				continue;
@@ -2142,7 +1794,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			// Re-derive when this model changes so a pending confirmation that streams in after
 			// the model is loaded (notably the active turn restored after a window reload) is
 			// picked up without requiring the user to open the session.
-			this.chatModelChangeSignal(chat.resource, chatModel).read(reader);
+			this.chatModelChangeSignal(chatModel).read(reader);
 
 			for (const request of chatModel.getRequests().toReversed()) {
 				const response = request.response;
@@ -2178,18 +1830,17 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	}
 
 	/**
-	 * A cached change signal for a chat model, keyed by its chat resource. The signal only
+	 * A weakly cached change signal for a chat model. The signal only
 	 * subscribes to the model's `onDidChange` event while the derivation observing it stays
-	 * live, and is replaced whenever the underlying model instance changes.
+	 * live, without retaining disposed model instances.
 	 */
-	private chatModelChangeSignal(chatResource: URI, chatModel: IChatModel): IObservable<void> {
-		const key = chatResource.toString();
-		const existing = this._chatModelChangeSignals.get(key);
-		if (existing?.model === chatModel) {
-			return existing.signal;
+	private chatModelChangeSignal(chatModel: IChatModel): IObservable<void> {
+		const existing = this._chatModelChangeSignals.get(chatModel);
+		if (existing) {
+			return existing;
 		}
 		const signal = observableSignalFromEvent(this, chatModel.onDidChange);
-		this._chatModelChangeSignals.set(key, { model: chatModel, signal });
+		this._chatModelChangeSignals.set(chatModel, signal);
 		return signal;
 	}
 
@@ -2262,6 +1913,7 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			const message = state.type === IChatToolInvocation.StateKind.WaitingForConfirmation
 				? state.confirmationMessages?.message ?? localize('inboxNotifications.toolConfirmation.message.default', "Review this tool request before continuing.")
 				: localize('inboxNotifications.toolConfirmation.message.postApproval', "Review the tool output and decide whether to continue.");
+			const details = getInboxToolConfirmationDetails(part);
 			const toolConfirmationPart: IInboxNotificationToolConfirmationPart = {
 				kind: 'toolConfirmation',
 				chatResource,
@@ -2270,7 +1922,10 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 				confirmationKind: state.type === IChatToolInvocation.StateKind.WaitingForPostApproval ? 'result' : 'execution',
 				title,
 				message,
-				buttons: this.getToolConfirmationButtons(state),
+				commandLine: details.commandLine,
+				disclaimer: details.disclaimer,
+				originMessage: details.originMessage,
+				buttons: details.requiresSession ? [] : this.getToolConfirmationButtons(state),
 			};
 			return toolConfirmationPart;
 		}
@@ -2307,6 +1962,9 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 			return localize('inboxNotifications.needsInput.description.questionCarousel', "Answer the pending questions below.");
 		}
 		if (part.kind === 'toolConfirmation') {
+			if (!part.buttons.length) {
+				return localize('inboxNotifications.needsInput.description.reviewInSession', "Open the session to review this request and respond.");
+			}
 			return localize('inboxNotifications.needsInput.description.toolConfirmation', "Review and approve the pending tool request below.");
 		}
 		return localize('inboxNotifications.needsInput.description.confirmation', "Review the confirmation request below.");
@@ -2322,58 +1980,9 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 	}
 
 	private getCompletedSessionDescription(session: ISession, reader: IReader): string {
-		const preview = this.getCompletedSessionResponsePreview(session, reader);
-		if (preview) {
-			return preview;
-		}
-
 		const description = session.description.read(reader);
 		const descriptionText = description ? this.normalizeResponsePreviewText(renderAsPlaintext(description, { useLinkFormatter: true })) : undefined;
 		return descriptionText || localize('inboxNotifications.completed.description', "Review this completed session or mark it done.");
-	}
-
-	private getLatestResponseRequestId(session: ISession, reader: IReader): string | undefined {
-		const chatResource = session.mainChat.read(reader).resource;
-		const chatModel = this.chatService.getSession(chatResource);
-		if (!chatModel) {
-			return undefined;
-		}
-		for (const request of chatModel.getRequests().toReversed()) {
-			const requestId = request.response?.requestId;
-			if (requestId) {
-				return requestId;
-			}
-		}
-		return undefined;
-	}
-
-	private getCompletedSessionResponsePreview(session: ISession, reader: IReader): string | undefined {
-		const chatResource = session.mainChat.read(reader).resource;
-		const chatModel = this.chatService.getSession(chatResource);
-		if (!chatModel) {
-			return undefined;
-		}
-
-		for (const request of chatModel.getRequests().toReversed()) {
-			const response = request.response;
-			if (!response
-				|| response.isCanceled
-				|| request.isHiddenFromTranscript
-				|| (request.shouldBeRemovedOnSend && !request.shouldBeRemovedOnSend.afterUndoStop)) {
-				continue;
-			}
-
-			for (const part of response.response.value) {
-				if (part.kind === 'markdownContent') {
-					const text = this.normalizeResponsePreviewText(renderAsPlaintext(part.content, { useLinkFormatter: true }));
-					if (text) {
-						return text;
-					}
-				}
-			}
-		}
-
-		return undefined;
 	}
 
 	private normalizeResponsePreviewText(text: string): string | undefined {
@@ -2489,7 +2098,12 @@ export class InboxNotificationsService extends Disposable implements IInboxNotif
 		try {
 			const raw = this.storageService.get(DISMISSED_NOTIFICATION_IDS_STORAGE_KEY, StorageScope.APPLICATION);
 			const parsed = raw ? JSON.parse(raw) : [];
-			return new Set(Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : []);
+			const entries = Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
+			const ids = new Set<string>(entries.slice(-MAX_DISMISSED_NOTIFICATION_IDS));
+			if (entries.length > MAX_DISMISSED_NOTIFICATION_IDS) {
+				this.persistDismissedIds(ids);
+			}
+			return ids;
 		} catch (error) {
 			onUnexpectedError(error);
 			return new Set();
@@ -2553,21 +2167,13 @@ function latestCITimestamp(checks: readonly { readonly startedAt?: string; reado
 }
 
 function latestReviewCommentsTimestamp(threads: readonly IGitHubPullRequestReviewThread[], fallbackTimestamp: number): number {
-	let latest = fallbackTimestamp;
+	let latest = 0;
 	for (const thread of threads) {
 		for (const comment of thread.comments) {
-			latest = Math.max(latest, parseTimestamp(comment.updatedAt) ?? parseTimestamp(comment.createdAt) ?? fallbackTimestamp);
+			latest = Math.max(latest, parseTimestamp(comment.updatedAt) ?? parseTimestamp(comment.createdAt) ?? 0);
 		}
 	}
-	return latest;
-}
-
-function hasCopilotReviewComment(comments: readonly IGitHubPRComment[]): boolean {
-	return comments.some(comment => isCopilotAuthor(comment.author.login));
-}
-
-function isCopilotAuthor(author: string | undefined): boolean {
-	return !!author && author.toLowerCase().includes('copilot');
+	return latest || fallbackTimestamp;
 }
 
 function parseTimestamp(value: string | undefined): number | undefined {

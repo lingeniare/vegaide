@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import './inboxNotificationsAccessibility.js';
-import { timeout } from '../../../../base/common/async.js';
-import { KeyChord, KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
 import { localize, localize2 } from '../../../../nls.js';
-import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
-import { Disposable, MutableDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
 import { autorun, derived } from '../../../../base/common/observable.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { observableConfigValue } from '../../../../platform/observable/common/platformObservableUtils.js';
@@ -19,20 +18,16 @@ import { SyncDescriptor } from '../../../../platform/instantiation/common/descri
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
-import { IsDevelopmentContext } from '../../../../platform/contextkey/common/contextkeys.js';
-import { KeybindingWeight } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
-import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { registerWorkbenchContribution2, WorkbenchPhase, type IWorkbenchContribution } from '../../../../workbench/common/contributions.js';
 import { ChatContextKeys } from '../../../../workbench/contrib/chat/common/actions/chatContextKeys.js';
-import { EditorAreaFocusContext, IsSessionsWindowContext } from '../../../../workbench/common/contextkeys.js';
 import { IChatEntitlementService } from '../../../../workbench/services/chat/common/chatEntitlementService.js';
-import { IAgentsActivityService } from '../../../services/activity/browser/agentsActivityService.js';
-import { ICustomViewService } from '../../../services/customView/browser/customViewService.js';
+import { SessionsCategories } from '../../../common/categories.js';
+import { IWindowCanvasService } from '../../../services/canvas/browser/windowCanvasService.js';
 import { InboxNotificationsView } from './inboxNotificationsView.js';
 import { InboxNotificationsService } from './inboxNotificationsService.js';
 import { IInboxCanvasHostService, UnsupportedInboxCanvasHostService } from './inboxCanvasHost.js';
 import { IInboxNotificationsService } from '../common/inboxNotificationsService.js';
-import { CHAT_INBOX_ENABLED_SETTING, ChatInboxEnabledContext, INBOX_NOTIFICATIONS_VIEW_ID, SHOW_INBOX_NOTIFICATIONS_COMMAND_ID } from './inboxNotificationsConstants.js';
+import { CHAT_INBOX_ENABLED_SETTING, ChatInboxEnabledContext, INBOX_CANVAS_ID, SHOW_INBOX_NOTIFICATIONS_COMMAND_ID } from './inboxNotificationsConstants.js';
 
 registerSingleton(IInboxNotificationsService, InboxNotificationsService, InstantiationType.Delayed);
 registerSingleton(IInboxCanvasHostService, UnsupportedInboxCanvasHostService, InstantiationType.Delayed);
@@ -46,7 +41,7 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).regis
 			scope: ConfigurationScope.MACHINE,
 			included: false,
 			tags: ['experimental', 'advanced'],
-			description: localize('chat.agentSessions.inbox.enabled', "Enables the Sessions Inbox: a prioritized, actionable notifications view. When disabled, the Inbox entry in the Sessions list, the Inbox view, and its Show Inbox command are hidden."),
+			description: localize('chat.agentSessions.inbox.enabled', "Enables the Sessions Inbox: a prioritized, actionable notifications canvas. When disabled, the Inbox entry in the Sessions list, the Inbox canvas, and its Show Inbox command are hidden."),
 			experiment: { mode: 'auto' },
 		},
 	},
@@ -74,44 +69,38 @@ class ChatInboxEnabledContextContribution extends Disposable implements IWorkben
 
 registerWorkbenchContribution2(ChatInboxEnabledContextContribution.ID, ChatInboxEnabledContextContribution, WorkbenchPhase.BlockStartup);
 
-export class InboxNotificationsCustomViewContribution extends Disposable implements IWorkbenchContribution {
+export class InboxNotificationsCanvasContribution extends Disposable implements IWorkbenchContribution {
 
 	static readonly ID = 'workbench.contrib.sessionsInboxNotificationsView';
 
 	constructor(
 		@IConfigurationService configurationService: IConfigurationService,
 		@IChatEntitlementService chatEntitlementService: IChatEntitlementService,
-		@ICustomViewService customViewService: ICustomViewService,
-		@IAgentsActivityService agentsActivityService: IAgentsActivityService,
+		@IWindowCanvasService canvasService: IWindowCanvasService,
 	) {
 		super();
 
 		const inboxEnabled = observableConfigValue(CHAT_INBOX_ENABLED_SETTING, false, configurationService);
 		const enabled = derived(this, reader => inboxEnabled.read(reader) && !chatEntitlementService.sentimentObs.read(reader).hidden);
 		const viewRegistration = this._register(new MutableDisposable());
-		let restore = enabled.get();
-		this._register(toDisposable(() => agentsActivityService.setEnabled(false)));
 		this._register(autorun(reader => {
 			const isEnabled = enabled.read(reader);
-			agentsActivityService.setEnabled(isEnabled);
 			if (isEnabled) {
-				viewRegistration.value = customViewService.registerCustomView({
-					id: INBOX_NOTIFICATIONS_VIEW_ID,
+				viewRegistration.value = canvasService.registerCanvas({
+					id: INBOX_CANVAS_ID,
+					title: localize('inbox.canvas.title', "Inbox"),
+					icon: Codicon.inbox,
 					ctor: new SyncDescriptor(InboxNotificationsView, [undefined, undefined]),
-					openNewSession: () => InboxNotificationsView.getActiveInstance()?.openNewSession(),
-				}, { restore });
-				restore = false;
+				});
 			} else {
-				if (customViewService.activeCustomView.read(undefined)?.id === INBOX_NOTIFICATIONS_VIEW_ID) {
-					customViewService.hideCustomView();
-				}
 				viewRegistration.clear();
+				void canvasService.closeCanvas(INBOX_CANVAS_ID).catch(onUnexpectedError);
 			}
 		}));
 	}
 }
 
-registerWorkbenchContribution2(InboxNotificationsCustomViewContribution.ID, InboxNotificationsCustomViewContribution, WorkbenchPhase.BlockRestore);
+registerWorkbenchContribution2(InboxNotificationsCanvasContribution.ID, InboxNotificationsCanvasContribution, WorkbenchPhase.BlockRestore);
 
 class ShowInboxNotificationsAction extends Action2 {
 
@@ -119,52 +108,15 @@ class ShowInboxNotificationsAction extends Action2 {
 		super({
 			id: SHOW_INBOX_NOTIFICATIONS_COMMAND_ID,
 			title: localize2('sessions.showInboxNotifications', "Show Inbox"),
+			category: SessionsCategories.Sessions,
 			f1: true,
 			precondition: ContextKeyExpr.and(ChatContextKeys.enabled, ChatInboxEnabledContext),
-			keybinding: {
-				weight: KeybindingWeight.SessionsContrib,
-				when: ContextKeyExpr.and(IsSessionsWindowContext, ChatContextKeys.enabled, ChatInboxEnabledContext, EditorAreaFocusContext.negate()),
-				primary: KeyChord(KeyMod.CtrlCmd | KeyCode.KeyK, KeyMod.CtrlCmd | KeyCode.KeyI),
-			},
 		});
 	}
 
-	run(accessor: ServicesAccessor): void {
-		accessor.get(ICustomViewService).showCustomView(INBOX_NOTIFICATIONS_VIEW_ID);
-	}
-}
-
-class ShowInboxAgentMergeAlwaysSpotlightDebugAction extends Action2 {
-
-	constructor() {
-		super({
-			id: 'sessions.inboxNotifications.debug.showAgentMergeAlwaysSpotlight',
-			title: localize2('sessions.debug.showInboxAgentMergeAlwaysSpotlight', "Show Inbox Agent Merge Always Spotlight"),
-			category: Categories.Developer,
-			f1: true,
-			precondition: ContextKeyExpr.and(ChatContextKeys.enabled, ChatInboxEnabledContext, IsDevelopmentContext),
-		});
-	}
-
-	async run(accessor: ServicesAccessor): Promise<void> {
-		const customViewService = accessor.get(ICustomViewService);
-		const notificationService = accessor.get(INotificationService);
-
-		customViewService.showCustomView(INBOX_NOTIFICATIONS_VIEW_ID);
-		await timeout(0);
-
-		const view = InboxNotificationsView.getActiveInstance();
-		if (!view) {
-			notificationService.warn(localize('inboxNotifications.debug.viewUnavailable', "Inbox view is not available. Open Inbox and try again."));
-			return;
-		}
-
-		const shown = await view.debugShowAgentMergeAlwaysSpotlight();
-		if (!shown) {
-			notificationService.warn(localize('inboxNotifications.debug.noEligibleNotification', "No eligible Agent Merge inbox notification is available to spotlight."));
-		}
+	run(accessor: ServicesAccessor): Promise<void> {
+		return accessor.get(IWindowCanvasService).openCanvas(INBOX_CANVAS_ID);
 	}
 }
 
 registerAction2(ShowInboxNotificationsAction);
-registerAction2(ShowInboxAgentMergeAlwaysSpotlightDebugAction);
