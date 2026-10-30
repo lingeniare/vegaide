@@ -188,16 +188,10 @@ export interface IInboxNotificationsService {
 	 */
 	readonly detailSummaries: IObservable<ReadonlyMap<string, IInboxDetailSummary>>;
 
-	/** A request to reveal and focus a notification card in the view, or `undefined`. */
-	readonly revealRequest: IObservable<IInboxNotificationRevealRequest | undefined>;
-
 	publishExternalNotification(notification: IExternalInboxNotification): void;
 	removeExternalNotification(id: string): void;
 	dismissNotification(id: string, snapshot?: IInboxNotificationItem): void;
 	setSortMode(sortMode: InboxNotificationsSortMode): void;
-
-	/** Ask the inbox view to reveal and focus the notification with the given id. */
-	requestReveal(id: string): void;
 
 	/**
 	 * Trigger (once, then cached) generation of the one-line preview for an item. Called by the
@@ -228,15 +222,9 @@ export interface IInboxInteractionTelemetryContext {
 	readonly providerId: string;
 }
 
-export interface IInboxNotificationRevealRequest {
-	readonly id: string;
-	/** Increments on every request so repeated reveals of the same id retrigger. */
-	readonly token: number;
-}
-
-/** A concrete, session-produced artifact an evidence claim is grounded in and links to. */
+/** A concrete source an evidence claim is grounded in and links to. */
 export interface IInboxEvidenceArtifact {
-	readonly kind: 'file' | 'session' | 'command';
+	readonly kind: 'file' | 'session' | 'command' | 'pullRequest';
 	readonly label: string;
 	readonly uri?: URI;
 }
@@ -247,15 +235,13 @@ export interface IInboxDetailEvidence {
 	readonly artifact: IInboxEvidenceArtifact;
 }
 
-/** A structured, model-generated evidence pack shown in the detail pane for a completed session. */
+/** A structured, model-generated evidence pack shown in the notification detail pane. */
 export interface IInboxDetailSummary {
 	readonly status: string;
 	readonly decisions: readonly string[];
 	readonly evidence: readonly IInboxDetailEvidence[];
 }
 
-<<<<<<< HEAD
-=======
 /** Shared PR eligibility for Inbox cards and their repair actions; merge and cleanup remain ownership-gated. */
 export function getInboxPullRequestRefs(session: ISession, reader?: IReader, includeReferences = false): readonly IGitHubPullRequestRef[] {
 	const references = [
@@ -308,7 +294,6 @@ export function getInboxPullRequestMergeOperation(session: ISession, reader?: IR
 	return candidate;
 }
 
->>>>>>> 91c8d266e5f (sessions: isolate Inbox state and deduplicate PR notifications)
 export function compareInboxNotifications(a: IInboxNotificationItem, b: IInboxNotificationItem): number {
 	if (a.priority !== b.priority) {
 		return a.priority - b.priority;
