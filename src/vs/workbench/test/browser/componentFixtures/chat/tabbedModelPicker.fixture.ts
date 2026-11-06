@@ -56,7 +56,7 @@ import { IModelPickerComparison } from '../../../../contrib/chat/browser/widget/
 import { IModelPickerProviderPlaceholder } from '../../../../contrib/chat/browser/widget/input/modelPicker/modelPickerTabs.js';
 import { NullLanguageModelsService } from '../../../../contrib/chat/test/common/languageModels.js';
 import { TestChatEntitlementService } from '../../../common/workbenchTestServices.js';
-import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup, registerWorkbenchServices, ServiceRegistration } from '../fixtureUtils.js';
+import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup, registerWorkbenchServices, ServiceRegistration, waitForFixtureCondition } from '../fixtureUtils.js';
 
 import '../../../../contrib/chat/browser/widget/media/chat.css';
 import '../../../../contrib/chat/browser/widget/input/modelPicker/media/modelPicker.css';
@@ -503,8 +503,12 @@ function registerPickerServices(registration: ServiceRegistration, vega?: boolea
 			id: model.metadata.id,
 			prompt_rub_per_1m: 20 + index * 30,
 			completion_rub_per_1m: 80 + index * 120,
+			input_cache_read_rub_per_1m: 2 + index * 3,
+			input_cache_write_rub_per_1m: 25 + index * 37,
 			prompt_usd_per_1m: 0.25 + index * 0.35,
 			completion_usd_per_1m: 0.9 + index * 1.3,
+			input_cache_read_usd_per_1m: 0.03 + index * 0.04,
+			input_cache_write_usd_per_1m: 0.31 + index * 0.43,
 			currency: 'RUB',
 		})) : [],
 	};
@@ -647,7 +651,7 @@ export async function renderPicker(context: ComponentFixtureContext, options: IP
 	}
 
 	if (options.search) {
-		container.querySelector<HTMLElement>('.tabbed-action-list-tabbar-action[data-id="search"]')?.click();
+		picker.openWithFilter({ initialFilterValue: '' });
 		await new Promise(resolve => setTimeout(resolve, 50));
 	}
 
@@ -685,10 +689,15 @@ export async function renderPicker(context: ComponentFixtureContext, options: IP
 	}
 	if (options.pricingExpanded) {
 		const toggle = container.querySelector<HTMLElement>('.chat-model-card-pricing-toggle');
-		if (!toggle) {
-			throw new Error('Model pricing disclosure not found');
+		if (toggle) {
+			toggle.click();
+		} else {
+			// VEGA's pricing is always expanded, so there is no toggle — the catalog
+			// lands asynchronously and can grow the card past the viewport's fold.
+			await waitForFixtureCondition(() => !!container.querySelector('.chat-model-card-pricing-row')
+				&& !container.getAnimations({ subtree: true }).some(animation => animation.playState !== 'finished'), 'Model pricing did not render');
+			container.querySelector<HTMLElement>('.chat-model-card-pricing')?.scrollIntoView(false);
 		}
-		toggle.click();
 	}
 }
 
@@ -874,7 +883,7 @@ export default defineThemedFixtureGroup({ path: 'chat/input/tabbedModelPicker' }
 	/** VEGA's model details, priced in rubles rather than credits. */
 	PickerVegaDetails: defineComponentFixture({
 		additionalThemes: ['darkHighContrast', 'lightHighContrast'],
-		render: context => renderPicker(context, { vega: true, pricingExpanded: true }),
+		render: context => renderPicker(context, { anchored: true, vega: true, pricingExpanded: true }),
 	}),
 	...Object.fromEntries(Object.entries({
 		PickerWithManagedDefault: { managedDefaultModel: 'gpt-5-5' },

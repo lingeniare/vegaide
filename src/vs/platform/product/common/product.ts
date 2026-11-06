@@ -4,8 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { env } from '../../../base/common/process.js';
+import { language } from '../../../base/common/platform.js';
 import { IProductConfiguration } from '../../../base/common/product.js';
 import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';
+import { withRuBrandNames } from './vegaBranding.js';
 
 interface IPackageConfiguration {
 	readonly version: string;
@@ -103,6 +105,19 @@ else {
 				providerScopes: []
 			}
 		});
+	}
+}
+
+// On a Russian UI the VEGA brand names are spelled in Cyrillic; see vegaBranding.ts.
+if (language === 'ru') {
+	Object.assign(product, {
+		nameShort: product.nameShort ? withRuBrandNames(product.nameShort) : product.nameShort,
+		nameLong: product.nameLong ? withRuBrandNames(product.nameLong) : product.nameLong,
+	});
+	for (const provider of Object.values(product.defaultChatAgent?.provider ?? {})) {
+		if (typeof provider?.name === 'string') {
+			Object.assign(provider, { name: withRuBrandNames(provider.name) });
+		}
 	}
 }
 

@@ -1,7 +1,7 @@
 {
 	"name": "vega-authentication",
-	"displayName": "VEGA Authentication",
-	"description": "VEGA sign-in provider (device flow) for api.vega.chat",
+	"displayName": "%displayName%",
+	"description": "%description%",
 	"publisher": "vscode",
 	"license": "MIT",
 	"version": "0.0.1",
@@ -29,7 +29,7 @@
 	"contributes": {
 		"authentication": [
 			{
-				"label": "VEGA",
+				"label": "%authProviderLabel%",
 				"id": "vega",
 				"authorizationServerGlobs": [
 					"https://api.vega.chat"

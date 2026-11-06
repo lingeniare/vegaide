@@ -16,6 +16,7 @@ import { ILayoutService } from '../../../../platform/layout/browser/layoutServic
 import { KeyCode } from '../../../../base/common/keyCodes.js';
 import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
 import { localize } from '../../../../nls.js';
+import { ruLabel } from '../../../../platform/product/common/vegaBranding.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { renderIcon } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
@@ -168,7 +169,7 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		this.overlay = append(container, $('.onboarding-a-overlay'));
 		this.overlay.setAttribute('role', 'dialog');
 		this.overlay.setAttribute('aria-modal', 'true');
-		this.overlay.setAttribute('aria-label', localize('onboarding.a.aria', "Welcome to VEGA Code"));
+		this.overlay.setAttribute('aria-label', ruLabel(localize('onboarding.a.aria', "Welcome to VEGA Code"), 'Добро пожаловать в ВЕГА КОД'));
 
 		// Card
 		this.card = append(this.overlay, $('.onboarding-a-card'));
@@ -426,7 +427,7 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 				if (!this._footerSignInBtn && !this._userSignedIn) {
 					this._footerSignInBtn = append(this.footerLeft, $<HTMLButtonElement>('button.onboarding-a-signin-nudge-btn'));
 					this._footerSignInBtn.type = 'button';
-					this._footerSignInBtn.textContent = localize('onboarding.sessions.signInNudge', "Sign in to use {0}", defaultChat.provider.default.name);
+					this._footerSignInBtn.textContent = ruLabel(localize('onboarding.sessions.signInNudge', "Sign in to use {0}", defaultChat.provider.default.name), `Войдите, чтобы использовать ${defaultChat.provider.default.name}`);
 					this.stepDisposables.add(addDisposableListener(this._footerSignInBtn, EventType.CLICK, async () => {
 						this._logAction('signInNudge');
 						await this._handleSignIn();
@@ -458,10 +459,10 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		const content = append(wrapper, $('.onboarding-a-signin-content'));
 		const contentMain = append(content, $('.onboarding-a-signin-content-main'));
 		const title = append(contentMain, $('h2.onboarding-a-signin-title'));
-		title.textContent = localize('onboarding.signIn.heroTitle', "Welcome to VEGA Code");
+		title.textContent = ruLabel(localize('onboarding.signIn.heroTitle', "Welcome to VEGA Code"), 'Добро пожаловать в ВЕГА КОД');
 
 		const subtitle = append(contentMain, $('p.onboarding-a-signin-subtitle'));
-		subtitle.textContent = localize('onboarding.signIn.heroSubtitle', "Sign in to use {0}.", defaultChat.provider.default.name);
+		subtitle.textContent = ruLabel(localize('onboarding.signIn.heroSubtitle', "Sign in to use {0}.", defaultChat.provider.default.name), `Войдите, чтобы использовать ${defaultChat.provider.default.name}.`);
 
 		const actions = append(contentMain, $('.onboarding-a-signin-actions'));
 
@@ -490,7 +491,7 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 	}
 
 	private _renderSignInActions(actions: HTMLElement): void {
-		const vegaBtn = this._registerStepFocusable(this._createSignInButton(actions, localize('onboarding.signIn.vega', "Sign in with {0}", defaultChat.provider.default.name), {
+		const vegaBtn = this._registerStepFocusable(this._createSignInButton(actions, ruLabel(localize('onboarding.signIn.vega', "Sign in with {0}", defaultChat.provider.default.name), `Войти через ${defaultChat.provider.default.name}`), {
 			emphasized: true,
 		}));
 		this.stepDisposables.add(addDisposableListener(vegaBtn, EventType.CLICK, () => {

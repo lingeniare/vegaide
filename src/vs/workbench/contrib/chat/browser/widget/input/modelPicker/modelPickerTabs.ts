@@ -182,6 +182,12 @@ export interface IModelPickerSectionsOptions {
 	readonly alwaysShowUnavailableModelIds?: ReadonlySet<string>;
 	/** This build's version, used to spot models gated behind a newer VS Code. */
 	readonly currentVSCodeVersion?: string;
+	/**
+	 * The model's comparable cost. When set, each section orders by it ascending,
+	 * cheapest first; models without a cost sink to the end of their section,
+	 * and ties break by name. Left unset for the picker's name order.
+	 */
+	readonly costOf?: (model: ILanguageModelChatMetadataAndIdentifier) => number | undefined;
 }
 
 /**
@@ -258,17 +264,22 @@ export function buildModelPickerSections(options: IModelPickerSectionsOptions): 
 
 	const byName = (left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier) =>
 		left.metadata.name.localeCompare(right.metadata.name);
+	// Cost ordering, when a cost resolver was supplied, still falls back to names.
+	const byCostOrName = options.costOf
+		? (left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier) =>
+			(options.costOf!(left) ?? Number.MAX_VALUE) - (options.costOf!(right) ?? Number.MAX_VALUE) || byName(left, right)
+		: byName;
 	// A time-limited offer leads the shortlist.
-	const byPromoThenName = (left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier) =>
-		(hasPromo(right) ? 1 : 0) - (hasPromo(left) ? 1 : 0) || byName(left, right);
+	const byPromoThenCostOrName = (left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier) =>
+		(hasPromo(right) ? 1 : 0) - (hasPromo(left) ? 1 : 0) || byCostOrName(left, right);
 	// A retiring model stays pickable but sinks to the end.
-	const byRetiringThenName = (left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier) =>
-		(isDeprecated(left) ? 1 : 0) - (isDeprecated(right) ? 1 : 0) || byName(left, right);
-	const rest = selectable.filter(model => !placed.has(model.identifier)).sort(byRetiringThenName);
+	const byRetiringThenCostOrName = (left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier) =>
+		(isDeprecated(left) ? 1 : 0) - (isDeprecated(right) ? 1 : 0) || byCostOrName(left, right);
+	const rest = selectable.filter(model => !placed.has(model.identifier)).sort(byRetiringThenCostOrName);
 
 	return {
-		pinned: pinned.sort(byName),
-		suggested: suggested.sort(byPromoThenName),
+		pinned: pinned.sort(byCostOrName),
+		suggested: suggested.sort(byPromoThenCostOrName),
 		other: rest,
 		unavailable,
 		speedVariants,

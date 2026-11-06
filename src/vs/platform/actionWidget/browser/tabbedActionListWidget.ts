@@ -446,9 +446,19 @@ export class TabbedActionListWidget extends Disposable {
 
 				const { items, listOptions } = options.createActionList(activeTab);
 				const emptyBody = items.length === 0 ? this._renderEmptyBody(bodyContent, options, activeTab, renderDisposables) : undefined;
-				const getExpandedPopupHeight = () => widget.offsetHeight - body.offsetHeight + bodyContent.offsetHeight;
+				// Measured through bounding rects rather than offsetHeight: a popup
+				// clamped to its anchor's space lands on a sub-pixel height, and the
+				// integer metric would lose that fraction for the next tab's layout.
+				const getExpandedPopupHeight = () => widget.getBoundingClientRect().height - body.getBoundingClientRect().height + bodyContent.getBoundingClientRect().height;
+				const getFractionalContentHeight = (element: HTMLElement) => {
+					const style = dom.getComputedStyle(element);
+					const toPixels = (value: string) => Number.parseFloat(value) || 0;
+					const border = toPixels(style.borderTopWidth) + toPixels(style.borderBottomWidth);
+					const padding = toPixels(style.paddingTop) + toPixels(style.paddingBottom);
+					return element.getBoundingClientRect().height - border - padding;
+				};
 				// Padding belongs to the popup's chrome, not the list's content height.
-				const getChromeHeight = (listElement: HTMLElement) => getExpandedPopupHeight() - (emptyBody ? emptyBody.offsetHeight : dom.getContentHeight(listElement));
+				const getChromeHeight = (listElement: HTMLElement) => getExpandedPopupHeight() - (emptyBody ? emptyBody.getBoundingClientRect().height : getFractionalContentHeight(listElement));
 				const list = renderDisposables.add(this._instantiationService.createInstance(
 					ActionList<T>,
 					options.user,

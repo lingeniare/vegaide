@@ -1,0 +1,5 @@
+{
+	"displayName": "Аутентификация ВЕГА",
+	"description": "Провайдер входа ВЕГА (device flow) для api.vega.chat",
+	"authProviderLabel": "ВЕГА"
+}

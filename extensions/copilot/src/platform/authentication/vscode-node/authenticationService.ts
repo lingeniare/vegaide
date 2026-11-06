@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as l10n from '@vscode/l10n';
-import { authentication, AuthenticationGetSessionOptions, AuthenticationSession } from 'vscode';
+import { authentication, AuthenticationGetSessionOptions, AuthenticationSession, env } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
 import { runOnChange } from '../../../util/vs/base/common/observable';
 import { AuthProviderId, ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';
@@ -15,6 +15,13 @@ import { ICopilotTokenStore } from '../common/copilotTokenStore';
 import { authenticationSessionIdentityEquals, resolveGitHubSessionUri } from '../common/enterprise';
 import { isVegaAuthSession } from '../common/vega';
 import { getAlignedSession, getAnyAuthSession } from './session';
+
+// The language packs predate the fork's VEGA branding; on a Russian UI these
+// messages come from a hardcoded Russian copy, `l10n.t` serves other locales.
+const isRussian = env.language === 'ru';
+const vegaProviderMessage = () => isRussian
+	? 'Вход через GitHub недоступен: чат в этой сборке предоставляется ВЕГА.'
+	: l10n.t('GitHub sign-in is not available because chat in this build is provided by VEGA.');
 
 export class AuthenticationService extends BaseAuthenticationService {
 	private _taskSingler = new TaskSingler<AuthenticationSession | undefined>();
@@ -54,7 +61,7 @@ export class AuthenticationService extends BaseAuthenticationService {
 		if (interactive && providerId === AuthProviderId.Vega) {
 			// GitHub REST callers must never trigger the VEGA device flow with a
 			// "Sign in to GitHub" prompt — fail before any interactive request.
-			throw new Error(l10n.t('GitHub sign-in is not available because chat in this build is provided by VEGA.'));
+			throw new Error(vegaProviderMessage());
 		}
 		const func = async () => {
 			const session = kind === 'permissive' ? await getAlignedSession(this._configurationService, options) : await getAnyAuthSession(this._configurationService, options);
@@ -83,7 +90,7 @@ export class AuthenticationService extends BaseAuthenticationService {
 			// change detection keeps working, but callers of this GitHub API
 			// must never receive the key.
 			if (interactive) {
-				throw new Error(l10n.t('GitHub sign-in is not available because chat in this build is provided by VEGA.'));
+				throw new Error(vegaProviderMessage());
 			}
 			return undefined;
 		}

@@ -27,6 +27,7 @@ import { URI } from '../../../../base/common/uri.js';
 import Severity from '../../../../base/common/severity.js';
 import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
 import { isWeb } from '../../../../base/common/platform.js';
+import { withRuBrandNames } from '../../../../platform/product/common/vegaBranding.js';
 import { ILifecycleService } from '../../lifecycle/common/lifecycle.js';
 import { Mutable } from '../../../../base/common/types.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
@@ -283,7 +284,7 @@ export function isProUser(chatEntitlement: ChatEntitlement): boolean {
  */
 export function getChatPlanName(chatEntitlement: ChatEntitlement, sku?: string): string {
 	if (sku === 'vega') {
-		return 'VEGA';
+		return withRuBrandNames('VEGA');
 	}
 	switch (chatEntitlement) {
 		case ChatEntitlement.EDU:

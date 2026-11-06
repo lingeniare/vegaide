@@ -21,7 +21,7 @@ import { URI } from '../../../../../../../base/common/uri.js';
 import { localize } from '../../../../../../../nls.js';
 import { IOpenerService } from '../../../../../../../platform/opener/common/opener.js';
 import { getModelContextWindowTotal, ILanguageModelChatMetadata, ILanguageModelChatMetadataAndIdentifier } from '../../../../common/languageModels.js';
-import { formatModelCost, getCreditsPerMillionTokensLabel, getMaxContextLabel, getModelCostMetrics, renderModelDescription } from './modelPickerDetails.js';
+import { formatModelCost, getCreditsPerMillionTokensLabel, getMaxContextLabel, getModelCostMetrics, pricingLabel, renderModelDescription } from './modelPickerDetails.js';
 import { createMessageBanner, HYDRA_FUSION_LEARN_MORE_URL } from './modelPickerHover.js';
 import { getChangedModelConfigProperties, getModelConfigChoices, getModelConfigProperty, IModelConfigProperty, IModelConfigurationAccess, isExtendedContext, MODEL_CONFIG_GROUP_CONTEXT, MODEL_CONFIG_GROUP_EFFORT, ModelConfigChangeListener, setModelConfigValues } from './modelPickerModelConfig.js';
 import { getCategoryLabel, getPriceCategoryLabel, getRoutingModelBadge, isAutoModel, isHighCostCategory, isHydraFusionModel, isMultiplierPricing } from './modelPickerPresentation.js';
@@ -820,23 +820,32 @@ export class ModelCard extends DisposableStore {
 		const currency = this._options.vegaPricingCurrency ?? 'rub';
 		const rows: { label: string; value: string }[] = [];
 		if (pricing.promptPer1M !== undefined) {
-			rows.push({ label: localize('models.inputCostLabel', "Input"), value: formatVegaPrice(pricing.promptPer1M, currency) });
+			rows.push({ label: pricingLabel(localize('models.inputCostLabel', "Input"), 'Вход'), value: formatVegaPrice(pricing.promptPer1M, currency) });
 		}
 		if (pricing.completionPer1M !== undefined) {
-			rows.push({ label: localize('models.outputCostLabel', "Output"), value: formatVegaPrice(pricing.completionPer1M, currency) });
+			rows.push({ label: pricingLabel(localize('models.outputCostLabel', "Output"), 'Выход'), value: formatVegaPrice(pricing.completionPer1M, currency) });
+		}
+		if (pricing.cacheReadPer1M !== undefined) {
+			rows.push({ label: pricingLabel(localize('models.cacheCostLabel', "Cache Read"), 'Чтение кэша'), value: formatVegaPrice(pricing.cacheReadPer1M, currency) });
+		}
+		if (pricing.cacheWritePer1M !== undefined) {
+			rows.push({ label: pricingLabel(localize('models.cacheWriteCostLabel', "Cache Write"), 'Запись в кэш'), value: formatVegaPrice(pricing.cacheWritePer1M, currency) });
 		}
 		if (pricing.imagePer1M !== undefined) {
-			rows.push({ label: localize('models.imageCostLabel', "Image"), value: formatVegaPrice(pricing.imagePer1M, currency) });
+			rows.push({ label: pricingLabel(localize('models.imageCostLabel', "Image"), 'Изображения'), value: formatVegaPrice(pricing.imagePer1M, currency) });
 		}
 		if (pricing.requestFee !== undefined) {
-			rows.push({ label: localize('models.requestCostLabel', "Per request"), value: formatVegaPrice(pricing.requestFee, currency) });
+			rows.push({ label: pricingLabel(localize('models.requestCostLabel', "Per request"), 'За запрос'), value: formatVegaPrice(pricing.requestFee, currency) });
 		}
 		if (pricing.imageFee !== undefined) {
-			rows.push({ label: localize('models.perImageCostLabel', "Per image"), value: formatVegaPrice(pricing.imageFee, currency) });
+			rows.push({ label: pricingLabel(localize('models.perImageCostLabel', "Per image"), 'За изображение'), value: formatVegaPrice(pricing.imageFee, currency) });
 		}
 		if (rows.length) {
 			this._renderPricingSection(
-				localize('models.vegaPricePerMillionTokens', "{0} per 1M tokens", currency === 'rub' ? '₽' : '$'),
+				pricingLabel(
+					localize('models.vegaPricePerMillionTokens', "{0} per 1M tokens", currency === 'rub' ? '₽' : '$'),
+					`${currency === 'rub' ? '₽' : '$'} за 1 млн токенов`,
+				),
 				rows,
 				getPriceCategoryLabel(this._options.model.metadata.priceCategory),
 				true,
@@ -863,7 +872,7 @@ export class ModelCard extends DisposableStore {
 				disclosure.setExpanded(!disclosure.isExpanded());
 			}));
 		}
-		dom.append(heading, dom.$('span.chat-model-card-section-title', undefined, localize('models.pricingDetails', "Pricing details")));
+		dom.append(heading, dom.$('span.chat-model-card-section-title', undefined, pricingLabel(localize('models.pricingDetails', "Pricing details"), 'Стоимость')));
 		if (badge) {
 			this._renderBadge(heading, badge, isHighCostCategory(this._options.model.metadata.priceCategory));
 		}

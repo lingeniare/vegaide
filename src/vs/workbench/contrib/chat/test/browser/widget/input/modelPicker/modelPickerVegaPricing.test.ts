@@ -71,6 +71,8 @@ suite('modelPickerVegaPricing', () => {
 					model: 'z-ai/glm-4.6',
 					prompt_rub_per_1m: 30.5,
 					completion_rub_per_1m: 91.25,
+					input_cache_read_rub_per_1m: 3.05,
+					input_cache_write_rub_per_1m: 38.1,
 					image_rub_per_1m: 10,
 					request_rub: 0.25,
 					image_rub: 4,
@@ -80,7 +82,7 @@ suite('modelPickerVegaPricing', () => {
 		const pricing = await getVegaPricing(authenticationService(apiKey), service, new NullLogService(), CancellationToken.None, 'rub');
 		assert.ok(calls[0]?.startsWith('https://api.vega.chat/api/v1/pricing?'), calls[0]);
 		assert.deepStrictEqual(pricing?.get('z-ai/glm-4.6'), {
-			promptPer1M: 30.5, completionPer1M: 91.25, imagePer1M: 10, requestFee: 0.25, imageFee: 4,
+			promptPer1M: 30.5, completionPer1M: 91.25, cacheReadPer1M: 3.05, cacheWritePer1M: 38.1, imagePer1M: 10, requestFee: 0.25, imageFee: 4,
 		});
 	});
 
@@ -91,6 +93,8 @@ suite('modelPickerVegaPricing', () => {
 				id: 'z-ai/glm-4.6',
 				prompt_usd_per_1m: 30.5,
 				completion_usd_per_1m: 91.25,
+				cache_read_usd_per_1m: 0.031,
+				cache_write_usd_per_1m: 0.38,
 				image_usd_per_1m: null,
 				request_usd: 0.00025,
 				image_usd: 0.004,
@@ -100,7 +104,7 @@ suite('modelPickerVegaPricing', () => {
 		const pricing = await getVegaPricing(authenticationService(apiKey), service, new NullLogService(), CancellationToken.None, 'usd');
 		assert.ok(calls[0]?.startsWith('https://api.vega.chat/api/v1/pricing?'), calls[0]);
 		assert.deepStrictEqual(pricing?.get('z-ai/glm-4.6'), {
-			promptPer1M: 30.5, completionPer1M: 91.25, imagePer1M: undefined, requestFee: 0.00025, imageFee: 0.004,
+			promptPer1M: 30.5, completionPer1M: 91.25, cacheReadPer1M: 0.031, cacheWritePer1M: 0.38, imagePer1M: undefined, requestFee: 0.00025, imageFee: 0.004,
 		});
 	});
 

@@ -53,7 +53,7 @@ import { getModelPickerAccessibilityProvider, getModelPickerControlModels } from
 import { filterModelPickerControlModelsForEntitlement, filterModelPickerModelsForEntitlement, getFusionDiscountPercent, getFusionTierLabel, getHydraFusionTierLabel, getRoutingModelBadge, isAutoModel, isHydraFusionModel, isHydraFusionUpgradeOnly } from './modelPickerPresentation.js';
 import { buildModelPickerDestinations, buildModelPickerSections, getModelProviderLabel, hasPromotedModels, IModelPickerDestination, IModelPickerProviderPlaceholder, IModelPickerSections, IModelPickerUnavailableEntry, MODEL_PICKER_BUILT_IN_DESTINATION, MODEL_PICKER_ON_DEVICE_DESTINATION } from './modelPickerTabs.js';
 import { ModelPickerWelcome } from './modelPickerWelcome.js';
-import { getVegaPricing, vegaPricingForModel, IVegaModelPricing } from './modelPickerVegaPricing.js';
+import { getVegaPricing, vegaPricingCost, vegaPricingForModel, IVegaModelPricing } from './modelPickerVegaPricing.js';
 import { createMessageBanner } from './modelPickerHover.js';
 import { createLocalModelDetailsAction, isLocalModelDirectRow, LOCAL_MODEL_DETAILS_ACTION_ID, LOCAL_MODEL_PICKER_ITEM_PREFIX, type ILocalModelDetails, type IModelPickerLocalModels } from './modelPickerLocalModelItems.js';
 import { LocalModelCard } from './modelPickerLocalModelCard.js';
@@ -67,6 +67,7 @@ const VEGA_PICKER_WIDTH = 280;
 const COMPARISON_PICKER_WIDTH = 420;
 const PRICING_EXPANDED_STORAGE_KEY = 'chat.modelPicker.pricingExpanded';
 const OTHER_MODELS_EXPANDED_STORAGE_KEY = 'chat.modelPicker.otherModelsExpanded';
+const SORT_BY_COST_STORAGE_KEY = 'chat.modelPicker.sortByCost';
 const MODEL_DETAILS_ACTION_ID = 'chat.modelPicker.details';
 
 function isComparisonConfigurationValue(value: unknown): value is string | number | boolean | null {
@@ -532,7 +533,6 @@ export class TabbedModelPicker extends Disposable {
 				return context;
 			} : undefined,
 			tabLabels: 'active',
-			filterInTabBar: true,
 			width: step ? COMPARISON_PICKER_WIDTH : this._isVegaProduct ? VEGA_PICKER_WIDTH : PICKER_WIDTH,
 			createActionList: (activeTab, forSizing) => {
 				const current = forSizing ? this._context ?? baseContext : this._getActiveContext(this._context ?? baseContext);
@@ -553,20 +553,23 @@ export class TabbedModelPicker extends Disposable {
 					stopToolbarPointerPropagation: true,
 					tabThroughItemActions: true,
 					detailItemHeight: 64,
-					showFilter: searching,
+					// The search field is always shown; typing in it flattens the
+					// list into cross-provider results, and clearing it restores the tabs.
+					showFilter: true,
 					filterPlaceholder: localize('chat.modelPicker.search', "Search models"),
 					focusFilterOnOpen: searching,
 					initialFilterValue,
 					initialFocusItemId,
 					filterAsCombobox: true,
-					onType: text => {
-						this._searchVisible = true;
-						current.onDidSearch();
-						this._showCurrent(text);
-					},
+					filterActions: this._buildFilterActions(current),
 					onDidChangeFilter: text => {
 						this._filterValue = text;
 						current.onDidSearch();
+						const searching = !!text;
+						if (searching !== this._searchVisible) {
+							this._searchVisible = searching;
+							this._showCurrent(text || undefined);
+						}
 					},
 					headerText: hint?.text,
 					headerIcon: hint ? Codicon.info : undefined,
@@ -806,6 +809,7 @@ export class TabbedModelPicker extends Disposable {
 				? new Set([COPILOT_HYDRA_FUSION_MODEL_ID])
 				: undefined,
 			currentVSCodeVersion: context.unavailableContext.currentVSCodeVersion,
+			costOf: this._sortByCost ? model => this._modelSortCost(model) : undefined,
 		});
 		for (const [id, pair] of sections.speedVariants) {
 			this._speedVariants.set(id, pair);
@@ -870,7 +874,7 @@ export class TabbedModelPicker extends Disposable {
 				},
 			});
 		}
-		// Hidden while searching, when the filter takes the tab strip's place.
+		// Hidden while searching, when the flattened results span every tab anyway.
 		if (context.showManageModels && !this._searchVisible && !comparison?.state.get()) {
 			actions.push({
 				id: 'addProvider',
@@ -883,24 +887,43 @@ export class TabbedModelPicker extends Disposable {
 				},
 			});
 		}
-		// With no models there is nothing to search, only the reason shown in their place.
-		if (context.models.length) {
-			actions.push({
-				id: 'search',
-				icon: Codicon.search,
-				tooltip: localize('chat.modelPicker.searchToggle', "Search Models"),
-				alignEnd: true,
-				checked: this._searchVisible,
-				run: () => {
-					this._searchVisible = !this._searchVisible;
-					if (this._searchVisible) {
-						context.onDidSearch();
-					}
-					this._showCurrent();
-				},
-			});
-		}
 		return actions;
+	}
+
+	/** Actions rendered inside the permanent filter row, at the search field's right edge. */
+	private _buildFilterActions(context: ITabbedModelPickerContext): readonly IAction[] {
+		// With no models there is nothing to sort, only the reason shown in their place.
+		if (!context.models.length) {
+			return [];
+		}
+		return [toAction({
+			id: 'chat.modelPicker.toggleSortByCost',
+			label: this._sortByCost
+				? localize('chat.modelPicker.sortByName', "Sort by Name")
+				: localize('chat.modelPicker.sortByCost', "Sort by Cost: Low to High"),
+			tooltip: this._sortByCost
+				? localize('chat.modelPicker.sortByCostTooltip', "Sorted by cost, low to high — switch to sort by name")
+				: localize('chat.modelPicker.sortByNameTooltip', "Sorted by name — switch to sort by cost, low to high"),
+			class: ThemeIcon.asClassName(Codicon.sortPrecedence),
+			checked: this._sortByCost,
+			run: () => {
+				this._storageService.store(SORT_BY_COST_STORAGE_KEY, !this._sortByCost, StorageScope.APPLICATION, StorageTarget.USER);
+				this._showCurrent(this._filterValue || undefined);
+			},
+		})];
+	}
+
+	/** Whether model rows sort by their cost, remembered across sessions. */
+	private get _sortByCost(): boolean {
+		return this._storageService.getBoolean(SORT_BY_COST_STORAGE_KEY, StorageScope.APPLICATION, false);
+	}
+
+	/** The model's sortable cost: VEGA's catalog pricing, or the provider's request multiplier. */
+	private _modelSortCost(model: ILanguageModelChatMetadataAndIdentifier): number | undefined {
+		if (this._isVegaProduct) {
+			return vegaPricingCost(vegaPricingForModel(this._vegaPricing, model));
+		}
+		return model.metadata.multiplierNumeric;
 	}
 
 	private _labelWithKeybinding(label: string, commandId: string | undefined, context?: IContextKeyService): string {
@@ -1083,7 +1106,7 @@ export class TabbedModelPicker extends Disposable {
 		// On-device models are found under the name of their tab, which no provider shares.
 		if (destination.id === MODEL_PICKER_ON_DEVICE_DESTINATION) {
 			return [...destination.models]
-				.sort((left, right) => left.metadata.name.localeCompare(right.metadata.name))
+				.sort((left, right) => this._compareSearchRows(left, right, context))
 				.map(model => this._createModelItem(model, context, undefined, destination.label));
 		}
 		const routingModels = destination.id === MODEL_PICKER_BUILT_IN_DESTINATION
@@ -1091,8 +1114,19 @@ export class TabbedModelPicker extends Disposable {
 			: [];
 		const modelToProviderGroup = this._modelToProviderGroup(context);
 		return [...sections.pinned, ...sections.suggested, ...sections.other, ...routingModels]
-			.sort((left, right) => this._getRowLabel(left, context).localeCompare(this._getRowLabel(right, context)))
+			.sort((left, right) => this._compareSearchRows(left, right, context))
 			.map(model => this._createModelItem(model, context, undefined, getModelProviderLabel(model, this._languageModelsService, modelToProviderGroup)));
+	}
+
+	/** Search result order: cost ascending when that sort is on, otherwise the row label. */
+	private _compareSearchRows(left: ILanguageModelChatMetadataAndIdentifier, right: ILanguageModelChatMetadataAndIdentifier, context: ITabbedModelPickerContext): number {
+		if (this._sortByCost) {
+			const byCost = (this._modelSortCost(left) ?? Number.MAX_VALUE) - (this._modelSortCost(right) ?? Number.MAX_VALUE);
+			if (byCost) {
+				return byCost;
+			}
+		}
+		return this._getRowLabel(left, context).localeCompare(this._getRowLabel(right, context));
 	}
 
 	/** The installed on-device models' direct rows, listed only in the "On This Device" tab. */

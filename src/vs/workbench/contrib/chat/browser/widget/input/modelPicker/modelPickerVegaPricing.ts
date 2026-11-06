@@ -18,6 +18,10 @@ export interface IVegaModelPricing {
 	readonly promptPer1M?: number;
 	/** Currency per 1M completion tokens. */
 	readonly completionPer1M?: number;
+	/** Currency per 1M cached prompt tokens read back. */
+	readonly cacheReadPer1M?: number;
+	/** Currency per 1M prompt tokens written to the cache. */
+	readonly cacheWritePer1M?: number;
 	/** Currency per 1M image tokens. */
 	readonly imagePer1M?: number;
 	/** Flat fee per request. */
@@ -113,12 +117,16 @@ function parsePricingEntries(json: unknown, currency: VegaPricingCurrency): Map<
 		entries.set(id.toLowerCase(), currency === 'rub' ? {
 			promptPer1M: asNumber(raw.prompt_rub_per_1m),
 			completionPer1M: asNumber(raw.completion_rub_per_1m),
+			cacheReadPer1M: asNumberOf(raw, 'input_cache_read_rub_per_1m', 'cache_read_rub_per_1m'),
+			cacheWritePer1M: asNumberOf(raw, 'input_cache_write_rub_per_1m', 'cache_write_rub_per_1m'),
 			imagePer1M: asNumber(raw.image_rub_per_1m),
 			requestFee: asNumber(raw.request_rub),
 			imageFee: asNumber(raw.image_rub),
 		} : {
 			promptPer1M: asNumber(raw.prompt_usd_per_1m),
 			completionPer1M: asNumber(raw.completion_usd_per_1m),
+			cacheReadPer1M: asNumberOf(raw, 'input_cache_read_usd_per_1m', 'cache_read_usd_per_1m'),
+			cacheWritePer1M: asNumberOf(raw, 'input_cache_write_usd_per_1m', 'cache_write_usd_per_1m'),
 			imagePer1M: asNumber(raw.image_usd_per_1m),
 			requestFee: asNumber(raw.request_usd),
 			imageFee: asNumber(raw.image_usd),
@@ -151,6 +159,21 @@ export function vegaPricingForModel(
 	return undefined;
 }
 
+/**
+ * The model's cost as one comparable number, for sorting: the token price for
+ * a million in plus a million out, or whatever the model charges instead when
+ * it has no token price. `undefined` means the price is unknown.
+ */
+export function vegaPricingCost(pricing: IVegaModelPricing | undefined): number | undefined {
+	if (!pricing) {
+		return undefined;
+	}
+	if (pricing.promptPer1M !== undefined || pricing.completionPer1M !== undefined) {
+		return (pricing.promptPer1M ?? 0) + (pricing.completionPer1M ?? 0);
+	}
+	return pricing.imagePer1M ?? pricing.requestFee ?? pricing.imageFee;
+}
+
 /** Formats one price row, keeping whole amounts plain and small prices readable. */
 export function formatVegaPrice(value: number, currency: VegaPricingCurrency): string {
 	const rounded = Math.abs(value) >= 1 ? Math.round(value * 100) / 100 : Number(value.toPrecision(3));
@@ -172,4 +195,15 @@ function asString(value: unknown): string | undefined {
 function asNumber(value: unknown): number | undefined {
 	const parsed = typeof value === 'string' ? Number(value) : value;
 	return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** The first listed spelling the payload actually carries, e.g. OpenRouter's `input_cache_*` or a shortened `cache_*`. */
+function asNumberOf(raw: Record<string, unknown>, ...keys: string[]): number | undefined {
+	for (const key of keys) {
+		const parsed = asNumber(raw[key]);
+		if (parsed !== undefined) {
+			return parsed;
+		}
+	}
+	return undefined;
 }

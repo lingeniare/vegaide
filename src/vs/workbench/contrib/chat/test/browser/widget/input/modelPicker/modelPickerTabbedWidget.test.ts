@@ -345,8 +345,8 @@ suite('TabbedModelPicker', () => {
 		};
 	}
 
-	function element(container: ParentNode, selector: string): HTMLElement {
-		const element = container.querySelector<HTMLElement>(selector);
+	function element<T extends HTMLElement = HTMLElement>(container: ParentNode, selector: string): T {
+		const element = container.querySelector<T>(selector);
 		assert.ok(element, selector);
 		return element;
 	}
@@ -478,24 +478,33 @@ suite('TabbedModelPicker', () => {
 		const { popup, picker, selections, values } = createPicker({ models: [createAutoModel(), createHydraFusionModel(), promotional, ...models.slice(1)], comparison, showManageModels: true });
 		const hides: boolean[] = [];
 		disposables.add(picker.onDidHide(event => hides.push(event.finishedComparison)));
-		const searchAction = element(popup, '[data-id="search"]');
+		const filterInput = element<HTMLInputElement>(popup, 'input.action-list-filter-input');
+		const sortAction = element(popup, '.action-list-filter-actions .action-label');
 		assert.deepStrictEqual({
 			actions: [...popup.querySelectorAll<HTMLElement>('.tabbed-action-list-tabbar > .tabbed-action-list-tabbar-action')].map(action => action.dataset.id),
 			addProvider: !!popup.querySelector('[data-id="addProvider"]'),
 			comparison: popup.querySelector('[data-id="comparison"]')?.getAttribute('aria-pressed'),
 			footer: element(popup, '.tabbed-action-list-footer .monaco-button').getAttribute('aria-label'),
 			search: {
-				ariaLabel: searchAction.getAttribute('aria-label'),
-				htmlTitle: searchAction.getAttribute('title'),
+				placeholder: filterInput.placeholder,
+				combobox: filterInput.getAttribute('role'),
+			},
+			sort: {
+				ariaLabel: sortAction.getAttribute('aria-label'),
+				pressed: sortAction.getAttribute('aria-pressed'),
 			},
 		}, {
-			actions: ['comparison', 'search'],
+			actions: ['comparison'],
 			addProvider: true,
 			comparison: 'false',
 			footer: 'Send Query to Multiple Models',
 			search: {
-				ariaLabel: 'Search Models',
-				htmlTitle: 'Search Models',
+				placeholder: 'Search models',
+				combobox: 'combobox',
+			},
+			sort: {
+				ariaLabel: 'Sorted by name — switch to sort by cost, low to high',
+				pressed: 'false',
 			},
 		});
 		element(popup, '.tabbed-action-list-footer .monaco-button').click();
@@ -1202,7 +1211,6 @@ suite('TabbedModelPicker', () => {
 			const result = createPicker({ comparison });
 			const { picker, popup } = result;
 			element(popup, '[aria-label="Compare Models"]').click();
-			element(popup, '[data-id="search"]').click();
 			const filterInput = popup.querySelector<HTMLInputElement>('input')!;
 			filterInput.value = 'Fi';
 			filterInput.dispatchEvent(new InputEvent('input', { bubbles: true }));
@@ -1238,11 +1246,10 @@ suite('TabbedModelPicker', () => {
 				activeElement.value += 'x';
 				activeElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
 			}
-			assert.strictEqual(filterInput.value, 'Fix');
+			assert.strictEqual(popup.querySelector<HTMLInputElement>('input')?.value, 'Fix');
 			picker.hide();
 			reopen(result);
 			element(popup, '[aria-label="Compare Models"]').click();
-			element(popup, '[data-id="search"]').click();
 			assert.strictEqual(popup.querySelector<HTMLInputElement>('input')?.value, '');
 		});
 	}
@@ -1267,10 +1274,8 @@ suite('TabbedModelPicker', () => {
 				comparison, realContextView: true, anchorTop: '400px',
 				models: Array.from({ length: 30 }, (_, index) => model(`Choice ${String(index).padStart(2, '0')}`)),
 			});
-			element(popup, '[data-id="search"]').click();
+			picker.openWithFilter({ initialFilterValue: query });
 			const input = popup.querySelector<HTMLInputElement>('input')!;
-			input.value = query;
-			input.dispatchEvent(new InputEvent('input', { bubbles: true }));
 			for (let index = 0; index < 25; index++) {
 				input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 40, bubbles: true }));
 			}
@@ -1367,9 +1372,7 @@ suite('TabbedModelPicker', () => {
 			const { picker, popup, selections } = createPicker({ models: [...models, createAutoModel()] });
 			let hidden = 0;
 			disposables.add(picker.onDidHide(() => hidden++));
-			if (target === 'search') {
-				element(popup, '[data-id="search"]').click();
-			} else if (target === 'details' || target === 'detailsControl' || target === 'back') {
+			if (target === 'details' || target === 'detailsControl' || target === 'back') {
 				openDetails(popup, 'First');
 			}
 			const selectors = {
@@ -1477,7 +1480,9 @@ suite('TabbedModelPicker', () => {
 				}],
 			});
 			if (badge === 'Copilot') {
-				element(popup, '[data-id="search"]').click();
+				const input = element<HTMLInputElement>(popup, 'input.action-list-filter-input');
+				input.value = 'First';
+				input.dispatchEvent(new InputEvent('input', { bubbles: true }));
 			}
 			const row = element(popup, '.chat-model-picker-org-default-badge').closest('.monaco-list-row')!;
 			assert.deepStrictEqual({
@@ -1879,8 +1884,7 @@ suite('TabbedModelPicker', () => {
 		const reopened = selectedModels(result.popup);
 		element(result.popup, '.chat-model-picker-tabbar [aria-label="Ollama"]').click();
 		const otherProvider = listRows(result.popup);
-		element(result.popup, '[data-id="search"]').click();
-		const input = result.popup.querySelector<HTMLInputElement>('input')!;
+		const input = element<HTMLInputElement>(result.popup, 'input.action-list-filter-input');
 		input.value = 'HydraFusion';
 		input.dispatchEvent(new InputEvent('input', { bubbles: true }));
 		const searchResults = Array.from(result.popup.querySelectorAll('.chat-model-picker-model .title'), title => title.textContent);
@@ -2286,7 +2290,6 @@ suite('TabbedModelPicker', () => {
 
 	test('search finds on-device models under the name of their tab', () => {
 		const { popup } = createPicker({ models: [...copilotModels, ollamaModel, exampleFlash, qwen], localModels: onDevicePresentation() });
-		element(popup, '[data-id="search"]').click();
 		// Each query narrows the results to rows that fit beside one another in the popup.
 		const search = (query: string) => {
 			const input = popup.querySelector<HTMLInputElement>('input')!;
@@ -2460,7 +2463,6 @@ suite('TabbedModelPicker', () => {
 			}
 			const label = expected?.model ?? 'HydraFusion';
 			const listAction = !!popup.querySelector(`[aria-label^="${label} Details"]`);
-			element(popup, '[data-id="search"]').click();
 			const input = popup.querySelector<HTMLInputElement>('input')!;
 			input.value = label;
 			input.dispatchEvent(new InputEvent('input', { bubbles: true }));
@@ -2943,6 +2945,67 @@ suite('TabbedModelPicker', () => {
 			multiplierInCard: false,
 			maxContextInCard: false,
 			selections: [],
+		});
+	});
+
+	test('the sort button in the search row toggles between name and cost order', () => {
+		const priced = (name: string, multiplierNumeric?: number) => {
+			const pricedModel = model(name);
+			pricedModel.metadata = {
+				...pricedModel.metadata,
+				multiplierNumeric,
+				pricing: multiplierNumeric !== undefined ? `${multiplierNumeric}x` : undefined,
+			};
+			return pricedModel;
+		};
+		const result = createPicker({ models: [priced('Alpha', 5), priced('Beta', 1), priced('Delta', 0.5), priced('Gamma')] });
+		const rows = () => listRows(result.popup);
+		const sort = () => element(result.popup, '.action-list-filter-actions .action-label');
+		const before = {
+			rows: rows(),
+			ariaLabel: sort().getAttribute('aria-label'),
+			pressed: sort().getAttribute('aria-pressed'),
+		};
+		sort().click();
+		const byCost = {
+			rows: rows(),
+			ariaLabel: sort().getAttribute('aria-label'),
+			pressed: sort().getAttribute('aria-pressed'),
+		};
+		sort().click();
+		assert.deepStrictEqual({ before, byCost, byName: { rows: rows(), ariaLabel: sort().getAttribute('aria-label'), pressed: sort().getAttribute('aria-pressed') }, selections: result.selections }, {
+			before: { rows: ['Alpha', 'Beta', 'Delta', 'Gamma'], ariaLabel: 'Sorted by name — switch to sort by cost, low to high', pressed: 'false' },
+			byCost: { rows: ['Delta', 'Beta', 'Alpha', 'Gamma'], ariaLabel: 'Sorted by cost, low to high — switch to sort by name', pressed: 'true' },
+			byName: before,
+			selections: [],
+		});
+	});
+
+	test('on VEGA the sort button orders models by their catalog price, in the list and in search', async () => {
+		const result = createPicker({
+			vega: true,
+			vegaSession: true,
+			models: [model('model-a'), model('model-b'), model('model-c'), model('unpriced')],
+			vegaPricingResponse: {
+				data: [
+					{ id: 'model-a', prompt_usd_per_1m: 20, completion_usd_per_1m: 10 },
+					{ id: 'model-b', prompt_usd_per_1m: 0.5, completion_usd_per_1m: 0.5 },
+					{ id: 'model-c', prompt_usd_per_1m: 6, completion_usd_per_1m: 5 },
+				]
+			},
+		});
+		await timeout(0);
+		const rows = () => listRows(result.popup);
+		const before = rows();
+		element(result.popup, '.action-list-filter-actions .action-label').click();
+		const byCost = rows();
+		const input = element<HTMLInputElement>(result.popup, 'input.action-list-filter-input');
+		input.value = 'model';
+		input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+		assert.deepStrictEqual({ before, byCost, search: rows() }, {
+			before: ['model-a', 'model-b', 'model-c', 'unpriced'],
+			byCost: ['model-b', 'model-c', 'model-a', 'unpriced'],
+			search: ['model-b', 'model-c', 'model-a'],
 		});
 	});
 });

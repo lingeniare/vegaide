@@ -851,6 +851,26 @@ suite('ModelCard', () => {
 		}, { headerBadge: undefined, title: 'Pricing details', badge: 'High cost', rows: 2 });
 	});
 
+	test('vega pricing lists the cache prices the catalog reports', () => {
+		const { card } = createCard({}, {
+			vegaPricing: () => ({ promptPer1M: 30, completionPer1M: 90, cacheReadPer1M: 3, cacheWritePer1M: 38, requestFee: 0.25 }),
+			vegaPricingCurrency: 'usd',
+		});
+		assert.deepStrictEqual(
+			Array.from(card.element.querySelectorAll('.chat-model-card-pricing-row'), row => ({
+				label: row.querySelector('.chat-model-card-pricing-label')?.textContent,
+				value: row.querySelector('.chat-model-card-pricing-value')?.textContent,
+			})),
+			[
+				{ label: 'Input', value: '$30' },
+				{ label: 'Output', value: '$90' },
+				{ label: 'Cache Read', value: '$3' },
+				{ label: 'Cache Write', value: '$38' },
+				{ label: 'Per request', value: '$0.25' },
+			],
+		);
+	});
+
 	for (const options of [{ isUBB: false }, { model: createModel({ inputCost: undefined, outputCost: undefined, longContextInputCost: undefined }) }]) {
 		test(`retains the header pill when ${options.isUBB === false ? 'not credit billed' : 'no pricing breakdown is available'}`, () => {
 			const { card } = createCard({}, options);

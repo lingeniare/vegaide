@@ -8,6 +8,12 @@ import { VEGA_API_ORIGIN, VEGA_CLIENT_ID, VEGA_SCOPE, createAppKey, getAccountIn
 
 const SESSIONS_STORAGE_KEY = `${VEGA_CLIENT_ID}.sessions`;
 
+// The language packs predate the fork's branding, so on a Russian UI these
+// strings are taken from the hardcoded Russian copy; `vscode.l10n.t` still
+// serves every other locale.
+const isRussian = vscode.env.language === 'ru';
+const ruT = (en: string, ru: string): string => isRussian ? ru : vscode.l10n.t(en);
+
 /**
  * Authentication provider for VEGA (`api.vega.chat`).
  *
@@ -97,12 +103,12 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 		this._logger.info('Starting VEGA device flow sign-in...');
 		const device = await requestDeviceCode();
 
-		const button = vscode.l10n.t('Copy & Continue to VEGA');
+		const button = ruT('Copy & Continue to VEGA', 'Скопировать и перейти в ВЕГА');
 		const selection = await vscode.window.showInformationMessage(
-			vscode.l10n.t('Your code: {0}', device.user_code),
+			isRussian ? `Ваш код: ${device.user_code}` : vscode.l10n.t('Your code: {0}', device.user_code),
 			{
 				modal: true,
-				detail: vscode.l10n.t('To finish signing in, open VEGA and enter this one-time code.'),
+				detail: ruT('To finish signing in, open VEGA and enter this one-time code.', 'Чтобы завершить вход, откройте ВЕГА и введите этот одноразовый код.'),
 			},
 			button,
 		);
@@ -152,7 +158,9 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 		return vscode.window.withProgress<string>({
 			location: vscode.ProgressLocation.Notification,
 			cancellable: true,
-			title: vscode.l10n.t('Waiting for VEGA sign-in… Enter code {0} at {1}', device.user_code, device.verification_uri),
+			title: isRussian
+				? `Ожидание входа в ВЕГА… Введите код ${device.user_code} на ${device.verification_uri}`
+				: vscode.l10n.t('Waiting for VEGA sign-in… Enter code {0} at {1}', device.user_code, device.verification_uri),
 		}, async (_progress, token) => {
 			let intervalMs = Math.max(device.interval, 1) * 1000;
 			const deadline = Date.now() + device.expires_in * 1000;
@@ -172,24 +180,24 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 						intervalMs += 5000;
 						continue;
 					case 'denied':
-						throw new Error(vscode.l10n.t('The sign-in request was declined on VEGA.'));
+						throw new Error(ruT('The sign-in request was declined on VEGA.', 'Запрос на вход отклонён в ВЕГА.'));
 					case 'expired':
-						throw new Error(vscode.l10n.t('The VEGA sign-in code expired. Please try again.'));
+						throw new Error(ruT('The VEGA sign-in code expired. Please try again.', 'Срок действия кода входа ВЕГА истёк. Попробуйте ещё раз.'));
 					case 'success':
 						return result.accessToken;
 				}
 			}
-			throw new Error(vscode.l10n.t('The VEGA sign-in code expired. Please try again.'));
+			throw new Error(ruT('The VEGA sign-in code expired. Please try again.', 'Срок действия кода входа ВЕГА истёк. Попробуйте ещё раз.'));
 		});
 	}
 
 	private async _resolveAccountLabel(apiKey: string): Promise<vscode.AuthenticationSessionAccountInformation> {
 		try {
 			const account = await getAccountInfo(apiKey);
-			return { id: account.id, label: account.label };
+			return { id: account.id, label: isRussian && account.label === 'VEGA' ? 'ВЕГА' : account.label };
 		} catch (error) {
 			this._logger.warn(`Failed to resolve the VEGA account label: ${error instanceof Error ? error.message : String(error)}`);
-			return { id: VEGA_CLIENT_ID, label: 'VEGA' };
+			return { id: VEGA_CLIENT_ID, label: isRussian ? 'ВЕГА' : 'VEGA' };
 		}
 	}
 }
@@ -217,12 +225,12 @@ class Context7McpDefinitionProvider implements vscode.McpServerDefinitionProvide
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	const logger = vscode.window.createOutputChannel('VEGA Authentication', { log: true });
+	const logger = vscode.window.createOutputChannel(isRussian ? 'Аутентификация ВЕГА' : 'VEGA Authentication', { log: true });
 	context.subscriptions.push(logger);
 
 	const provider = new VegaAuthenticationProvider(context, logger);
 	context.subscriptions.push(provider);
-	context.subscriptions.push(vscode.authentication.registerAuthenticationProvider('vega', 'VEGA', provider, {
+	context.subscriptions.push(vscode.authentication.registerAuthenticationProvider('vega', isRussian ? 'ВЕГА' : 'VEGA', provider, {
 		supportsMultipleAccounts: false,
 		supportedAuthorizationServers: [vscode.Uri.parse(VEGA_API_ORIGIN)],
 	}));
