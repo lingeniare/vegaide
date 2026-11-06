@@ -26,6 +26,7 @@ import { ISessionsService } from '../../../services/sessions/browser/sessionsSer
 import { ISessionsProvidersService } from '../../../services/sessions/browser/sessionsProvidersService.js';
 import { INestedChatWorkspace, INestedChatWorkspaceSupport, NestedChatWorkspaceError } from '../../../services/sessions/common/sessionsProvider.js';
 import { IChat, SessionStatus } from '../../../services/sessions/common/session.js';
+import { getNoWorkspaceChoicePresentation } from './noWorkspaceChoice.js';
 import { INestedChatFolderSources, isSameNestedChatWorkspace, NestedChatWorkspaceControls } from './nestedChatWorkspacePicker.js';
 import { ISessionsRecentWorkspacesService } from '../../../services/sessions/browser/sessionsRecentWorkspacesService.js';
 import { IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
@@ -34,8 +35,7 @@ import { raceCancellation, raceTimeout } from '../../../../base/common/async.js'
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { isEqual } from '../../../../base/common/resources.js';
 import { SharedChatInputComposer } from './sharedChatInputComposer.js';
-import { isExperimentalSessionComposerLayoutEnabled } from './newChatWidget.js';
-import { COLLAPSED_SESSION_OPTIONS_SHOW_ICONS_SETTING, EXPERIMENTAL_NEW_SESSION_COMPOSER_LAYOUT_SETTING, UNIFIED_WORKSPACE_PICKER_SETTING } from '../common/constants.js';
+import { COLLAPSED_SESSION_OPTIONS_SHOW_ICONS_SETTING } from '../common/constants.js';
 import { getStoredSessionOptionsExpanded, SessionOptionsRow } from './sessionOptionsRow.js';
 import { NewChatUserInteraction } from './newChatUserInteraction.js';
 import { IChatViewOptions } from '../../../browser/parts/chatView.js';
@@ -68,17 +68,11 @@ export class NewChatInSessionWidget extends Disposable {
 	 * be another one, which this composer must neither bind to nor send to.
 	 */
 	private readonly _chat = observableValue<IChat | undefined>(this, undefined);
-	/**
-	 * When the experimental composer layout is enabled, the in-session input mirrors the
-	 * new-session composer: the mode/permissions control moves into the input row and the model
-	 * picker is right-aligned, keeping both surfaces consistent.
-	 */
-	private readonly _useExperimentalComposerLayout: IObservable<boolean>;
 	private readonly _screenReaderOptimized: IObservable<boolean>;
 	private readonly _collapsedSessionOptionsShowIcons: IObservable<boolean>;
 	/**
 	 * Whether the session options are shown. Starts from the user's New Session choice, but a choice
-	 * made here is kept apart: New Session applies its experiment's default until the user chooses there.
+	 * made here is kept apart: New Session applies its options default until the user chooses there.
 	 */
 	private readonly _sessionOptionsExpanded: ISettableObservable<boolean>;
 	private readonly _workspaceSupport: IObservable<INestedChatWorkspaceSupport | undefined>;
@@ -105,14 +99,6 @@ export class NewChatInSessionWidget extends Disposable {
 		@IFileService private readonly fileService: IFileService,
 	) {
 		super();
-
-		this._useExperimentalComposerLayout = observableFromEvent(
-			this,
-			Event.filter(this.configurationService.onDidChangeConfiguration, event =>
-				event.affectsConfiguration(UNIFIED_WORKSPACE_PICKER_SETTING)
-				|| event.affectsConfiguration(EXPERIMENTAL_NEW_SESSION_COMPOSER_LAYOUT_SETTING)),
-			() => isExperimentalSessionComposerLayoutEnabled(this.configurationService),
-		);
 
 		this._screenReaderOptimized = observableFromEvent(
 			this,
@@ -146,6 +132,10 @@ export class NewChatInSessionWidget extends Disposable {
 			resolveFolder: (folder, token) => this._requireProvider().resolveNestedChatFolder(this._requireSession().sessionId, folder, token),
 			getBranches: (folder, token) => this._requireProvider().getNestedChatBranches(this._requireSession().sessionId, folder, '', token),
 			getFolderSources: () => this._getFolderSources(),
+			describeNoWorkspace: () => {
+				const session = this._session.get();
+				return getNoWorkspaceChoicePresentation(session && this.sessionsProvidersService.getProvider(session.providerId));
+			},
 			describeFolder: folder => {
 				const session = this._session.get();
 				const workspace = session && this.sessionsProvidersService.getProvider(session.providerId)?.resolveWorkspace(folder);
@@ -183,12 +173,12 @@ export class NewChatInSessionWidget extends Disposable {
 			loading: constObservable(false),
 			placeholder: localize('newChatInSessionPlaceholder', 'Ask a follow-up question or start a new topic within this session...'),
 			petHostPreferred: _options.petHostPreferred,
+			renderChatPet: _options.renderChatPet,
 			getChatPetPlatformElements: () => this._workspaceControls.getChatPetPlatformElements(),
 			onDidChangeChatPetPlatform: this._workspaceControls.onDidChangeChatPetPlatform,
 			renderRepositoryControls: (container, hoverDelegate) => this._workspaceControls.renderRepositoryControls(container, hoverDelegate),
 			supportsBackground: true,
 			voiceRoutesWhileSessionActive: true,
-			useExperimentalLayout: this._useExperimentalComposerLayout,
 		}));
 	}
 
@@ -212,7 +202,6 @@ export class NewChatInSessionWidget extends Disposable {
 		const sessionOptionsRow = this._register(new SessionOptionsRow(row, workspacePickerContainer, {
 			user: 'NewChatInSessionWidget.sessionOptions',
 			hoverDelegate: this._newChatInput.pickerHoverDelegate,
-			useExperimentalLayout: this._useExperimentalComposerLayout,
 			screenReaderOptimized: this._screenReaderOptimized,
 			expanded: this._sessionOptionsExpanded,
 			collapsedShowIcons: this._collapsedSessionOptionsShowIcons,
@@ -229,12 +218,9 @@ export class NewChatInSessionWidget extends Disposable {
 		}));
 
 		this._newChatInput.render(chatWidgetContent, parent);
-		this._register(autorun(reader => {
-			const useExperimentalLayout = this._useExperimentalComposerLayout.read(reader);
-			chatWidgetContent.classList.toggle('experimental-new-session-composer', useExperimentalLayout);
-			this._newChatInput.placeRepositoryControls(useExperimentalLayout ? sessionOptionsRow.repositoryControlsHost : undefined);
-			sessionOptionsRow.layout();
-		}));
+		chatWidgetContent.classList.add('experimental-new-session-composer');
+		this._newChatInput.placeRepositoryControls(sessionOptionsRow.repositoryControlsHost);
+		sessionOptionsRow.layout();
 		// Rendered after the composer: the tip docks inside the composer's stack,
 		// so the pet stands on it rather than on the composer boundary.
 		this._renderSubSessionTip();
