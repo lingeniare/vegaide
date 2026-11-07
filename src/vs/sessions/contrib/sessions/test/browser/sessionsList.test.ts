@@ -1950,6 +1950,8 @@ suite('Sessions - SessionsList', () => {
 				undefined,
 				undefined,
 				undefined,
+				undefined,
+				undefined,
 				(session, reader) => listed.read(reader).has(session.sessionId),
 			);
 			const statuses: (SessionStatus | undefined)[] = [];
