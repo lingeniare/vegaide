@@ -128,7 +128,7 @@ Other agent surfaces (Copilot CLI, Copilot Coding Agent, Copilot Code Review, cu
 The stored `agent_name` differs by backend — match the active backend's value **exactly** (case and spacing matter):
 
 - **Cloud (DuckDB)**: `sessions.agent_name = 'VS Code Chat'`
-- **Local (SQLite)**: `sessions.agent_name = 'GitHub Copilot Chat'`. Local also records subagent invocations (e.g. `Explore`, `summarizeConversationHistory`) as their own session rows; the default filter correctly excludes them.
+- **Local (SQLite)**: `sessions.agent_name = 'VEGA IDE Chat'`. Local also records subagent invocations (e.g. `Explore`, `summarizeConversationHistory`) as their own session rows; the default filter correctly excludes them.
 
 Briefly check the agent mix once so you know what's being excluded (e.g. `SELECT agent_name, COUNT(*) AS n FROM sessions WHERE updated_at > <30-day cutoff> GROUP BY 1 ORDER BY n DESC`). If the interactive chat value is a small minority of the user's sessions, mention that in the summary so they know the tips are scoped to a slice of their activity, and **offer to run a separate pass on another agent type** — name the candidates you saw in the mix check (e.g. "want a separate pass on `Copilot CLI` or `Copilot Coding Agent`?") so the user knows widening is possible.
 
@@ -138,12 +138,12 @@ If the user asks to widen scope to a specific surface (e.g. "now do CLI", "cost 
 
 - **Cloud DuckDB only** — the local SQLite store does **not** record per-event token usage and has no `events` table. If the active backend is local, gate all token queries and tell the user that real token-level analysis requires enabling cloud sync (`chat.sessionSync.enabled`).
 - **events** (cloud): per-event billing — rows where `type = 'assistant.usage'` carry `usage_input_tokens`, `usage_output_tokens`, `usage_model`. JOIN `events e` to `sessions s ON s.id = e.session_id` and filter `WHERE s.agent_name = 'VS Code Chat'` to keep the scope tight.
-- **sessions.agent_name** / **agent_description** (both backends): the interactive VS Code chat surface is stored as `'VS Code Chat'` on cloud and `'GitHub Copilot Chat'` on local. Other values include `Copilot CLI` / `copilotcli`, `Copilot Coding Agent`, subagents (`Explore`, `summarizeConversationHistory`, `panel/editAgent`, …), and custom agents.
+- **sessions.agent_name** / **agent_description** (both backends): the interactive VS Code chat surface is stored as `'VS Code Chat'` on cloud and `'VEGA IDE Chat'` on local. Other values include `Copilot CLI` / `copilotcli`, `Copilot Coding Agent`, subagents (`Explore`, `summarizeConversationHistory`, `panel/editAgent`, …), and custom agents.
 - Use `LENGTH(user_message)` on `turns` (or `LENGTH(user_content)` on `events` where `type = 'user.message'`) to find oversized pastes.
 
 **Step 1: Investigate cost and token patterns (interactive VS Code chat only)**
 
-Use `copilot_sessionStoreSql` with `action: "query"`. Every query in this step must filter `sessions.agent_name` to the interactive VS Code chat value for the active backend — `'VS Code Chat'` on cloud, `'GitHub Copilot Chat'` on local. What to investigate depends on the active backend.
+Use `copilot_sessionStoreSql` with `action: "query"`. Every query in this step must filter `sessions.agent_name` to the interactive VS Code chat value for the active backend — `'VS Code Chat'` on cloud, `'VEGA IDE Chat'` on local. What to investigate depends on the active backend.
 
 *Cloud (DuckDB) — drill into cost patterns* (filter `events` rows by `type = 'assistant.usage'` for billable rows, and join `sessions` to keep `agent_name = 'VS Code Chat'`):
 
@@ -153,7 +153,7 @@ Use `copilot_sessionStoreSql` with `action: "query"`. Every query in this step m
 - **Per-turn growth** — within long sessions, does `usage_input_tokens` keep climbing turn-over-turn? Strong signal that compaction wasn't used.
 - **Oversized pastes** — `LENGTH(user_content)` on `events` where `type = 'user.message'` to find user messages that should have been file references (also visible in `session_files` as repeated reads of the same path within one session).
 
-*Local (SQLite) — no token data; use proxies* (filter `sessions.agent_name = 'GitHub Copilot Chat'` on every query):
+*Local (SQLite) — no token data; use proxies* (filter `sessions.agent_name = 'VEGA IDE Chat'` on every query):
 
 - **Long sessions without compaction** — sessions with many turns and no rows in `checkpoints` (each `checkpoints` row is a successful compaction). `LEFT JOIN checkpoints c ON c.session_id = s.id WHERE c.session_id IS NULL` + a turn-count threshold gives prime candidates.
 - **Late compaction** — for sessions that *do* have checkpoints, compare `checkpoints.checkpoint_number` and `created_at` against the session's turn count. A first compaction at turn 60 of an 80-turn session is far less helpful than one at turn 25.

@@ -211,7 +211,7 @@ export class PromptCodeActionProvider implements CodeActionProvider {
 		}
 		const target = getTarget(promptType, promptFile.header, this.customizationHarnessService.getActiveDescriptor().customAgentTarget);
 		if (!isVSCodeOrDefaultTarget(target)) {
-			// GitHub Copilot and Claude custom agents use a fixed set of tool names that are not deprecated
+			// VEGA IDE and Claude custom agents use a fixed set of tool names that are not deprecated
 			return;
 		}
 		let value = toolsAttr.value;

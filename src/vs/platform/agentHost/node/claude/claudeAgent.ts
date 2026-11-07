@@ -813,7 +813,7 @@ export class ClaudeAgent extends Disposable implements IAgent {
 			this._logService.info(changed ? '[Claude] Auth token cleared' : '[Claude] Auth token unchanged');
 			return true;
 		}
-		// A GitHub Copilot token is arriving (sign-in). Always start the proxy so a
+		// A VEGA IDE token is arriving (sign-in). Always start the proxy so a
 		// session that picks a Copilot-routed model from the merged catalog has a
 		// started handle to run against — even while model-less sessions still
 		// default to native. Per-session routing is decided later in

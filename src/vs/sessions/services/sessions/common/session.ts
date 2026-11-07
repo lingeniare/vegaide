@@ -71,7 +71,7 @@ export interface ISessionType {
 export const enum SessionTypeAuthRequirement {
 	/** Runs on the user's own credentials — usable while signed out of GitHub. */
 	None = 'none',
-	/** Needs a GitHub Copilot account. Also the assumption until an agent resolves. */
+	/** Needs a VEGA IDE account. Also the assumption until an agent resolves. */
 	GitHub = 'github',
 	/**
 	 * Cannot run at all right now, and signing in to GitHub would not help — e.g.

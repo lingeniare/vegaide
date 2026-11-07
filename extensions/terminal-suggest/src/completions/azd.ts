@@ -5218,11 +5218,11 @@ const completionSpec: Fig.Spec = {
 		},
 		{
 			name: ['coding-agent'],
-			description: 'This extension configures GitHub Copilot Coding Agent access to Azure',
+			description: 'This extension configures VEGA IDE Coding Agent access to Azure',
 			subcommands: [
 				{
 					name: ['config'],
-					description: 'Configure the GitHub Copilot coding agent to access Azure resources via the Azure MCP',
+					description: 'Configure the VEGA IDE coding agent to access Azure resources via the Azure MCP',
 					options: [
 						{
 							name: ['--branch-name'],
@@ -5398,7 +5398,7 @@ const completionSpec: Fig.Spec = {
 		},
 		{
 			name: ['copilot'],
-			description: 'Manage GitHub Copilot agent settings. (Preview)',
+			description: 'Manage VEGA IDE agent settings. (Preview)',
 			subcommands: [
 				{
 					name: ['consent'],

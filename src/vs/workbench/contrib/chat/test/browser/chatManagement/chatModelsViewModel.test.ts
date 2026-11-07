@@ -221,7 +221,7 @@ suite('ChatModelsViewModel', () => {
 		// Setup test data
 		languageModelsService.addVendor({
 			vendor: 'copilot',
-			displayName: 'GitHub Copilot',
+			displayName: 'VEGA IDE',
 			managementCommand: undefined,
 			when: undefined,
 			configuration: undefined
@@ -472,7 +472,7 @@ suite('ChatModelsViewModel', () => {
 	test('the default provider Auto model is never listed, so a group toggle cannot hide it', async () => {
 		// A non-default provider's Auto does get a row and stays hideable.
 		const service = new MockLanguageModelsService();
-		service.addVendor({ vendor: 'copilot', displayName: 'GitHub Copilot', managementCommand: undefined, when: undefined, configuration: undefined });
+		service.addVendor({ vendor: 'copilot', displayName: 'VEGA IDE', managementCommand: undefined, when: undefined, configuration: undefined });
 		service.addVendor({ vendor: 'copilotcli', displayName: 'Copilot CLI', managementCommand: undefined, when: undefined, configuration: undefined });
 		const metadata = {
 			extension: new ExtensionIdentifier('github.copilot'),
@@ -618,7 +618,7 @@ suite('ChatModelsViewModel', () => {
 
 		const models = results.filter(r => !isLanguageModelProviderEntry(r) && !isLanguageModelGroupEntry(r)) as ILanguageModelEntry[];
 		assert.strictEqual(models.length, 2);
-		assert.ok(models.every(m => m.model.provider.group.name === 'GitHub Copilot'));
+		assert.ok(models.every(m => m.model.provider.group.name === 'VEGA IDE'));
 	});
 
 	test('should combine text search with capability filter', () => {
@@ -751,7 +751,7 @@ suite('ChatModelsViewModel', () => {
 		const service = new MockLanguageModelsService();
 		service.addVendor({
 			vendor: 'copilot',
-			displayName: 'GitHub Copilot',
+			displayName: 'VEGA IDE',
 			managementCommand: undefined,
 			when: undefined,
 			configuration: undefined
@@ -1158,7 +1158,7 @@ suite('ChatModelsViewModel', () => {
 		await viewModel.refresh();
 		viewModel.setSessionType('agent-host-codex');
 
-		const copilotGroups = viewModel.filter('').filter(isLanguageModelProviderEntry).filter(entry => entry.label === 'GitHub Copilot');
+		const copilotGroups = viewModel.filter('').filter(isLanguageModelProviderEntry).filter(entry => entry.label === 'VEGA IDE');
 		assert.strictEqual(copilotGroups.length, 1);
 		viewModel.toggleGroupHidden(copilotGroups[0]);
 

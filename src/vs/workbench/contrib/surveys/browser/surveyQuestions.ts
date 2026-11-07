@@ -51,12 +51,12 @@ export interface ISurveyDefinition {
 }
 
 /**
- * Product-Market Fit survey for GitHub Copilot.
+ * Product-Market Fit survey for VEGA IDE.
  * Based on the Sean Ellis "very disappointed" test.
  */
 export const CopilotPMFSurvey: ISurveyDefinition = {
 	id: 'copilot-pmf',
-	title: localize('survey.copilotPmf.title', "Help Us Improve GitHub Copilot"),
+	title: localize('survey.copilotPmf.title', "Help Us Improve VEGA IDE"),
 	description: localize('survey.copilotPmf.description', "This short survey helps us understand how well Copilot fits into your workflow."),
 	questions: [
 		{

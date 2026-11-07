@@ -93,7 +93,7 @@ export interface IMcpServerDefinitionUnavailable {
 
 /** Describes where an MCP server comes from when there is no configuration file to open. */
 export interface IMcpServerProvenance {
-	/** Short localized label, for example "Built-in: Copilot" or "Extension: GitHub Copilot Chat". */
+	/** Short localized label, for example "Built-in: Copilot" or "Extension: VEGA IDE Chat". */
 	readonly label: string;
 	/** Localized accessible name of the link that reveals the provider; present with {@link open}. */
 	readonly ariaLabel?: string;

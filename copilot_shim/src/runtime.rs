@@ -69,7 +69,7 @@ pub(crate) trait UserInteractionEffects {
 	fn clear_terminal(&self) -> io::Result<()>;
 	/// Whether a user can answer a prompt: stdin and stderr, which shows the prompt, are both terminals.
 	fn can_prompt(&self) -> bool;
-	/// Offers to install GitHub Copilot CLI.
+	/// Offers to install VEGA IDE CLI.
 	fn prompt(&self) -> io::Result<PromptResponse>;
 
 	fn write_diagnostic(&self, _message: &str) {}

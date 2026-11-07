@@ -18209,7 +18209,7 @@ suite('CopilotAgent', () => {
 				await disposeAgent(agent);
 			});
 			await agent.authenticate('https://api.github.com', 'token');
-			// The GitHub Copilot app writes the same marker with `origin: 'other'`.
+			// The VEGA IDE app writes the same marker with `origin: 'other'`.
 			await writeExtensionHostMarker(userHome, sessionId, { origin: 'other' });
 			configurationService.updateRootConfig({ [AgentHostMigrateLegacyCopilotCliEnabledConfigKey]: true });
 
@@ -18886,7 +18886,7 @@ suite('CopilotAgent', () => {
 			]);
 		});
 
-		test('surfaces a GitHub Copilot app session as external rather than adoptable', async () => {
+		test('surfaces a VEGA IDE app session as external rather than adoptable', async () => {
 			const userHome = URI.file(await fs.mkdtemp(`${os.tmpdir()}/external-origin-home-`));
 			const workingDirectory = await fs.mkdtemp(`${os.tmpdir()}/external-origin-cwd-`);
 			const sessionDataService = disposables.add(new TestSessionDataService());
@@ -18901,7 +18901,7 @@ suite('CopilotAgent', () => {
 				await fs.rm(workingDirectory, { recursive: true, force: true });
 				await disposeAgent(agent);
 			});
-			// The GitHub Copilot app writes the same sidecar with `origin: 'other'`.
+			// The VEGA IDE app writes the same sidecar with `origin: 'other'`.
 			await writeExtensionHostMarker(userHome, 'other-origin', { origin: 'other' });
 
 			assert.deepStrictEqual(await collectDiscoveredChats(agent), [
@@ -19023,7 +19023,7 @@ suite('CopilotAgent', () => {
 
 		test('marks a session working under the Copilot chats folder as workspace-less', async () => {
 			const userHome = URI.file(await fs.mkdtemp(`${os.tmpdir()}/workspaceless-discovery-home-`));
-			// The GitHub Copilot app nests its chat folders by date, not by session id.
+			// The VEGA IDE app nests its chat folders by date, not by session id.
 			const chatDirectory = join(userHome.fsPath, '.copilot', 'chats', '2026-09-23', 'congenial-happiness');
 			await fs.mkdir(chatDirectory, { recursive: true });
 			const workingDirectory = await fs.mkdtemp(`${os.tmpdir()}/workspaceless-discovery-cwd-`);
@@ -30723,7 +30723,7 @@ suite('CopilotAgent', () => {
 			});
 			await agent.authenticate('https://api.github.com', 'token');
 
-			// The GitHub Copilot app writes the same marker with `origin: 'other'`.
+			// The VEGA IDE app writes the same marker with `origin: 'other'`.
 			await writeExtensionHostMarker(userHome, sessionId, { origin: 'other' });
 			// Credits are migrated for legacy VS Code sessions only: a sidecar
 			// belonging to another Copilot host must never be read or applied.

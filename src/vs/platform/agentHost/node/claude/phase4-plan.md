@@ -80,7 +80,7 @@ getDescriptor(): IAgentDescriptor {
 getProtectedResources(): ProtectedResourceMetadata[] {
     return [{
         resource: 'https://api.github.com',
-        resource_name: 'GitHub Copilot',
+        resource_name: 'VEGA IDE',
         authorization_servers: ['https://github.com/login/oauth'],
         scopes_supported: ['read:user', 'user:email'],
         required: true,

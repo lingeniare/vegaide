@@ -38,7 +38,7 @@ The fastest way to see Copilot Chat traces locally — no cloud account required
 ### Prerequisites
 
 - **Docker** installed
-- **VS Code** with the GitHub Copilot Chat extension
+- **VS Code** with the VEGA IDE Chat extension
 
 ### 1. Start the Aspire Dashboard
 

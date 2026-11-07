@@ -768,7 +768,7 @@ suite('Copilot slash command handlers', () => {
 					text: [
 						'# Plugin marketplaces',
 						'',
-						'## Included with GitHub Copilot',
+						'## Included with VEGA IDE',
 						'- `copilot-plugins` — GitHub: github/copilot-plugins',
 						'',
 						'## Registered marketplaces',

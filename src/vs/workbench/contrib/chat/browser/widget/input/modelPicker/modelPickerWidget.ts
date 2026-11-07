@@ -621,7 +621,7 @@ export class ModelPickerWidget extends Disposable {
 		}
 		const entitlement = this._entitlementService.entitlement;
 		const canUpgrade = entitlement === ChatEntitlement.Free || entitlement === ChatEntitlement.EDU;
-		const providerName = this._productService.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot';
+		const providerName = this._productService.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE';
 		return [{
 			vendor,
 			label,

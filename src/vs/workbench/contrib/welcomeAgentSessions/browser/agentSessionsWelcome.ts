@@ -743,13 +743,13 @@ export class AgentSessionsWelcomePage extends EditorPane {
 		// Content
 		const content = append(tosCard, $('.agentSessionsWelcome-walkthroughCard-content'));
 		const title = append(content, $('.agentSessionsWelcome-walkthroughCard-title'));
-		title.textContent = localize('tosTitle', "Try {0} Copilot for free, no sign-in required!", providers.default.name);
+		title.textContent = localize('tosTitle', "Try {0} for free, no sign-in required!", providers.default.name);
 
 		const desc = append(content, $('.agentSessionsWelcome-walkthroughCard-description'));
 		const descriptionMarkdown = new MarkdownString(
 			localize(
 				{ key: 'tosDescription', comment: ['{Locked="]({1})"}', '{Locked="]({2})"}'] },
-				"By continuing, you agree to {0}'s [Terms]({1}) and [Privacy Statement]({2}).",
+				"By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}).",
 				providers.default.name,
 				this.productService.defaultChatAgent.termsStatementUrl,
 				this.productService.defaultChatAgent.privacyStatementUrl

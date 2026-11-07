@@ -1473,7 +1473,7 @@ suite('ClaudeAgent', () => {
 		const { agent } = createTestContext(disposables);
 		assert.deepStrictEqual(agent.getProtectedResources(), [{
 			resource: 'https://api.github.com',
-			resource_name: 'GitHub Copilot',
+			resource_name: 'VEGA IDE',
 			authorization_servers: ['https://github.com/login/oauth'],
 			scopes_supported: ['read:user', 'user:email'],
 			// Shape check; the `required` flag itself is the subject of

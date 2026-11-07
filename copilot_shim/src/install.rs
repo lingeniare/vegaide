@@ -166,7 +166,7 @@ impl UnsupportedTarget {
 	pub(crate) const fn guidance(self) -> &'static str {
 		match self {
 			Self::LinuxArmhf => {
-				"Automatic installation is unavailable on GNU/Linux ARMhf. Install a supported GitHub Copilot CLI release manually."
+				"Automatic installation is unavailable on GNU/Linux ARMhf. Install a supported VEGA IDE CLI release manually."
 			}
 			Self::LinuxMusl => {
 				"Automatic installation is unavailable for musl builds. Install the matching copilot-linuxmusl release from https://github.com/github/copilot-cli/releases."
@@ -757,7 +757,7 @@ mod tests {
 				UnsupportedTarget::LinuxMusl.guidance(),
 			),
 			(
-				"Automatic installation is unavailable on GNU/Linux ARMhf. Install a supported GitHub Copilot CLI release manually.",
+				"Automatic installation is unavailable on GNU/Linux ARMhf. Install a supported VEGA IDE CLI release manually.",
 				"Automatic installation is unavailable for musl builds. Install the matching copilot-linuxmusl release from https://github.com/github/copilot-cli/releases.",
 			)
 		);
@@ -852,7 +852,7 @@ mod tests {
 			(
 				PromptResponse::Declined,
 				format!(
-					"Installation instructions: {}\nInstall GitHub Copilot CLI? [y/N] ",
+					"Installation instructions: {}\nInstall VEGA IDE CLI? [y/N] ",
 					prompt::INSTALL_DOCUMENTATION_URL
 				),
 				1,

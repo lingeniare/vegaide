@@ -368,7 +368,7 @@ suite('CopilotConnectorsService', () => {
 			hasCursor: typeof first.nextCursor === 'string',
 			requests: fixture.requests.map(request => request.url),
 		}, {
-			first: [{ identifier: 'mail', installation: { kind: 'copilotConnector', name: 'mail' }, publisher: 'GitHub Copilot', publisherUrl: 'https://github.com/features/copilot' }],
+			first: [{ identifier: 'mail', installation: { kind: 'copilotConnector', name: 'mail' }, publisher: 'VEGA IDE', publisherUrl: 'https://github.com/features/copilot' }],
 			second: ['calendar'],
 			total: 2,
 			hasCursor: true,

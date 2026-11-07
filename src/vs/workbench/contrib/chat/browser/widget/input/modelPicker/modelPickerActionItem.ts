@@ -240,7 +240,7 @@ export class ModelPickerActionItem extends BaseActionViewItem {
 			return this._appendComparisonAction(localize('chat.modelPicker.restrictedHover', "{0} • Unavailable while in Restricted mode. Trust Workspace to enable models.", label));
 		}
 		if (this._pickerWidget.isSetupRequired()) {
-			return this._appendComparisonAction(localize('chat.modelPicker.setupRequiredHover', "{0} • Sign in to {1} to choose a model.", label, product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot'));
+			return this._appendComparisonAction(localize('chat.modelPicker.setupRequiredHover', "{0} • Sign in to {1} to choose a model.", label, product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE'));
 		}
 		const comparisonSummary = this.delegate.comparison?.summary.get();
 		if (comparisonSummary) {

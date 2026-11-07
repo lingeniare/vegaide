@@ -854,7 +854,7 @@ export const platformRootSchema = createSchema({
 		enumDescriptions: [
 			localize('agentHost.config.byokUtilityModelDefault.none', "Do not use a default utility model."),
 			localize('agentHost.config.byokUtilityModelDefault.mainAgent', "Use the selected BYOK main agent model."),
-			localize('agentHost.config.byokUtilityModelDefault.copilot', "Use the default GitHub Copilot utility model."),
+			localize('agentHost.config.byokUtilityModelDefault.copilot', "Use the default VEGA IDE utility model."),
 		],
 		default: 'copilot',
 	}),

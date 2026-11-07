@@ -31,7 +31,7 @@ export interface IResolvedHookEntry {
  * Supported hook file formats.
  */
 export enum HookSourceFormat {
-	/** GitHub Copilot hooks .json format */
+	/** VEGA IDE hooks .json format */
 	Copilot = 'copilot',
 	/** Claude settings.json / settings.local.json format */
 	Claude = 'claude',
@@ -196,7 +196,7 @@ export function getHookSourceFormatLabel(format: HookSourceFormat): string {
 		case HookSourceFormat.Claude:
 			return 'Claude';
 		case HookSourceFormat.Copilot:
-			return 'GitHub Copilot';
+			return 'VEGA IDE';
 	}
 }
 

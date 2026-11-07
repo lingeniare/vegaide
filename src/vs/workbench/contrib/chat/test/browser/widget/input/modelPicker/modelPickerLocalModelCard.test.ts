@@ -23,7 +23,7 @@ const GB = 1024 ** 3;
 const FAMILY_ID = 'example-flash-local';
 /** The Use in Auto notes: what it does, then the agreed safety disclosure. */
 const USE_IN_AUTO = 'Let Auto route turns to this on-device model, with cloud fallback.';
-const DISCLOSURE = 'Local models may not use the same safety filters as GitHub Copilot-provided models and may be more susceptible to malicious instructions, especially when actions are automatically approved.';
+const DISCLOSURE = 'Local models may not use the same safety filters as VEGA IDE-provided models and may be more susceptible to malicious instructions, especially when actions are automatically approved.';
 const offer = { fit: 'full', requiredGpuBytes: 60 * GB, downloadBytes: 56.7 * GB, peakDiskBytes: 57.2 * GB, licenseName: 'MIT', licenseUrl: 'https://example.com/license' } as const;
 const install = { contentId: 'c1', adopted: false, owned: true, modelId: 'vscode-on-device/Example-Flash' } as const;
 

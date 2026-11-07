@@ -21,7 +21,7 @@ use std::time::{Duration, Instant};
 
 const IO_TIMEOUT: Duration = Duration::from_secs(10);
 const CLEAR_SEQUENCE: &[u8] = b"\x1b[2J\x1b[H";
-const INSTALL_PROMPT: &[u8] = b"Install GitHub Copilot CLI? [y/N] ";
+const INSTALL_PROMPT: &[u8] = b"Install VEGA IDE CLI? [y/N] ";
 
 struct PtyProcess {
 	master: File,
@@ -802,7 +802,7 @@ fn macos_pty_install_only_keeps_installer_profile_consent_and_never_launches_cli
 			false,
 			0,
 			format!(
-				"Would you like to add it to {}/.profile? [y/N] GitHub Copilot CLI installed successfully.\nLocation: {}/bin/copilot",
+				"Would you like to add it to {}/.profile? [y/N] VEGA IDE CLI installed successfully.\nLocation: {}/bin/copilot",
 				home.display(),
 				prefix.display()
 			)

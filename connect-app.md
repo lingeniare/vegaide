@@ -45,7 +45,7 @@
 | Слой | Файл | Что там |
 |---|---|---|
 | Device flow whitelist | `src/lib/auth.ts` | `deviceAuthorization({ verificationUri: "/device", validateClient })` — принимает `officevega`, `vegaoffice`, `vegacode`, `vegaharness`, `vegaide`, `vegamedia` |
-| Страница подтверждения device | `src/app/device/page.tsx` | `CLIENT_NAMES = { officevega, vegaoffice, vegacode: "Vega Code", vegaharness: "Vega Harness", vegaide: "Vega IDE", vegamedia: "Vega Media" }` |
+| Страница подтверждения device | `src/app/device/page.tsx` | `CLIENT_NAMES = { officevega, vegaoffice, vegacode: "VEGA IDE", vegaharness: "Vega Harness", vegaide: "Vega IDE", vegamedia: "Vega Media" }` |
 | PKCE-страница `/auth` | `src/app/auth/page.tsx`, `src/lib/pkce-auth-codes.ts`, `src/app/api/v1/auth/keys/route.ts` | OpenRouter-совместимый OAuth: `callback_url` + `code_challenge` (S256) → одноразовый `code` (10 мин) → `POST /api/v1/auth/keys` → `{ key }` |
 | Выдача / отзыв ключей | `src/lib/officevega-keys.ts` | `OFFICEVEGA_KEY_NAME` + `VEGACODE_KEY_NAME`/`VEGAHARNESS_KEY_NAME`/`VEGAIDE_KEY_NAME`/`VEGAMEDIA_KEY_NAME`, `LEGACY_APP_KEY_NAMES`, `normalizeKeyName`, `mintNamedApiKey` (один активный ключ), `revokeNamedApiKeys`, `revokeApiKeyById` |
 | Роуты ключей | `src/app/api/v1/keys/<app>/route.ts`, `.../revoke/route.ts` для `officevega` (+ алиас `vegaoffice/`), `vegacode`, `vegaharness`, `vegaide`, `vegamedia` | POST выдача по session-token, POST отзыв по `sk-apivega-...` (self) или session-token (все ключи имени) |
@@ -248,7 +248,7 @@ validateClient: (clientId) =>
 const CLIENT_NAMES: Record<string, string> = {
   officevega: "officevega",
   vegaoffice: "officevega",
-  vegacode: "Vega Code",
+  vegacode: "VEGA IDE",
   vegaharness: "Vega Harness",
   vegaide: "Vega IDE",
   vegamedia: "Vega Media",

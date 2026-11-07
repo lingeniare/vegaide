@@ -1731,7 +1731,7 @@ suite('RemoteAgentHostSessionsProvider', () => {
 	test('session type icons use per-agent codicons', () => {
 		connection.setAgents([
 			{ provider: 'copilotcli', displayName: 'Copilot', description: '', models: [] } as AgentInfo,
-			{ provider: 'copilot', displayName: 'GitHub Copilot', description: '', models: [] } as AgentInfo,
+			{ provider: 'copilot', displayName: 'VEGA IDE', description: '', models: [] } as AgentInfo,
 			{ provider: 'claude', displayName: 'Claude', description: '', models: [] } as AgentInfo,
 			{ provider: 'openai', displayName: 'OpenAI', description: '', models: [] } as AgentInfo,
 			{ provider: 'unknown-agent', displayName: 'Unknown', description: '', models: [] } as AgentInfo,
@@ -1741,7 +1741,7 @@ suite('RemoteAgentHostSessionsProvider', () => {
 			provider.sessionTypes.map(t => ({ id: t.id, label: t.label, icon: t.icon.id })),
 			[
 				{ id: CopilotCLISessionType.id, label: 'Copilot', icon: 'copilot' },
-				{ id: 'copilot', label: 'GitHub Copilot', icon: 'copilot' },
+				{ id: 'copilot', label: 'VEGA IDE', icon: 'copilot' },
 				{ id: 'claude', label: 'Claude', icon: 'claude' },
 				{ id: 'openai', label: 'OpenAI', icon: 'openai' },
 				{ id: 'unknown-agent', label: 'Unknown', icon: 'remote' },
@@ -1796,7 +1796,7 @@ suite('RemoteAgentHostSessionsProvider', () => {
 				return resource;
 			}
 		}());
-		host.setAgents([{ provider: 'copilot', displayName: 'GitHub Copilot', description: '', models: [] } as AgentInfo]);
+		host.setAgents([{ provider: 'copilot', displayName: 'VEGA IDE', description: '', models: [] } as AgentInfo]);
 		host.handshakeState.set({ ...host.handshakeState.get(), _meta: undefined }, undefined);
 		host.resolveSessionConfigResult = {
 			schema: { type: 'object', properties: { mode: { type: 'string', title: 'Mode', enum: ['interactive', 'plan'], sessionMutable: true } } },

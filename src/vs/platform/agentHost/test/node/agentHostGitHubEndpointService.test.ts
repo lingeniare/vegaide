@@ -16,7 +16,7 @@ const GITHUB_PRODUCT_SERVICE = { _serviceBrand: undefined } as IProductService;
 
 const VEGA_PRODUCT_SERVICE = {
 	_serviceBrand: undefined,
-	defaultChatAgent: { provider: { default: { id: 'vega', name: 'VEGA' } } },
+	defaultChatAgent: { provider: { default: { id: 'vega', name: 'VEGA IDE' } } },
 } as IProductService;
 
 suite('AgentHostGitHubEndpointService', () => {

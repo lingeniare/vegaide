@@ -94,6 +94,6 @@ CommandsRegistry.registerCommand('_chat.showCodexContinuation', async accessor =
 		accessor.get(IWorkbenchLayoutService).setPartHidden(false, Parts.SIDEBAR_PART);
 	}
 	if (!await nudge.showPreview()) {
-		notifications.info(localize('codexContinuation.previewUnavailable', "To preview the suggestion, open a Codex conversation that uses ChatGPT and has a matching model available through GitHub Copilot."));
+		notifications.info(localize('codexContinuation.previewUnavailable', "To preview the suggestion, open a Codex conversation that uses ChatGPT and has a matching model available through VEGA IDE."));
 	}
 });

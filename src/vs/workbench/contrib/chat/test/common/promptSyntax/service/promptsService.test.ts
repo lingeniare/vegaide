@@ -1400,11 +1400,11 @@ suite('PromptsService', () => {
 					path: `${rootFolder}/.github/agents/github-agent.agent.md`,
 					contents: [
 						'---',
-						'description: \'GitHub Copilot specialized agent.\'',
+						'description: \'VEGA IDE specialized agent.\'',
 						'target: \'github-copilot\'',
 						'tools: [ github-api, code-search ]',
 						'---',
-						'I am optimized for GitHub Copilot workflows.',
+						'I am optimized for VEGA IDE workflows.',
 					]
 				},
 				{
@@ -1434,11 +1434,11 @@ suite('PromptsService', () => {
 				{
 					id: URI.joinPath(rootFolderUri, '.github/agents/github-agent.agent.md').toString(),
 					name: 'github-agent',
-					description: 'GitHub Copilot specialized agent.',
+					description: 'VEGA IDE specialized agent.',
 					target: Target.GitHubCopilot,
 					tools: ['github-api', 'code-search'],
 					agentInstructions: {
-						content: 'I am optimized for GitHub Copilot workflows.',
+						content: 'I am optimized for VEGA IDE workflows.',
 						toolReferences: [],
 						metadata: undefined
 					},

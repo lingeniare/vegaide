@@ -226,7 +226,7 @@ export class CodexContinuationGuide extends Disposable {
 			}));
 			steps.push({
 				id: 'chooseCopilot', targetId: id, title: CODEX_CONTINUATION_LABEL,
-				description: localize('codexContinuation.guide', "Select {0} from GitHub Copilot to continue this session.", current.target.name),
+				description: localize('codexContinuation.guide', "Select {0} from VEGA IDE to continue this session.", current.target.name),
 				placement: 'left', openTarget: true, allowTargetInteraction: true, advanceOnTargetSelection: true,
 				primaryAction: {
 					label: localize('codexContinuation.useCopilot', "Use Copilot"),

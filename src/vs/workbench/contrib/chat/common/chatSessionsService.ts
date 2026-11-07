@@ -229,7 +229,7 @@ export interface IChatSessionsExtensionPoint {
 	 */
 	readonly agentHostProviderId?: string;
 	/**
-	 * Whether this type needs a GitHub Copilot account and so is unusable until the user signs in. Set by
+	 * Whether this type needs a VEGA IDE account and so is unusable until the user signs in. Set by
 	 * Copilot-backed types (Copilot CLI / agent host, cloud agent) where BYOK isn't supported. Defaults to false, so
 	 * third-party types that don't depend on Copilot stay usable while signed out.
 	 *

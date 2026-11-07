@@ -1,4 +1,4 @@
-// GitHub Copilot CLI: publishes the native `copilot` shim to {app}\bin\copilot-shim, with the POSIX `copilot` launcher
+// VEGA IDE CLI: publishes the native `copilot` shim to {app}\bin\copilot-shim, with the POSIX `copilot` launcher
 // that WSL, Git Bash, and Cygwin use, manages its PATH entry, and optionally installs Copilot CLI through the shim.
 // Design: https://github.com/microsoft/vscode-internalbacklog/issues/9765
 //

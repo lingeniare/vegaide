@@ -60,7 +60,7 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 			const sessions = JSON.parse(raw) as vscode.AuthenticationSession[];
 			return Array.isArray(sessions) ? sessions : [];
 		} catch {
-			this._logger.warn('Stored VEGA sessions were corrupt, clearing them.');
+			this._logger.warn('Stored VEGA IDE sessions were corrupt, clearing them.');
 			await this._context.secrets.delete(SESSIONS_STORAGE_KEY);
 			return [];
 		}
@@ -100,15 +100,15 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 			return session;
 		}
 
-		this._logger.info('Starting VEGA device flow sign-in...');
+		this._logger.info('Starting VEGA IDE device flow sign-in...');
 		const device = await requestDeviceCode();
 
-		const button = ruT('Copy & Continue to VEGA', 'Скопировать и перейти в ВЕГА');
+		const button = ruT('Copy & Continue to VEGA IDE', 'Скопировать и перейти в ВЕГА Редактор');
 		const selection = await vscode.window.showInformationMessage(
 			isRussian ? `Ваш код: ${device.user_code}` : vscode.l10n.t('Your code: {0}', device.user_code),
 			{
 				modal: true,
-				detail: ruT('To finish signing in, open VEGA and enter this one-time code.', 'Чтобы завершить вход, откройте ВЕГА и введите этот одноразовый код.'),
+				detail: ruT('To finish signing in, open VEGA IDE and enter this one-time code.', 'Чтобы завершить вход, откройте ВЕГА Редактор и введите этот одноразовый код.'),
 			},
 			button,
 		);
@@ -132,7 +132,7 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 		};
 		await this._storeSessions([session]);
 		this._onDidChangeSessions.fire({ added: [session], removed: [], changed: [] });
-		this._logger.info('VEGA sign-in completed.');
+		this._logger.info('VEGA IDE sign-in completed.');
 		return session;
 	}
 
@@ -146,12 +146,12 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 			await revokeAppKey(session.accessToken);
 		} catch (error) {
 			// The key may already be revoked server-side; local sign-out proceeds regardless.
-			this._logger.warn(`Failed to revoke the VEGA application key: ${error instanceof Error ? error.message : String(error)}`);
+			this._logger.warn(`Failed to revoke the VEGA IDE application key: ${error instanceof Error ? error.message : String(error)}`);
 		}
 		const remaining = sessions.filter(candidate => candidate.id !== sessionId);
 		await this._storeSessions(remaining);
 		this._onDidChangeSessions.fire({ added: [], removed: [session], changed: [] });
-		this._logger.info('VEGA session removed.');
+		this._logger.info('VEGA IDE session removed.');
 	}
 
 	private async _pollForSessionToken(device: { device_code: string; user_code: string; verification_uri: string; expires_in: number; interval: number }): Promise<string> {
@@ -159,8 +159,8 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 			location: vscode.ProgressLocation.Notification,
 			cancellable: true,
 			title: isRussian
-				? `Ожидание входа в ВЕГА… Введите код ${device.user_code} на ${device.verification_uri}`
-				: vscode.l10n.t('Waiting for VEGA sign-in… Enter code {0} at {1}', device.user_code, device.verification_uri),
+				? `Ожидание входа в ВЕГА Редактор… Введите код ${device.user_code} на ${device.verification_uri}`
+				: vscode.l10n.t('Waiting for VEGA IDE sign-in… Enter code {0} at {1}', device.user_code, device.verification_uri),
 		}, async (_progress, token) => {
 			let intervalMs = Math.max(device.interval, 1) * 1000;
 			const deadline = Date.now() + device.expires_in * 1000;
@@ -180,24 +180,24 @@ class VegaAuthenticationProvider implements vscode.AuthenticationProvider, vscod
 						intervalMs += 5000;
 						continue;
 					case 'denied':
-						throw new Error(ruT('The sign-in request was declined on VEGA.', 'Запрос на вход отклонён в ВЕГА.'));
+						throw new Error(ruT('The sign-in request was declined on VEGA IDE.', 'Запрос на вход отклонён в ВЕГА Редактор.'));
 					case 'expired':
-						throw new Error(ruT('The VEGA sign-in code expired. Please try again.', 'Срок действия кода входа ВЕГА истёк. Попробуйте ещё раз.'));
+						throw new Error(ruT('The VEGA IDE sign-in code expired. Please try again.', 'Срок действия кода входа ВЕГА Редактор истёк. Попробуйте ещё раз.'));
 					case 'success':
 						return result.accessToken;
 				}
 			}
-			throw new Error(ruT('The VEGA sign-in code expired. Please try again.', 'Срок действия кода входа ВЕГА истёк. Попробуйте ещё раз.'));
+			throw new Error(ruT('The VEGA IDE sign-in code expired. Please try again.', 'Срок действия кода входа ВЕГА Редактор истёк. Попробуйте ещё раз.'));
 		});
 	}
 
 	private async _resolveAccountLabel(apiKey: string): Promise<vscode.AuthenticationSessionAccountInformation> {
 		try {
 			const account = await getAccountInfo(apiKey);
-			return { id: account.id, label: isRussian && account.label === 'VEGA' ? 'ВЕГА' : account.label };
+			return { id: account.id, label: account.label === 'VEGA' ? (isRussian ? 'ВЕГА Редактор' : 'VEGA IDE') : account.label };
 		} catch (error) {
-			this._logger.warn(`Failed to resolve the VEGA account label: ${error instanceof Error ? error.message : String(error)}`);
-			return { id: VEGA_CLIENT_ID, label: isRussian ? 'ВЕГА' : 'VEGA' };
+			this._logger.warn(`Failed to resolve the VEGA IDE account label: ${error instanceof Error ? error.message : String(error)}`);
+			return { id: VEGA_CLIENT_ID, label: isRussian ? 'ВЕГА Редактор' : 'VEGA IDE' };
 		}
 	}
 }
@@ -225,12 +225,12 @@ class Context7McpDefinitionProvider implements vscode.McpServerDefinitionProvide
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	const logger = vscode.window.createOutputChannel(isRussian ? 'Аутентификация ВЕГА' : 'VEGA Authentication', { log: true });
+	const logger = vscode.window.createOutputChannel(isRussian ? 'Аутентификация VEGA IDE' : 'VEGA IDE Authentication', { log: true });
 	context.subscriptions.push(logger);
 
 	const provider = new VegaAuthenticationProvider(context, logger);
 	context.subscriptions.push(provider);
-	context.subscriptions.push(vscode.authentication.registerAuthenticationProvider('vega', isRussian ? 'ВЕГА' : 'VEGA', provider, {
+	context.subscriptions.push(vscode.authentication.registerAuthenticationProvider('vega', isRussian ? 'ВЕГА Редактор' : 'VEGA IDE', provider, {
 		supportsMultipleAccounts: false,
 		supportedAuthorizationServers: [vscode.Uri.parse(VEGA_API_ORIGIN)],
 	}));

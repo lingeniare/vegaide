@@ -259,7 +259,7 @@ suite('TabbedModelPicker', () => {
 		instantiationService.set(IStorageService, disposables.add(new InMemoryStorageService()));
 		instantiationService.set(IProductService, upcastPartial<IProductService>({
 			defaultChatAgent: options.vega ? upcastPartial<IDefaultChatAgent>({
-				provider: upcastPartial<IDefaultChatAgent['provider']>({ default: { id: 'vega', name: 'VEGA' } }),
+				provider: upcastPartial<IDefaultChatAgent['provider']>({ default: { id: 'vega', name: 'VEGA IDE' } }),
 			}) : undefined,
 		}));
 		// A unique key per picker keeps the pricing cache from leaking between tests.
@@ -1309,7 +1309,7 @@ suite('TabbedModelPicker', () => {
 
 	test('idempotent filtered opening focuses the exact row without selecting it', () => {
 		const a = model('same');
-		const b = { ...model('same'), identifier: 'codex/target', metadata: { ...a.metadata, vendor: 'codex', modelPickerGroup: { id: 'copilot', label: 'GitHub Copilot' } } };
+		const b = { ...model('same'), identifier: 'codex/target', metadata: { ...a.metadata, vendor: 'codex', modelPickerGroup: { id: 'copilot', label: 'VEGA IDE' } } };
 		const { picker, popup, selections } = createPicker({ models: [a, b] });
 		picker.openWithFilter({ initialFilterValue: 'same', initialFocusItemId: b.identifier });
 		picker.openWithFilter({ initialFilterValue: 'same', initialFocusItemId: b.identifier });
@@ -2966,7 +2966,7 @@ suite('TabbedModelPicker', () => {
 			maxContextInCard: card.textContent?.includes('Max context'),
 			selections: result.selections,
 		}, {
-			tabs: ['VEGA'],
+			tabs: ['VEGA IDE'],
 			rows: ['First', 'Fixed', 'Priced', 'Second'],
 			multiplierInRow: false,
 			detailsLabel: '',

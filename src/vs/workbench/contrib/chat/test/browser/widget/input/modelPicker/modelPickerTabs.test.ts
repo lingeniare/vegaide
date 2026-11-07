@@ -76,7 +76,7 @@ function createConfigurableModel(): ILanguageModelChatMetadataAndIdentifier {
 function createLanguageModelsService(): ILanguageModelsService {
 	return {
 		getVendors: () => [
-			{ vendor: 'copilot', displayName: 'GitHub Copilot', isDefault: true },
+			{ vendor: 'copilot', displayName: 'VEGA IDE', isDefault: true },
 			{ vendor: 'ollama', displayName: 'Ollama', isDefault: false },
 			{ vendor: 'openai', displayName: 'OpenAI', isDefault: false },
 		],
@@ -123,7 +123,7 @@ suite('Model picker destinations', () => {
 			]),
 			[service, noDefault].map(() => [
 				[],
-				[{ id: 'builtIn', label: 'GitHub Copilot', icon: ThemeIcon.fromId('chat-model-provider-copilot'), models: [], placeholders: [] }],
+				[{ id: 'builtIn', label: 'VEGA IDE', icon: ThemeIcon.fromId('chat-model-provider-copilot'), models: [], placeholders: [] }],
 			]),
 		);
 	});
@@ -176,7 +176,7 @@ suite('Model picker destinations', () => {
 		const actions: string[] = [];
 		const placeholders: IModelPickerProviderPlaceholder[] = [
 			{ vendor: 'relay', label: 'Shared Provider', icon: Codicon.lock, message: 'First reason.', action: { label: 'First action', run: () => actions.push('first') } },
-			{ vendor: 'copilot', label: 'GitHub Copilot', message: 'Built-in reason.' },
+			{ vendor: 'copilot', label: 'VEGA IDE', message: 'Built-in reason.' },
 			{ vendor: 'relay', label: 'Shared Provider', message: 'Second reason.', action: { label: 'Second action', run: () => actions.push('second') } },
 		];
 		const destinations = buildModelPickerDestinations([first, gpt, second, claude], mixedService, placeholders);
@@ -195,7 +195,7 @@ suite('Model picker destinations', () => {
 			},
 			{
 				destinations: [
-					{ id: 'builtIn', label: 'GitHub Copilot', icon: ThemeIcon.fromId('chat-model-provider-copilot'), models: [gpt, claude], placeholders: [placeholders[1]] },
+					{ id: 'builtIn', label: 'VEGA IDE', icon: ThemeIcon.fromId('chat-model-provider-copilot'), models: [gpt, claude], placeholders: [placeholders[1]] },
 					{ id: providerId('relay', 'Shared Provider'), label: 'Shared Provider', icon: Codicon.vm, models: [first, second], placeholders: [placeholders[0], placeholders[2]] },
 				],
 				modelIdentity: [true, true, true, true],
@@ -216,7 +216,7 @@ suite('Model picker destinations', () => {
 		});
 		const configuredService = upcastPartial<ILanguageModelsService>({
 			getVendors: () => [
-				{ vendor: 'copilot', displayName: 'GitHub Copilot', isDefault: true },
+				{ vendor: 'copilot', displayName: 'VEGA IDE', isDefault: true },
 				{ vendor: 'openai', displayName: 'OpenAI', isDefault: false, icon: Codicon.vm },
 			].map(provider => ({ ...provider, configuration: undefined, managementCommand: undefined, when: undefined })),
 			getLanguageModelGroups: vendor => vendor === 'openai'
@@ -233,8 +233,8 @@ suite('Model picker destinations', () => {
 		const grouped = createModel('grouped', 'Grouped Model', { modelGroupId: 'other-provider' });
 		const service = upcastPartial<ILanguageModelsService>({
 			getVendors: () => [
-				{ vendor: 'copilot', displayName: 'GitHub Copilot', isDefault: true },
-				{ vendor: 'other-provider', displayName: 'GitHub Copilot', isDefault: false },
+				{ vendor: 'copilot', displayName: 'VEGA IDE', isDefault: true },
+				{ vendor: 'other-provider', displayName: 'VEGA IDE', isDefault: false },
 			].map(provider => ({ ...provider, configuration: undefined, managementCommand: undefined, when: undefined })),
 			getLanguageModelGroups: () => [],
 		});
@@ -242,7 +242,7 @@ suite('Model picker destinations', () => {
 			buildModelPickerDestinations([grouped, gpt], service).map(({ id, models }) => ({ id, models })),
 			[
 				{ id: 'builtIn', models: [gpt] },
-				{ id: providerId('copilot', 'GitHub Copilot'), models: [grouped] },
+				{ id: providerId('copilot', 'VEGA IDE'), models: [grouped] },
 			],
 		);
 	});
@@ -270,7 +270,7 @@ suite('Model picker destinations', () => {
 		assert.deepStrictEqual(
 			summarize([relayed, relayedNative, relayedByok]),
 			[
-				{ id: 'builtIn', label: 'GitHub Copilot', models: ['GPT-5.5', 'CLI Model'] },
+				{ id: 'builtIn', label: 'VEGA IDE', models: ['GPT-5.5', 'CLI Model'] },
 				// The relayed model carries the host's vendor, so that is the identity it
 				// is keyed by; only the group supplies the name the user reads.
 				{ id: providerId('agent-host-copilotcli', 'Ollama'), label: 'Ollama', models: ['Llama 3'] },
@@ -282,7 +282,7 @@ suite('Model picker destinations', () => {
 		const image = { light: URI.file('/openrouter-light.svg'), dark: URI.file('/openrouter-dark.svg') };
 		const serviceWithIcons = {
 			getVendors: () => [
-				{ vendor: 'copilot', displayName: 'GitHub Copilot', isDefault: true },
+				{ vendor: 'copilot', displayName: 'VEGA IDE', isDefault: true },
 				{ vendor: 'openrouter', displayName: 'OpenRouter', isDefault: false, icon: image },
 				{ vendor: 'ollama', displayName: 'Ollama', isDefault: false, icon: Codicon.vm },
 				{ vendor: 'openai', displayName: 'OpenAI', isDefault: false },
@@ -299,7 +299,7 @@ suite('Model picker destinations', () => {
 			buildModelPickerDestinations([gpt, routed, relayed, mistral], serviceWithIcons, [signingIn])
 				.map(destination => ({ label: destination.label, icon: describeIcon(destination.icon) })),
 			[
-				{ label: 'GitHub Copilot', icon: 'chat-model-provider-copilot' },
+				{ label: 'VEGA IDE', icon: 'chat-model-provider-copilot' },
 				{ label: 'Ollama', icon: 'vm' },
 				{ label: 'OpenAI', icon: 'chat-model-provider-openai' },
 				{ label: 'OpenRouter', icon: { light: '/openrouter-light.svg', dark: '/openrouter-dark.svg' } },
@@ -313,7 +313,7 @@ suite('Model picker destinations', () => {
 		// picker would have no destination at all and open on nothing.
 		assert.deepStrictEqual(
 			summarize([auto]),
-			[{ id: 'builtIn', label: 'GitHub Copilot', models: [] }],
+			[{ id: 'builtIn', label: 'VEGA IDE', models: [] }],
 		);
 	});
 
@@ -328,7 +328,7 @@ suite('Model picker destinations', () => {
 				[{ id: 'builtIn', models: [] }],
 				[{ id: 'builtIn', models: ['GPT-5.5'] }],
 				// Without its own row, e.g. when this build is too old for it, it stays listed.
-				[{ id: 'builtIn', label: 'GitHub Copilot', models: ['HydraFusion', 'GPT-5.5'] }],
+				[{ id: 'builtIn', label: 'VEGA IDE', models: ['HydraFusion', 'GPT-5.5'] }],
 			],
 		);
 	});
@@ -336,7 +336,7 @@ suite('Model picker destinations', () => {
 	test('models from only the built-in provider yield a single destination', () => {
 		assert.deepStrictEqual(
 			summarize([auto, gpt, claude]),
-			[{ id: 'builtIn', label: 'GitHub Copilot', models: ['GPT-5.5', 'Claude Sonnet 5'] }],
+			[{ id: 'builtIn', label: 'VEGA IDE', models: ['GPT-5.5', 'Claude Sonnet 5'] }],
 		);
 	});
 
@@ -344,7 +344,7 @@ suite('Model picker destinations', () => {
 		assert.deepStrictEqual(
 			summarize([gpt, llama]),
 			[
-				{ id: 'builtIn', label: 'GitHub Copilot', models: ['GPT-5.5'] },
+				{ id: 'builtIn', label: 'VEGA IDE', models: ['GPT-5.5'] },
 				{ id: providerId('ollama', 'Ollama'), label: 'Ollama', models: ['Llama 3'] },
 			],
 		);
@@ -354,7 +354,7 @@ suite('Model picker destinations', () => {
 		assert.deepStrictEqual(
 			summarize([gpt, mistral, llama]),
 			[
-				{ id: 'builtIn', label: 'GitHub Copilot', models: ['GPT-5.5'] },
+				{ id: 'builtIn', label: 'VEGA IDE', models: ['GPT-5.5'] },
 				{ id: providerId('ollama', 'Ollama'), label: 'Ollama', models: ['Llama 3'] },
 				{ id: providerId('openai', 'OpenAI'), label: 'OpenAI', models: ['Mistral Large'] },
 			],
@@ -368,7 +368,7 @@ suite('Model picker destinations', () => {
 		const alsoSameName = createModel('local-2', 'Local Two', { vendor: 'openai', isBYOK: true });
 		const service = {
 			getVendors: () => [
-				{ vendor: 'copilot', displayName: 'GitHub Copilot', isDefault: true },
+				{ vendor: 'copilot', displayName: 'VEGA IDE', isDefault: true },
 				{ vendor: 'ollama', displayName: 'Local Models', isDefault: false },
 				{ vendor: 'openai', displayName: 'Local Models', isDefault: false },
 			],
@@ -390,7 +390,7 @@ suite('Model picker destinations', () => {
 		assert.deepStrictEqual(
 			summarize([gpt], [{ vendor: 'ollama', label: 'Ollama', message: 'Sign in to see available models.' }]),
 			[
-				{ id: 'builtIn', label: 'GitHub Copilot', models: ['GPT-5.5'] },
+				{ id: 'builtIn', label: 'VEGA IDE', models: ['GPT-5.5'] },
 				{ id: providerId('ollama', 'Ollama'), label: 'Ollama', models: [] },
 			],
 		);
@@ -398,8 +398,8 @@ suite('Model picker destinations', () => {
 
 	test('the built-in provider waiting on sign-in still gets its destination', () => {
 		assert.deepStrictEqual(
-			summarize([], [{ vendor: 'copilot', label: 'GitHub Copilot', message: 'Sign in to see available models.' }]),
-			[{ id: 'builtIn', label: 'GitHub Copilot', models: [] }],
+			summarize([], [{ vendor: 'copilot', label: 'VEGA IDE', message: 'Sign in to see available models.' }]),
+			[{ id: 'builtIn', label: 'VEGA IDE', models: [] }],
 		);
 	});
 

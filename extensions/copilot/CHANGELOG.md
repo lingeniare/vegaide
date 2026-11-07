@@ -1,6 +1,6 @@
-# GitHub Copilot Chat in VS Code - Changelog
+# VEGA IDE Chat in VS Code - Changelog
 
-You can find the latest AI-related updates for GitHub Copilot in VS Code in the weekly [VS Code release notes](https://code.visualstudio.com/updates).
+You can find the latest AI-related updates for VEGA IDE in VS Code in the weekly [VS Code release notes](https://code.visualstudio.com/updates).
 
 For more frequent updates, check the [Commit log](https://github.com/Microsoft/vscode/commits/main) and [vscode-copilot-chat commit log](https://github.com/microsoft/vscode-copilot-chat/commits/main) on GitHub.
 
@@ -10,7 +10,7 @@ For more frequent updates, check the [Commit log](https://github.com/Microsoft/v
 
 ## 0.41 (2026-03-25)
 
-GitHub Copilot updates for [VS Code 1.113](https://code.visualstudio.com/updates/v1_113):
+VEGA IDE updates for [VS Code 1.113](https://code.visualstudio.com/updates/v1_113):
 
 - MCP support in Copilot CLI & Claude agents
 - Forking sessions in Copilot CLI & Claude agents
@@ -25,7 +25,7 @@ GitHub Copilot updates for [VS Code 1.113](https://code.visualstudio.com/updates
 
 ## 0.40 (2026-03-18)
 
-GitHub Copilot updates for [VS Code 1.112](https://code.visualstudio.com/updates/v1_112):
+VEGA IDE updates for [VS Code 1.112](https://code.visualstudio.com/updates/v1_112):
 
 - Message steering and queueing in Copilot CLI
 - Preview changes before delegating to Copilot CLI
@@ -44,7 +44,7 @@ GitHub Copilot updates for [VS Code 1.112](https://code.visualstudio.com/updates
 
 ## 0.39 (2026-03-09)
 
-GitHub Copilot updates for [VS Code 1.111](https://code.visualstudio.com/updates/v1_111):
+VEGA IDE updates for [VS Code 1.111](https://code.visualstudio.com/updates/v1_111):
 
 - Autopilot and agent permissions
 - Agent-scoped hooks (Preview)
@@ -54,7 +54,7 @@ GitHub Copilot updates for [VS Code 1.111](https://code.visualstudio.com/updates
 
 ## 0.38 (2026-03-05)
 
-GitHub Copilot updates from [February 2026](https://code.visualstudio.com/updates/v1_110):
+VEGA IDE updates from [February 2026](https://code.visualstudio.com/updates/v1_110):
 
 ### Agent controls
 
@@ -98,7 +98,7 @@ GitHub Copilot updates from [February 2026](https://code.visualstudio.com/update
 
 ## 0.37 (2026-02-04)
 
-GitHub Copilot updates from [January 2026](https://code.visualstudio.com/updates/v1_109):
+VEGA IDE updates from [January 2026](https://code.visualstudio.com/updates/v1_109):
 
 ### Chat UX
 
@@ -142,7 +142,7 @@ GitHub Copilot updates from [January 2026](https://code.visualstudio.com/updates
 ### Agent extensibility
 
 - **Claude compatibility** — VS Code reads Claude configuration files directly: `CLAUDE.md` instructions, `.claude/agents`, `.claude/skills`, `.claude/settings.json` hooks.
-- **Agent orchestration** — Building blocks for multi-agent workflows using custom agents, subagents, and invocation controls. Community examples: Copilot Orchestra, GitHub Copilot Atlas.
+- **Agent orchestration** — Building blocks for multi-agent workflows using custom agents, subagents, and invocation controls. Community examples: Copilot Orchestra, VEGA IDE Atlas.
 - **Claude Agent (Preview)** — Delegate tasks to Claude Agent SDK using Copilot subscription models. Uses official Anthropic agent harness.
 - **Anthropic model improvements** — Messages API with interleaved thinking, tool search tool, context editing (Experimental).
 - **MCP Apps support** — MCP servers can display rich, interactive UI in chat responses.
@@ -165,7 +165,7 @@ GitHub Copilot updates from [January 2026](https://code.visualstudio.com/updates
 
 - **Rename suggestions for TypeScript** — Also works when typing over existing declarations.
 - **Improved ghost text visibility** — Dotted underline for short inline suggestions (fewer than 3 characters).
-- **Copilot extension deprecated** — GitHub Copilot extension fully deprecated; all functionality in GitHub Copilot Chat extension.
+- **Copilot extension deprecated** — VEGA IDE extension fully deprecated; all functionality in VEGA IDE Chat extension.
 
 ### Enterprise
 
@@ -175,7 +175,7 @@ GitHub Copilot updates from [January 2026](https://code.visualstudio.com/updates
 
 ## 0.36 (2026-01-08)
 
-GitHub Copilot updates from [December 2025](https://code.visualstudio.com/updates/v1_108):
+VEGA IDE updates from [December 2025](https://code.visualstudio.com/updates/v1_108):
 
 ### Agents
 
@@ -197,7 +197,7 @@ GitHub Copilot updates from [December 2025](https://code.visualstudio.com/update
 
 ## 0.35 (2025-12-10)
 
-GitHub Copilot updates from [November 2025](https://code.visualstudio.com/updates/v1_107):
+VEGA IDE updates from [November 2025](https://code.visualstudio.com/updates/v1_107):
 
 ### Agents
 
@@ -234,7 +234,7 @@ GitHub Copilot updates from [November 2025](https://code.visualstudio.com/update
 - **Rename suggestions for TypeScript** — AI predicts symbol renames and suggests related renames across the file.
 - **New model for next edit suggestions** — Improved model with better acceptance/dismissal performance.
 - **Preview next edit suggestions outside the viewport** — Suggestions outside the viewport show a preview at the cursor position.
-- **Copilot extensions unification** — Inline suggestions fully served from Copilot Chat extension; GitHub Copilot extension disabled by default. Full deprecation planned for January 2026.
+- **Copilot extensions unification** — Inline suggestions fully served from Copilot Chat extension; VEGA IDE extension disabled by default. Full deprecation planned for January 2026.
 
 ### MCP
 
@@ -251,7 +251,7 @@ GitHub Copilot updates from [November 2025](https://code.visualstudio.com/update
 
 ## 0.33 (2025-11-12)
 
-GitHub Copilot updates from [October 2025](https://code.visualstudio.com/updates/v1_106):
+VEGA IDE updates from [October 2025](https://code.visualstudio.com/updates/v1_106):
 
 ### Agents
 
@@ -276,7 +276,7 @@ GitHub Copilot updates from [October 2025](https://code.visualstudio.com/updates
 
 ### Code editing (AI-related)
 
-- **Inline suggestions open-sourced** — Merged into vscode-copilot-chat repo; Copilot and Copilot Chat extensions consolidating into one. GitHub Copilot extension to be deprecated by early 2026.
+- **Inline suggestions open-sourced** — Merged into vscode-copilot-chat repo; Copilot and Copilot Chat extensions consolidating into one. VEGA IDE extension to be deprecated by early 2026.
 - **Snooze inline suggestions** — Pause suggestions directly from the gutter icon with a configurable duration.
 
 ### MCP
@@ -299,7 +299,7 @@ GitHub Copilot updates from [October 2025](https://code.visualstudio.com/updates
 
 ## 0.32 (2025-10-09)
 
-GitHub Copilot updates from [September 2025](https://code.visualstudio.com/updates/v1_105):
+VEGA IDE updates from [September 2025](https://code.visualstudio.com/updates/v1_105):
 
 ### Chat
 
@@ -502,7 +502,7 @@ In this release, the `runTests` tool now also reports test code coverage to the 
 
 ## 0.31 (2025-09-11)
 
-GitHub Copilot updates from [August 2025](https://code.visualstudio.com/updates/v1_104):
+VEGA IDE updates from [August 2025](https://code.visualstudio.com/updates/v1_104):
 
 ### Chat
 
@@ -510,7 +510,7 @@ GitHub Copilot updates from [August 2025](https://code.visualstudio.com/updates/
 
 This iteration, we're introducing auto model selection in chat. When you choose the **Auto** model in the model picker, VS Code automatically selects a model to ensure that you get the optimal performance and avoid rate limits.
 
-Auto model selection is currently in preview and we are rolling it out to all GitHub Copilot users in VS Code in the following weeks, starting with the individual Copilot plans.
+Auto model selection is currently in preview and we are rolling it out to all VEGA IDE users in VS Code in the following weeks, starting with the individual Copilot plans.
 
 ![Screenshot that shows the model picker in the Chat view, showing the Auto option.](https://code.visualstudio.com/assets/updates/1_104/model-dropdown-auto.png)
 
@@ -654,7 +654,7 @@ _Theme: [Sharp Solarized](https://marketplace.visualstudio.com/items?itemName=jo
 
 #### Social sign in with Google
 
-The option to sign in or sign up to GitHub Copilot with a Google account is now generally available and rolling out to all users in VS Code.
+The option to sign in or sign up to VEGA IDE with a Google account is now generally available and rolling out to all users in VS Code.
 
 ![Screenshot showing the sign in dialog showing the option to use a Google account.](https://code.visualstudio.com/assets/updates/1_104/google.png)
 
@@ -772,11 +772,11 @@ We've upgraded the `#codebase` tool to use a new [embeddings](https://en.wikiped
 
 We'll be gradually rolling out this new embeddings model over the next few weeks. Your workspace will be automatically updated to use this new embeddings model, so no action is required. VS Code Insiders is already using the new model if you want to try it out before it rolls out to you.
 
-#### Hide and disable GitHub Copilot AI features
+#### Hide and disable VEGA IDE AI features
 
 **Setting**: `chat.disableAIFeatures`
 
-We are introducing a new setting `chat.disableAIFeatures` for disabling and hiding built-in AI features provided by GitHub Copilot, including chat, code completions, and next edit suggestions.
+We are introducing a new setting `chat.disableAIFeatures` for disabling and hiding built-in AI features provided by VEGA IDE, including chat, code completions, and next edit suggestions.
 
 The setting has the following advantages over the previous solution we had in place:
 
@@ -835,7 +835,7 @@ We are experimenting with improving the quality of next edit suggestions for not
 
 ## 0.30 (2025-08-07)
 
-GitHub Copilot updates from [July 2025](https://code.visualstudio.com/updates/v1_103):
+VEGA IDE updates from [July 2025](https://code.visualstudio.com/updates/v1_103):
 
 ### Chat
 
@@ -1090,13 +1090,13 @@ To enable agent tools in notebooks, enable the new experimental setting `inlineC
 
 ## 0.29 (2025-07-09)
 
-GitHub Copilot updates from [June 2025](https://code.visualstudio.com/updates/v1_102):
+VEGA IDE updates from [June 2025](https://code.visualstudio.com/updates/v1_102):
 
 ### Chat
 
 #### Copilot Chat is open source
 
-We're excited to announce that we've open sourced the GitHub Copilot Chat extension! The source code is now available at [`microsoft/vscode-copilot-chat`](https://github.com/microsoft/vscode-copilot-chat) under the MIT license.
+We're excited to announce that we've open sourced the VEGA IDE Chat extension! The source code is now available at [`microsoft/vscode-copilot-chat`](https://github.com/microsoft/vscode-copilot-chat) under the MIT license.
 
 This marks a significant milestone in our commitment to transparency and community collaboration. By open sourcing the extension, we're enabling the community to:
 
@@ -1267,9 +1267,9 @@ We've seen that, on occasion, models want to call the Fetch tool with non-HTTP U
 
 #### Clearer language model access management
 
-We've reworked the UX around managing extension access to language models provided by extensions. Previously, you saw an item in the Account menu that said **AccountName (GitHub Copilot Chat)**, which had nothing to do with what account GitHub Copilot Chat was using. Rather, it allowed you to manage which extensions had access to the language models provided by Copilot Chat.
+We've reworked the UX around managing extension access to language models provided by extensions. Previously, you saw an item in the Account menu that said **AccountName (VEGA IDE Chat)**, which had nothing to do with what account VEGA IDE Chat was using. Rather, it allowed you to manage which extensions had access to the language models provided by Copilot Chat.
 
-To make this clearer, we've removed the **AccountName (GitHub Copilot Chat)** item and replaced it with a new item called **Manage Language Model Access...**. This item opens a Quick Pick that enables you to manage which extensions have access to the language models provided by GitHub Copilot Chat.
+To make this clearer, we've removed the **AccountName (VEGA IDE Chat)** item and replaced it with a new item called **Manage Language Model Access...**. This item opens a Quick Pick that enables you to manage which extensions have access to the language models provided by VEGA IDE Chat.
 
 ![Screenshot that shows the language model access Quick Pick.](https://code.visualstudio.com/assets/updates/1_102/lm-access-qp.png)
 
@@ -1410,7 +1410,7 @@ The toggle is enabled only when there are AI results available. We welcome feedb
 
 ## 0.28 (2025-06-12)
 
-GitHub Copilot updates from [May 2025](https://code.visualstudio.com/updates/v1_101):
+VEGA IDE updates from [May 2025](https://code.visualstudio.com/updates/v1_101):
 
 ### Chat
 
@@ -1548,7 +1548,7 @@ Learn more about [adding context in chat](https://code.visualstudio.com/docs/cop
 
 #### Fix task configuration errors
 
-Configuring tasks and problem matchers can be tricky. Use the **Fix with Github Copilot** action that is offered when there are errors in your task configuration to address them quickly and efficiently.
+Configuring tasks and problem matchers can be tricky. Use the **Fix with VEGA IDE** action that is offered when there are errors in your task configuration to address them quickly and efficiently.
 
 #### Custom chat modes (Preview)
 
@@ -1728,7 +1728,7 @@ A snippet of the code is shown from a notebook cell when the agent requests conf
 
 #### Copilot coding agent integration
 
-With Copilot coding agent, GitHub Copilot can work independently in the background to complete tasks, just like a human developer. We have expanded the GitHub Pull Requests extension to make it easier to assign and track tasks for the agent from within VS Code.
+With Copilot coding agent, VEGA IDE can work independently in the background to complete tasks, just like a human developer. We have expanded the GitHub Pull Requests extension to make it easier to assign and track tasks for the agent from within VS Code.
 
 We have added the following features to the extension:
 
@@ -1748,7 +1748,7 @@ To add a history item to chat, use **Add Context** > **Source Control** from the
 
 ## 0.27 (2025-05-07)
 
-GitHub Copilot updates from [April 2025](https://code.visualstudio.com/updates/v1_100):
+VEGA IDE updates from [April 2025](https://code.visualstudio.com/updates/v1_100):
 
 ### Chat
 
@@ -2049,7 +2049,7 @@ The Jupyter extension contributes tools for listing and installing packages into
 
 ## 0.26 (2025-04-02)
 
-GitHub Copilot updates from [March 2025](https://code.visualstudio.com/updates/v1_99):
+VEGA IDE updates from [March 2025](https://code.visualstudio.com/updates/v1_99):
 
 ### Accessibility
 
@@ -2089,7 +2089,7 @@ Keep in mind that remote workspaces indexes are currently only available for cod
 
 ![Screenshot that shows the workspace index status in the Copilot Status Bar menu.](https://code.visualstudio.com/assets/updates/1_99/copilot-workspace-index-remote.png)
 
-To manage load, we are slowly rolling out instant indexing over the next few weeks, so you may not see it right away. You can still run the `GitHub Copilot: Build remote index command` command to start using a remote index when instant indexing is not yet enabled for you.
+To manage load, we are slowly rolling out instant indexing over the next few weeks, so you may not see it right away. You can still run the `VEGA IDE: Build remote index command` command to start using a remote index when instant indexing is not yet enabled for you.
 
 #### Copilot status menu
 
@@ -2404,7 +2404,7 @@ One of the bigger changes is the introduction of the concept of "rich" quality [
 
 ## 0.25 (2025-03-05)
 
-GitHub Copilot updates from [February 2025](https://code.visualstudio.com/updates/v1_98):
+VEGA IDE updates from [February 2025](https://code.visualstudio.com/updates/v1_98):
 
 ### Copilot Edits
 
@@ -2439,7 +2439,7 @@ Learn more about [Copilot Edits agent mode](https://code.visualstudio.com/docs/c
 
 We are introducing notebook support in Copilot Edits. You can now use Copilot to edit notebook files with the same intuitive experience as editing code files. Create new notebooks from scratch, modify content across multiple cells, insert and delete cells, and change cell types. This preview feature provides a seamless workflow when working with data science or documentation notebooks.
 
-> For the best notebook editing experience with Copilot, we recommend using [VS Code Insiders](https://code.visualstudio.com/insiders/) and the pre-release version of GitHub Copilot Chat, where you'll get the latest improvements to this feature as they're developed.
+> For the best notebook editing experience with Copilot, we recommend using [VS Code Insiders](https://code.visualstudio.com/insiders/) and the pre-release version of VEGA IDE Chat, where you'll get the latest improvements to this feature as they're developed.
 
 <video src="https://code.visualstudio.com/assets/updates/1_98/notebook_copilot_edits.mp4" title="Video that shows using Copilot Edits to modify a notebook." autoplay loop controls muted></video>
 
@@ -2541,7 +2541,7 @@ Alternatively, you can change the model that is used for code completions via **
 
 This release, we added more models to choose from when using Copilot. The following models are now available in the model picker in Visual Studio Code and github.com chat:
 
-* **GPT 4.5 (Preview)**: OpenAI’s latest model, GPT-4.5, is now available in GitHub Copilot Chat to Copilot Enterprise users. GPT-4.5 is a large language model designed with advanced capabilities in intuition, writing style, and broad knowledge. Learn more about the GPT-4.5 model availability in the [GitHub blog post](https://github.blog/changelog/2025-02-27-openai-gpt-4-5-in-github-copilot-now-available-in-public-preview).
+* **GPT 4.5 (Preview)**: OpenAI’s latest model, GPT-4.5, is now available in VEGA IDE Chat to Copilot Enterprise users. GPT-4.5 is a large language model designed with advanced capabilities in intuition, writing style, and broad knowledge. Learn more about the GPT-4.5 model availability in the [GitHub blog post](https://github.blog/changelog/2025-02-27-openai-gpt-4-5-in-github-copilot-now-available-in-public-preview).
 
 * **Claude 3.7 Sonnet (Preview)**: Claude 3.7 Sonnet is now available to all customers on paid Copilot plans. This new Sonnet model supports both thinking and non-thinking modes in Copilot. In initial testing, we’ve seen particularly strong improvements in agentic scenarios. Learn more about the Claude 3.7 Sonnet model availability in the [GitHub blog post](https://github.blog/changelog/2025-02-24-claude-3-7-sonnet-is-now-available-in-github-copilot-in-public-preview/).
 

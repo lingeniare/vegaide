@@ -795,7 +795,7 @@
 }
 
 /* Copilot Fusion's badge, its discount or else Recommended, is a neutral pill whose border
- * takes the GitHub Copilot brand gradient. The gradient is masked to the stroke, so the
+ * takes the VEGA IDE brand gradient. The gradient is masked to the stroke, so the
  * translucent fill stays neutral. High contrast drops the gradient for the contrast border. */
 .action-widget .chat-model-picker-tabbed .monaco-list-row.chat-model-picker-badge-fusion > .action-item-badge {
 	position: relative;

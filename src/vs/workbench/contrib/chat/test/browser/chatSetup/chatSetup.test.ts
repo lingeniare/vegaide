@@ -150,7 +150,7 @@ suite('Chat setup dialog presentation', () => {
 				strategy: ChatSetupStrategy.Canceled,
 				classes: ['link-button'],
 			},
-			footer: 'By continuing, you agree to GitHub\'s [Terms](https://example.com/terms) and [Privacy Statement](https://example.com/privacy). GitHub Copilot may show [public code](https://example.com/public-code) suggestions and use your data to improve the product. You can change these [settings](https://example.com/settings) anytime.',
+			footer: 'By continuing, you agree to the GitHub [Terms](https://example.com/terms) and [Privacy Statement](https://example.com/privacy). GitHub may show [public code](https://example.com/public-code) suggestions and use your data to improve the product. You can change these [settings](https://example.com/settings) anytime.',
 		});
 	});
 
@@ -162,7 +162,7 @@ suite('Chat setup dialog presentation', () => {
 			publicCodeMatchesUrl: 'https://example.com/public-code',
 		});
 
-		assert.strictEqual(footer, 'By continuing, you agree to GitHub\'s [Terms](https://example.com/terms) and [Privacy Statement](https://example.com/privacy). GitHub Copilot may show [public code](https://example.com/public-code) suggestions and use your data to improve the product. You can change these settings anytime.');
+		assert.strictEqual(footer, 'By continuing, you agree to the GitHub [Terms](https://example.com/terms) and [Privacy Statement](https://example.com/privacy). GitHub may show [public code](https://example.com/public-code) suggestions and use your data to improve the product. You can change these settings anytime.');
 	});
 
 	test('offers only the default provider for sign-in', () => {

@@ -636,7 +636,7 @@ export interface AuthenticateResult {
 }
 
 /**
- * Canonical {@link ProtectedResourceMetadata} for the GitHub Copilot
+ * Canonical {@link ProtectedResourceMetadata} for the VEGA IDE
  * resource. Shared between every agent provider that consumes a GitHub
  * Copilot bearer token (e.g. Copilot CLI, Claude) so they advertise an
  * identical resource identifier to the auth flow — clients dispatch by
@@ -645,7 +645,7 @@ export interface AuthenticateResult {
  */
 export const GITHUB_COPILOT_PROTECTED_RESOURCE: ProtectedResourceMetadata = {
 	resource: 'https://api.github.com',
-	resource_name: 'GitHub Copilot',
+	resource_name: 'VEGA IDE',
 	authorization_servers: ['https://github.com/login/oauth'],
 	scopes_supported: ['read:user', 'user:email'],
 	required: true,
@@ -673,9 +673,9 @@ export const GITHUB_REPO_PROTECTED_RESOURCE: ProtectedResourceMetadata = {
 
 /**
  * Pure decision: does this set of advertised protected resources require the
- * user to be signed in to GitHub Copilot right now?
+ * user to be signed in to VEGA IDE right now?
  *
- * Returns `true` iff the agent advertises the canonical GitHub Copilot
+ * Returns `true` iff the agent advertises the canonical VEGA IDE
  * protected resource ({@link GITHUB_COPILOT_PROTECTED_RESOURCE}) with
  * `required !== false`. Provider-agnostic by design: an agent that drops the
  * resource entirely (e.g. Claude in native mode) or advertises it with

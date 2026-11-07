@@ -23881,7 +23881,7 @@ suite('AgentHostChatContribution', () => {
 						telemetrySource: 'agentHost',
 						forceSignInDialog: true,
 						additionalScopes: ['read:user'],
-						dialogTitle: 'Sign in to use GitHub Copilot',
+						dialogTitle: 'Sign in to use VEGA IDE',
 						disableChatViewReveal: true,
 						returnResult: true,
 					}],

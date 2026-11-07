@@ -165,8 +165,8 @@ suite('PromptHoverProvider', () => {
 				fileHover,
 			}, {
 				placeholderHover: 'Current working directory.',
-				toolHover: 'Local `#tool:` references are not expanded by the GitHub Copilot harness.',
-				fileHover: 'Local `#file:` references are not expanded by the GitHub Copilot harness.',
+				toolHover: 'Local `#tool:` references are not expanded by the VEGA IDE harness.',
+				fileHover: 'Local `#file:` references are not expanded by the VEGA IDE harness.',
 			});
 		});
 
@@ -184,7 +184,7 @@ suite('PromptHoverProvider', () => {
 
 			const hover = await getHover(content, 3, 1, PromptsType.agent);
 
-			assert.strictEqual(hover, 'Possible handoff actions when the agent has completed its task.\n\nNote: This attribute is not used by the GitHub Copilot harness.');
+			assert.strictEqual(hover, 'Possible handoff actions when the agent has completed its task.\n\nNote: This attribute is not used by the VEGA IDE harness.');
 		});
 
 		test('hover on target attribute shows description', async () => {
@@ -385,7 +385,7 @@ suite('PromptHoverProvider', () => {
 			].join('\n');
 			const hover = await getHover(content, 4, 1, PromptsType.agent);
 			const expected = [
-				'Specify the model that runs this custom agent. This is supported by the GitHub Copilot harness. You can also provide an ordered list of model preferences; the first available model will be used.',
+				'Specify the model that runs this custom agent. This is supported by the VEGA IDE harness. You can also provide an ordered list of model preferences; the first available model will be used.',
 				'',
 				'- Name: MAE 4',
 				'- Family: mae',
@@ -409,7 +409,7 @@ suite('PromptHoverProvider', () => {
 			const expected = [
 				'Possible handoff actions when the agent has completed its task.',
 				'',
-				'Note: This attribute is not used by the GitHub Copilot harness.'
+				'Note: This attribute is not used by the VEGA IDE harness.'
 			].join('\n');
 			assert.strictEqual(hover, expected);
 		});
@@ -458,7 +458,7 @@ suite('PromptHoverProvider', () => {
 
 			const hover = await getHover(content, 4, 10, PromptsType.agent);
 
-			assert.strictEqual(hover, 'GitHub tools\n\nThis tool is recognized but disabled for the matching GitHub Copilot harness.');
+			assert.strictEqual(hover, 'GitHub tools\n\nThis tool is recognized but disabled for the matching VEGA IDE harness.');
 		});
 
 		test('hover on github-copilot skill shows description, source, and availability', async () => {
@@ -477,7 +477,7 @@ suite('PromptHoverProvider', () => {
 
 			const hover = await getHover(content, 4, 12, PromptsType.agent);
 
-			assert.strictEqual(hover, 'Review changes\n\nSource: Workspace\n\nSkill failed to load\n\nThis skill is recognized but currently unavailable for the matching GitHub Copilot harness.');
+			assert.strictEqual(hover, 'Review changes\n\nSource: Workspace\n\nSkill failed to load\n\nThis skill is recognized but currently unavailable for the matching VEGA IDE harness.');
 		});
 
 		test('hover on github-copilot tool with target undefined', async () => {
@@ -533,7 +533,7 @@ suite('PromptHoverProvider', () => {
 			].join('\n');
 			const hover = await getHover(content, 4, 10, PromptsType.agent);
 			const expected = [
-				'Specify the model that runs this custom agent. This is supported by the GitHub Copilot harness. You can also provide an ordered list of model preferences; the first available model will be used.',
+				'Specify the model that runs this custom agent. This is supported by the VEGA IDE harness. You can also provide an ordered list of model preferences; the first available model will be used.',
 				'',
 				'- Name: MAE 4',
 				'- Family: mae',
@@ -552,7 +552,7 @@ suite('PromptHoverProvider', () => {
 			].join('\n');
 			const hover = await getHover(content, 4, 30, PromptsType.agent);
 			const expected = [
-				'Specify the model that runs this custom agent. This is supported by the GitHub Copilot harness. You can also provide an ordered list of model preferences; the first available model will be used.',
+				'Specify the model that runs this custom agent. This is supported by the VEGA IDE harness. You can also provide an ordered list of model preferences; the first available model will be used.',
 				'',
 				'- Name: MAE 4.1',
 				'- Family: mae',

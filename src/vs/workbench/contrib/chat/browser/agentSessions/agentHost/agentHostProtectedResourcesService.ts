@@ -17,7 +17,7 @@ export const IAgentHostProtectedResourcesService = createDecorator<IAgentHostPro
  * Tracks the protected resources each live agent-host provider currently
  * advertises, and signals — with the provider in the payload — when that set
  * changes. Consumers derive higher-level facts from the raw resources (e.g.
- * whether a session type requires GitHub Copilot sign-in right now: Claude in
+ * whether a session type requires VEGA IDE sign-in right now: Claude in
  * native mode / Codex on OpenAI advertise the Copilot resource with
  * `required: false`, so they are usable without signing in) and filter
  * {@link onDidChange} to the provider they care about.

@@ -42,7 +42,7 @@ export class PromptDocumentSemanticTokensProvider implements DocumentSemanticTok
 		}
 		const target = getTarget(promptType, promptAST.header ?? model.uri, this.customizationHarnessService.getActiveDescriptor().customAgentTarget);
 		if (!isVSCodeOrDefaultTarget(target) && target !== Target.GitHubCopilot) {
-			// variables syntax is only support for VS Code and default targets, not for GitHub Copilot or Claude custom agents
+			// variables syntax is only support for VS Code and default targets, not for VEGA IDE or Claude custom agents
 			return undefined;
 		}
 

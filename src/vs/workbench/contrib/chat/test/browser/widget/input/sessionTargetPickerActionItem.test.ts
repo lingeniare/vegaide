@@ -563,7 +563,7 @@ suite('SessionTypePickerActionItem', () => {
 			() => { },
 		);
 
-		const providerName = product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot';
+		const providerName = product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE';
 		assert.deepStrictEqual({
 			label: action.label,
 			checked: action.checked,

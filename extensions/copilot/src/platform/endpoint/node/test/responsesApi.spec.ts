@@ -1986,8 +1986,8 @@ describe('phase commentary followed by phase final_answer', () => {
 		const accumulatedTexts: string[] = [];
 		const phases: string[] = [];
 
-		const commentaryText = 'Responding directly in commentary as requested. My name is GitHub Copilot.';
-		const finalText = 'My name is GitHub Copilot.';
+		const commentaryText = 'Responding directly in commentary as requested. My name is VEGA IDE.';
+		const finalText = 'My name is VEGA IDE.';
 
 		// Real-world Responses API stream: commentary message (output_index 0)
 		// followed by final_answer message (output_index 1), with incremental

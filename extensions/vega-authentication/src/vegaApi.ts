@@ -154,6 +154,6 @@ export async function getAccountInfo(apiKey: string): Promise<IVegaAccountInfo> 
 	const data = await response.json() as { id?: string; user_id?: string; email?: string; name?: string };
 	return {
 		id: data.user_id ?? data.id ?? VEGA_CLIENT_ID,
-		label: data.email ?? data.name ?? 'VEGA',
+		label: data.email ?? data.name ?? 'VEGA IDE',
 	};
 }

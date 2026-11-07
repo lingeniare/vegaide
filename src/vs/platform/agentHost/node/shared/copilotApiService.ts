@@ -235,7 +235,7 @@ export function isVegaApiKey(token: string | undefined): boolean {
 
 /**
  * `CAPIClient` derives `ChatMessages` as `{api}/v1/messages`. With the VEGA
- * base (`…/api/v1`) that yields a doubled `/v1/v1/` segment; VEGA's
+ * base (`…/api/v1`) that yields a doubled `/v1/v1/` segment; VEGA IDE's
  * Anthropic endpoint is flat `…/api/v1/messages`. Collapse the duplication
  * in the fetch wrapper so the request reaches the real route.
  */
@@ -459,7 +459,7 @@ export type FetchFunction = typeof globalThis.fetch;
 export const ICopilotApiService = createDecorator<ICopilotApiService>('copilotApiService');
 
 /**
- * Foundational gateway between the agent host and GitHub Copilot's CAPI proxy
+ * Foundational gateway between the agent host and VEGA IDE's CAPI proxy
  * for Anthropic-style chat completions and model discovery.
  *
  * ## Goals

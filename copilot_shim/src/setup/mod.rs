@@ -542,11 +542,11 @@ impl InstallReporter for ConsoleReporter {
 			self.last_progress = None;
 			match phase {
 				InstallPhase::Resolving => {
-					eprintln!("Finding the latest GitHub Copilot CLI release...")
+					eprintln!("Finding the latest VEGA IDE CLI release...")
 				}
 				InstallPhase::Downloading => {}
 				InstallPhase::Verifying => eprintln!("Verifying the download..."),
-				InstallPhase::Installing => eprintln!("Installing GitHub Copilot CLI..."),
+				InstallPhase::Installing => eprintln!("Installing VEGA IDE CLI..."),
 			}
 		}
 		if phase == InstallPhase::Downloading && total > 0 {
@@ -555,7 +555,7 @@ impl InstallReporter for ConsoleReporter {
 				self.last_progress = Some((now, current));
 				let percent = current.saturating_mul(100) / total;
 				eprint!(
-					"\rDownloading GitHub Copilot CLI... {} MB of {} MB ({percent}%)",
+					"\rDownloading VEGA IDE CLI... {} MB of {} MB ({percent}%)",
 					current / 1_048_576,
 					total / 1_048_576
 				);
@@ -576,7 +576,7 @@ where
 		InstallOutcome::failed(
 			InstallStatus::Policy,
 			format!(
-				"installing GitHub Copilot CLI from VS Code is turned off by the {COPILOT_CLI_COMMAND_POLICY} policy"
+				"installing VEGA IDE CLI from VS Code is turned off by the {COPILOT_CLI_COMMAND_POLICY} policy"
 			),
 		)
 	});
@@ -605,7 +605,7 @@ where
 			match outcome.status {
 				InstallStatus::Cancelled => {}
 				InstallStatus::Installed => eprintln!(
-					"Installed GitHub Copilot CLI{}.",
+					"Installed VEGA IDE CLI{}.",
 					outcome
 						.release_tag
 						.as_deref()
@@ -613,7 +613,7 @@ where
 						.unwrap_or_default()
 				),
 				InstallStatus::AlreadyInstalled => eprintln!(
-					"GitHub Copilot CLI is already installed{}.",
+					"VEGA IDE CLI is already installed{}.",
 					outcome
 						.cli_path
 						.as_ref()
@@ -622,7 +622,7 @@ where
 				),
 				// The reason is shown without verbose mode; the parent shim adds the manual install link.
 				_ => runtime.write_message(&format!(
-					"GitHub Copilot CLI couldn't be installed: {}",
+					"VEGA IDE CLI couldn't be installed: {}",
 					outcome.reason
 				)),
 			}
@@ -737,7 +737,7 @@ fn install_cli(target: Option<HostTarget>, reporter: &mut dyn InstallReporter) -
 	if matches!(windows::cli_msi_registered(), Ok(true)) {
 		return InstallOutcome::failed(
 			InstallStatus::Error,
-			"GitHub Copilot CLI is registered in Installed apps, but its copilot.exe is missing; uninstall it in Settings > Apps > Installed apps and try again",
+			"VEGA IDE CLI is registered in Installed apps, but its copilot.exe is missing; uninstall it in Settings > Apps > Installed apps and try again",
 		);
 	}
 	let cancelled =

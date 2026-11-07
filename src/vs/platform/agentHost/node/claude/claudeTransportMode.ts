@@ -16,7 +16,7 @@ export type ClaudeTransportMode = 'proxy' | 'native';
  * The authentication inputs {@link resolveClaudeTransportMode} decides over.
  */
 export interface IClaudeTransportModeInputs {
-	/** Whether a GitHub Copilot token has been captured (i.e. signed in). */
+	/** Whether a VEGA IDE token has been captured (i.e. signed in). */
 	readonly hasGitHubToken: boolean;
 	/** Whether the SDK reported a Claude setup usable on the user's own credentials (see {@link isClaudeAccountSetUp}). */
 	readonly hasExistingSetup: boolean;

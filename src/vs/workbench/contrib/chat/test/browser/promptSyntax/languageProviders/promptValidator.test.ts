@@ -273,7 +273,7 @@ suite('PromptValidator', () => {
 			})), [{
 				severity: MarkerSeverity.Hint,
 				tags: [MarkerTag.Unnecessary],
-				message: `Attribute 'argument-hint' is not supported in custom GitHub Copilot agent files. Supported: deferred-tool-loading, description, disable-model-invocation, github, hooks, include-custom-instructions, infer, mcp-servers, model, model-policy, name, reasoning-effort, skills, strict-tools-list, target, tools, user-invocable.`,
+				message: `Attribute 'argument-hint' is not supported in custom VEGA IDE agent files. Supported: deferred-tool-loading, description, disable-model-invocation, github, hooks, include-custom-instructions, infer, mcp-servers, model, model-policy, name, reasoning-effort, skills, strict-tools-list, target, tools, user-invocable.`,
 			}]);
 		});
 
@@ -706,7 +706,7 @@ suite('PromptValidator', () => {
 			const content = [
 				'---',
 				'name: "GitHub_Copilot_Custom_Agent"',
-				'description: "GitHub Copilot agent"',
+				'description: "VEGA IDE agent"',
 				'target: github-copilot',
 				'model: ["MAE 4.1 (copilot)", "MAE 4 (olama)"]',
 				`tools: ['shell', 'edit', 'search', 'custom-agent']`,
@@ -765,7 +765,7 @@ suite('PromptValidator', () => {
 				message: marker.message,
 				tags: marker.tags,
 			})), [{
-				message: `Model 'unavailable-model' is not available for the GitHub Copilot harness.`,
+				message: `Model 'unavailable-model' is not available for the VEGA IDE harness.`,
 				tags: [MarkerTag.Unnecessary],
 			}]);
 		});
@@ -791,8 +791,8 @@ suite('PromptValidator', () => {
 			const markers = await validate(content, PromptsType.agent);
 
 			assert.deepStrictEqual(markers.map(marker => marker.message), [
-				`Model 'Private Model' is not available for the GitHub Copilot harness.`,
-				`Model 'Copilot Model (agent-host-copilotcli)' is not available for the GitHub Copilot harness.`,
+				`Model 'Private Model' is not available for the VEGA IDE harness.`,
+				`Model 'Copilot Model (agent-host-copilotcli)' is not available for the VEGA IDE harness.`,
 			]);
 		});
 
@@ -984,7 +984,7 @@ suite('PromptValidator', () => {
 			const markers = await validate(content, PromptsType.agent);
 
 			assert.deepStrictEqual(markers.map(marker => marker.message), [
-				`Attribute 'constructor' is not supported in custom GitHub Copilot agent files. Supported: deferred-tool-loading, description, disable-model-invocation, github, hooks, include-custom-instructions, infer, mcp-servers, model, model-policy, name, reasoning-effort, skills, strict-tools-list, target, tools, user-invocable.`,
+				`Attribute 'constructor' is not supported in custom VEGA IDE agent files. Supported: deferred-tool-loading, description, disable-model-invocation, github, hooks, include-custom-instructions, infer, mcp-servers, model, model-policy, name, reasoning-effort, skills, strict-tools-list, target, tools, user-invocable.`,
 			]);
 		});
 
@@ -1020,10 +1020,10 @@ suite('PromptValidator', () => {
 			const markers = await validate(content, PromptsType.agent);
 
 			assert.deepStrictEqual(markers.map(marker => ({ message: marker.message, tags: marker.tags })), [
-				{ message: `Tool 'disabled' is recognized but disabled for the matching GitHub Copilot harness.`, tags: [MarkerTag.Unnecessary] },
-				{ message: `Tool 'unavailable' is recognized but currently unavailable for the matching GitHub Copilot harness.`, tags: [MarkerTag.Unnecessary] },
-				{ message: `Tool 'missing' is not recognized by the matching GitHub Copilot harness.`, tags: [MarkerTag.Unnecessary] },
-				{ message: `Tool set 'newToolSetRef' is not supported by the GitHub Copilot harness. List individual tools instead.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Tool 'disabled' is recognized but disabled for the matching VEGA IDE harness.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Tool 'unavailable' is recognized but currently unavailable for the matching VEGA IDE harness.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Tool 'missing' is not recognized by the matching VEGA IDE harness.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Tool set 'newToolSetRef' is not supported by the VEGA IDE harness. List individual tools instead.`, tags: [MarkerTag.Unnecessary] },
 			]);
 		});
 
@@ -1061,7 +1061,7 @@ suite('PromptValidator', () => {
 			const after = (await validate(content, PromptsType.agent)).map(marker => marker.message);
 
 			assert.deepStrictEqual({ before, after }, {
-				before: [`Tool 'appearing-tool' is not recognized by the matching GitHub Copilot harness.`],
+				before: [`Tool 'appearing-tool' is not recognized by the matching VEGA IDE harness.`],
 				after: [],
 			});
 		});
@@ -1084,9 +1084,9 @@ suite('PromptValidator', () => {
 			const markers = await validate(content, PromptsType.agent);
 
 			assert.deepStrictEqual(markers.map(marker => ({ message: marker.message, tags: marker.tags })), [
-				{ message: `Skill 'disabled' is recognized but disabled for the matching GitHub Copilot harness.`, tags: [MarkerTag.Unnecessary] },
-				{ message: `Skill 'unavailable' is recognized but currently unavailable for the matching GitHub Copilot harness.`, tags: [MarkerTag.Unnecessary] },
-				{ message: `Skill 'missing' is not recognized by the matching GitHub Copilot harness.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Skill 'disabled' is recognized but disabled for the matching VEGA IDE harness.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Skill 'unavailable' is recognized but currently unavailable for the matching VEGA IDE harness.`, tags: [MarkerTag.Unnecessary] },
+				{ message: `Skill 'missing' is not recognized by the matching VEGA IDE harness.`, tags: [MarkerTag.Unnecessary] },
 			]);
 		});
 
@@ -1200,7 +1200,7 @@ suite('PromptValidator', () => {
 			const content = [
 				'---',
 				'name: "GitHubAgent"',
-				'description: "GitHub Copilot agent"',
+				'description: "VEGA IDE agent"',
 				'target: github-copilot',
 				'model: MAE 4.1',
 				'reasoning-effort: high',
@@ -1215,7 +1215,7 @@ suite('PromptValidator', () => {
 			const markers = await validate(content, PromptsType.agent);
 			const messages = markers.map(m => m.message);
 			assert.deepStrictEqual(messages, [
-				'Attribute \'handoffs\' is not supported in custom GitHub Copilot agent files. Supported: deferred-tool-loading, description, disable-model-invocation, github, hooks, include-custom-instructions, infer, mcp-servers, model, model-policy, name, reasoning-effort, skills, strict-tools-list, target, tools, user-invocable.',
+				'Attribute \'handoffs\' is not supported in custom VEGA IDE agent files. Supported: deferred-tool-loading, description, disable-model-invocation, github, hooks, include-custom-instructions, infer, mcp-servers, model, model-policy, name, reasoning-effort, skills, strict-tools-list, target, tools, user-invocable.',
 			], 'Only handoffs is unsupported for github-copilot target, model and reasoning-effort are supported');
 		});
 
@@ -1223,7 +1223,7 @@ suite('PromptValidator', () => {
 			const content = [
 				'---',
 				'name: "GitHubAgent"',
-				'description: "GitHub Copilot agent"',
+				'description: "VEGA IDE agent"',
 				'target: github-copilot',
 				`tools: ['shell', 'edit']`,
 				'---',
@@ -1251,15 +1251,15 @@ suite('PromptValidator', () => {
 				tags: marker.tags,
 			})), [
 				{
-					message: `Local '#file:' references are not expanded by the GitHub Copilot harness.`,
+					message: `Local '#file:' references are not expanded by the VEGA IDE harness.`,
 					tags: [MarkerTag.Unnecessary],
 				},
 				{
-					message: `Unknown GitHub Copilot placeholder '{{unknownPlaceholder}}'.`,
+					message: `Unknown VEGA IDE placeholder '{{unknownPlaceholder}}'.`,
 					tags: [MarkerTag.Unnecessary],
 				},
 				{
-					message: `Tool set 'newToolSetRef' is not supported by the GitHub Copilot harness. List individual tools in the 'tools' frontmatter attribute.`,
+					message: `Tool set 'newToolSetRef' is not supported by the VEGA IDE harness. List individual tools in the 'tools' frontmatter attribute.`,
 					tags: [MarkerTag.Unnecessary],
 				},
 			]);
@@ -1269,7 +1269,7 @@ suite('PromptValidator', () => {
 			const content = [
 				'---',
 				'name: "GitHubAgent"',
-				'description: "GitHub Copilot agent"',
+				'description: "VEGA IDE agent"',
 				'target: github-copilot',
 				'argument-hint: "test hint"',
 				`tools: ['shell']`,
@@ -1543,7 +1543,7 @@ suite('PromptValidator', () => {
 			{
 				const content = [
 					'---',
-					'description: "GitHub Copilot agent"',
+					'description: "VEGA IDE agent"',
 					'target: github-copilot',
 					`tools: ['shell']`,
 					'---',
@@ -1558,7 +1558,7 @@ suite('PromptValidator', () => {
 				const content = [
 					'---',
 					'name: "GitHubAgent"',
-					'description: "GitHub Copilot agent"',
+					'description: "VEGA IDE agent"',
 					'target: github-copilot',
 					`tools: ['shell']`,
 					'---',

@@ -31,8 +31,8 @@ function createModel(overrides: Partial<ILanguageModelChatMetadata> = {}): ILang
 		},
 		identifier: 'copilot-gpt-4',
 		provider: {
-			vendor: { vendor: 'copilot', displayName: 'GitHub Copilot', isDefault: true },
-			group: { name: 'GitHub Copilot' }
+			vendor: { vendor: 'copilot', displayName: 'VEGA IDE', isDefault: true },
+			group: { name: 'VEGA IDE' }
 		},
 	} as ILanguageModel;
 }
@@ -194,7 +194,7 @@ suite('ChatModelsWidget', () => {
 			});
 		});
 
-		test('prepends GitHub Copilot sign-in when signed out', async () => {
+		test('prepends VEGA IDE sign-in when signed out', async () => {
 			const ran: string[] = [];
 			const actions = buildAddModelsDropdownActions(
 				[createVendor('anthropic', 'Anthropic')],
@@ -213,12 +213,12 @@ suite('ChatModelsWidget', () => {
 				actions: actions.map(action => action instanceof Separator ? 'separator' : `${action.id}:${action.label}`),
 				ran,
 			}, {
-				actions: ['signIn-github-copilot:GitHub Copilot', 'separator', 'enable-anthropic:Anthropic'],
+				actions: ['signIn-github-copilot:VEGA IDE', 'separator', 'enable-anthropic:Anthropic'],
 				ran: ['copilot', 'anthropic'],
 			});
 		});
 
-		test('offers GitHub Copilot sign-in when BYOK model addition is unavailable', () => {
+		test('offers VEGA IDE sign-in when BYOK model addition is unavailable', () => {
 			const actions = buildAddModelsDropdownActions(
 				[createVendor('anthropic', 'Anthropic')],
 				false,
@@ -228,7 +228,7 @@ suite('ChatModelsWidget', () => {
 
 			assert.deepStrictEqual(
 				actions.map(action => action instanceof Separator ? 'separator' : `${action.id}:${action.label}`),
-				['signIn-github-copilot:GitHub Copilot'],
+				['signIn-github-copilot:VEGA IDE'],
 			);
 		});
 

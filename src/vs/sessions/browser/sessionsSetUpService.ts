@@ -557,11 +557,11 @@ class SessionsSetUpWidget extends Disposable {
 
 		const footer = settingsUrl ? localize(
 			{ key: 'welcomeFooter', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}', '{Locked="]({5})"}'] },
-			"By continuing, you agree to {0}'s [Terms]({1}) and [Privacy Statement]({2}). {3} Copilot may show [public code]({4}) suggestions and use your data to improve the product. You can change these [settings]({5}) anytime.",
+			"By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these [settings]({5}) anytime.",
 			providerName, termsUrl, privacyUrl, providerName, publicCodeUrl, settingsUrl
 		) : localize(
 			{ key: 'welcomeFooterWithoutSettingsLink', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}'] },
-			"By continuing, you agree to {0}'s [Terms]({1}) and [Privacy Statement]({2}). {3} Copilot may show [public code]({4}) suggestions and use your data to improve the product. You can change these settings anytime.",
+			"By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these settings anytime.",
 			providerName, termsUrl, privacyUrl, providerName, publicCodeUrl
 		);
 		element.appendChild($('p', undefined, disposables.add(this.markdownRendererService.render(new MarkdownString(footer, { isTrusted: true }))).element));

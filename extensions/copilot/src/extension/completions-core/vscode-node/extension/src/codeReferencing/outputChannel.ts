@@ -15,7 +15,7 @@ interface GitHubLogger extends Disposable {
 	forceShow(): void;
 }
 
-export const citationsChannelName = 'GitHub Copilot Log (Code References)';
+export const citationsChannelName = 'VEGA IDE Log (Code References)';
 
 // Literally taken from VS Code
 function getCurrentTimestamp() {

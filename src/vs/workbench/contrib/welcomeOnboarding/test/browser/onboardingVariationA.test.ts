@@ -48,7 +48,7 @@ suite('OnboardingVariationA', () => {
 		const { container } = createOnboarding();
 		const providerName = product.defaultChatAgent?.provider.default.name;
 
-		assert.strictEqual(container.querySelector('.onboarding-a-signin-title')?.textContent, 'Welcome to VEGA Code');
+		assert.strictEqual(container.querySelector('.onboarding-a-signin-title')?.textContent, 'Welcome to VEGA IDE');
 		assert.strictEqual(container.querySelector('.onboarding-a-signin-subtitle')?.textContent, `Sign in to use ${providerName}.`);
 
 		const buttons = Array.from(container.querySelectorAll<HTMLElement>('.onboarding-a-signin-actions button'));

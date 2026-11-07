@@ -37,7 +37,7 @@ function withVersion(base: IVersionFixture, changes: { readonly metadata?: Reado
 	return { metadata: override(base.metadata ?? {}, changes.metadata), tags: override(base.tags, changes.tags) };
 }
 
-/** A model published for GitHub Copilot local use. */
+/** A model published for VEGA IDE local use. */
 const MAI: IVersionFixture = {
 	metadata: {
 		githubCopilotLocal: true,

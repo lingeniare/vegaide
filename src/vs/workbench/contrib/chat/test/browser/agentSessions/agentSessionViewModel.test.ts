@@ -3109,7 +3109,7 @@ suite('AgentSessions', () => {
 
 		test('should return detailed AgentHostCopilot provider description', () => {
 			const description = getAgentSessionProviderDescription(AgentSessionProviders.AgentHostCopilot);
-			assert.strictEqual(description, 'Run tasks using the Copilot SDK, which is the agent experience shared consistently across GitHub Copilot products. The agent works in the Agent Host, which lets sessions continue in the background, independently of an editor window.');
+			assert.strictEqual(description, 'Run tasks using the Copilot SDK, which is the agent experience shared consistently across VEGA IDE products. The agent works in the Agent Host, which lets sessions continue in the background, independently of an editor window.');
 		});
 
 		test('should return correct name for Growth provider', () => {

@@ -73,7 +73,7 @@ export class InstallShellScriptWithCopilotAction extends Action2 {
 			{ label: localize('no', "No"), installCopilot: false }
 		];
 		const pick = await quickInputService.pick(picks, {
-			placeHolder: localize('installCopilotPrompt', "Would you also like to install GitHub Copilot CLI?"),
+			placeHolder: localize('installCopilotPrompt', "Would you also like to install VEGA IDE CLI?"),
 			activeItem: picks[0]
 		});
 
@@ -115,7 +115,7 @@ export class InstallShellScriptWithCopilotAction extends Action2 {
 
 		try {
 			if (!await fileService.exists(shim)) {
-				await dialogService.error(localize('copilotShimMissing', "GitHub Copilot CLI installation could not be started because the shipped installer was not found."));
+				await dialogService.error(localize('copilotShimMissing', "VEGA IDE CLI installation could not be started because the shipped installer was not found."));
 				return;
 			}
 
@@ -127,7 +127,7 @@ export class InstallShellScriptWithCopilotAction extends Action2 {
 
 			const terminal = await terminalService.createTerminal({
 				config: {
-					name: localize('copilotInstallTerminal', "Install GitHub Copilot CLI"),
+					name: localize('copilotInstallTerminal', "Install VEGA IDE CLI"),
 					executable: shim.fsPath,
 					args: ['--vscode-shim', 'install', '--interactive'],
 					useShellEnvironment: true,
@@ -142,7 +142,7 @@ export class InstallShellScriptWithCopilotAction extends Action2 {
 			terminalService.setActiveInstance(terminal);
 			await terminalGroupService.showPanel(true);
 		} catch (error) {
-			await dialogService.error(localize('copilotShimStartFailed', "GitHub Copilot CLI installation could not be started: {0}", error instanceof Error ? error.message : String(error)));
+			await dialogService.error(localize('copilotShimStartFailed', "VEGA IDE CLI installation could not be started: {0}", error instanceof Error ? error.message : String(error)));
 		}
 	}
 }

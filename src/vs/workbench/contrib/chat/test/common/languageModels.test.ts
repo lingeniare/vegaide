@@ -685,7 +685,7 @@ suite('LanguageModels', function () {
 	/** Registers the default provider with its `Auto` model plus one regular model. */
 	async function registerDefaultVendorWithAutoModel(): Promise<void> {
 		languageModels.deltaLanguageModelChatProviderDescriptors([
-			{ vendor: COPILOT_VENDOR_ID, displayName: 'GitHub Copilot', configuration: undefined, managementCommand: undefined, when: undefined }
+			{ vendor: COPILOT_VENDOR_ID, displayName: 'VEGA IDE', configuration: undefined, managementCommand: undefined, when: undefined }
 		], []);
 		store.add(languageModels.registerLanguageModelProvider(COPILOT_VENDOR_ID, {
 			onDidChange: Event.None,
@@ -723,12 +723,12 @@ suite('LanguageModels', function () {
 		languageModels.setModelHidden('copilot/auto', true);
 		assert.deepStrictEqual({ hiddenModels: languageModels.getHiddenModelIds(), events: fired }, { hiddenModels: [], events: 0 });
 
-		languageModels.setGroupHidden(COPILOT_VENDOR_ID, 'GitHub Copilot', true);
+		languageModels.setGroupHidden(COPILOT_VENDOR_ID, 'VEGA IDE', true);
 
 		assert.deepStrictEqual({
 			hiddenModels: languageModels.getHiddenModelIds(),
 			autoHidden: languageModels.isModelHidden('copilot/auto'),
-			groupHidden: languageModels.isGroupHidden(COPILOT_VENDOR_ID, 'GitHub Copilot'),
+			groupHidden: languageModels.isGroupHidden(COPILOT_VENDOR_ID, 'VEGA IDE'),
 			events: fired,
 		}, {
 			hiddenModels: ['copilot/gpt-5'],

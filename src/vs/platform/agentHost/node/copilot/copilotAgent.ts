@@ -925,7 +925,7 @@ type LegacyMarkerFallbackClassification = {
 
 /**
  * Shape of the `vscode.metadata.json` marker written next to a Copilot CLI
- * session's SDK event log. Other Copilot CLI hosts (e.g. the GitHub Copilot
+ * session's SDK event log. Other Copilot CLI hosts (e.g. the VEGA IDE
  * app) write the same file with a non-`vscode` `origin`.
  */
 interface IExtensionHostCliMarker {
@@ -970,7 +970,7 @@ function parseExtensionHostCliMarker(raw: string): IExtensionHostCliMarker | und
  * the only chats migration ever adopts.
  *
  * Mirrors the extension host's `getSessionOrigin`: honor an explicit `origin`
- * (the GitHub Copilot app writes `other`), else guess `vscode` only when older
+ * (the VEGA IDE app writes `other`), else guess `vscode` only when older
  * origin-less markers carry VS Code-specific properties.
  */
 function isExtensionHostCliMarker(marker: IExtensionHostCliMarker | undefined): boolean {
@@ -5038,7 +5038,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 	 * - a legacy extension-host Copilot CLI chat is *internal* and adoptable in
 	 *   place (see {@link ensureChatAdopted}), so it keeps `external: false`;
 	 * - a non-adoptable chat is external only when its persisted `clientName`
-	 *   identifies the standalone CLI or GitHub Copilot app. This value records
+	 *   identifies the standalone CLI or VEGA IDE app. This value records
 	 *   the runtime client that created or last resumed the chat, not immutable
 	 *   creator provenance. External chats must also have been modified within
 	 *   the last seven days.

@@ -1162,8 +1162,8 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 		if (!hasGptLiveByok && !isVoiceEntitled(this.chatEntitlementService)) {
 			this.disconnect();
 			this.notificationService.warn(this.chatEntitlementService.entitlement === ChatEntitlement.Business || this.chatEntitlementService.entitlement === ChatEntitlement.Enterprise
-				? localize('voiceMode.organizationUnavailable', "Voice Mode is not available for GitHub Copilot Business or Enterprise accounts.")
-				: localize('voiceMode.requiresPaidPlan', "Voice Mode requires a paid GitHub Copilot plan."));
+				? localize('voiceMode.organizationUnavailable', "Voice Mode is not available for VEGA IDE Business or Enterprise accounts.")
+				: localize('voiceMode.requiresPaidPlan', "Voice Mode requires a paid VEGA IDE plan."));
 			return;
 		}
 		this._usingGptLiveByok = hasGptLiveByok;
@@ -7115,15 +7115,15 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 				}
 				questionLines.push(localize('voice.questionnaire.options', "options: {0}", optionsText));
 			} else {
-				questionLines.push(localize('voice.questionnaire.freeform', "response: enter a free-form answer in GitHub Copilot"));
+				questionLines.push(localize('voice.questionnaire.freeform', "response: enter a free-form answer in VEGA IDE"));
 			}
 
 			const remainingAfterCandidate = questionnaire.questions.length - (includedQuestions + 1);
 			const reservedSuffix = remainingAfterCandidate > 0
 				? remainingAfterCandidate === 1
-					? localize('voice.questionnaire.oneOmitted', "1 more question is open in GitHub Copilot.")
-					: localize('voice.questionnaire.manyOmitted', "{0} more questions are open in GitHub Copilot.", remainingAfterCandidate)
-				: localize('voice.questionnaire.open', "The questionnaire is open in GitHub Copilot.");
+					? localize('voice.questionnaire.oneOmitted', "1 more question is open in VEGA IDE.")
+					: localize('voice.questionnaire.manyOmitted', "{0} more questions are open in VEGA IDE.", remainingAfterCandidate)
+				: localize('voice.questionnaire.open', "The questionnaire is open in VEGA IDE.");
 			const candidate = [...lines, ...questionLines, reservedSuffix].join('\n');
 			if (candidate.length > VoiceSessionController._MAX_CONFIRMATION_NARRATION_CHARS) {
 				break;
@@ -7135,10 +7135,10 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 		const omittedQuestions = questionnaire.questions.length - includedQuestions;
 		if (omittedQuestions > 0) {
 			lines.push(omittedQuestions === 1
-				? localize('voice.questionnaire.oneOmitted', "1 more question is open in GitHub Copilot.")
-				: localize('voice.questionnaire.manyOmitted', "{0} more questions are open in GitHub Copilot.", omittedQuestions));
+				? localize('voice.questionnaire.oneOmitted', "1 more question is open in VEGA IDE.")
+				: localize('voice.questionnaire.manyOmitted', "{0} more questions are open in VEGA IDE.", omittedQuestions));
 		} else {
-			lines.push(localize('voice.questionnaire.open', "The questionnaire is open in GitHub Copilot."));
+			lines.push(localize('voice.questionnaire.open', "The questionnaire is open in VEGA IDE."));
 		}
 		return lines.join('\n') || fallback;
 	}
@@ -7161,19 +7161,19 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 	}
 
 	private _formatPlanNarration(plan: IChatPlanReview): string {
-		const fallback = localize('voice.plan.fallback', "A plan is open in GitHub Copilot and needs your approval.");
+		const fallback = localize('voice.plan.fallback', "A plan is open in VEGA IDE and needs your approval.");
 		const title = this._visibleConfirmationText(plan.title) || fallback;
 		const lines = [localize('voice.plan.title', "plan approval: {0}", title)];
 		const choices = this._formatChoiceLabels(plan.actions);
 		if (choices) {
 			lines.push(localize('voice.plan.choices', "choices: {0}", choices));
 		}
-		lines.push(localize('voice.plan.open', "The plan is open in GitHub Copilot."));
+		lines.push(localize('voice.plan.open', "The plan is open in VEGA IDE."));
 		return this._boundedConfirmationLines(lines, fallback);
 	}
 
 	private _formatElicitationNarration(elicitation: IChatElicitationRequest): string {
-		const fallback = localize('voice.elicitation.fallback', "GitHub Copilot needs your input in the open request.");
+		const fallback = localize('voice.elicitation.fallback', "VEGA IDE needs your input in the open request.");
 		const title = this._visibleConfirmationText(elicitation.title);
 		const message = this._visibleConfirmationText(elicitation.message);
 		const subtitle = this._visibleConfirmationText(elicitation.subtitle);
@@ -7196,7 +7196,7 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 	}
 
 	private _formatConfirmationNarration(confirmation: IChatConfirmation): string {
-		const fallback = localize('voice.confirmation.fallback', "GitHub Copilot needs your approval to continue.");
+		const fallback = localize('voice.confirmation.fallback', "VEGA IDE needs your approval to continue.");
 		const title = this._visibleConfirmationText(confirmation.title);
 		const message = this._visibleConfirmationText(confirmation.message);
 		const lines = [localize('voice.confirmation.title', "confirmation: {0}", title || message || fallback)];
@@ -7211,7 +7211,7 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 	}
 
 	private _formatToolNarration(toolInvocation: IChatToolInvocation): string {
-		const fallback = localize('voice.toolConfirmation.fallback', "GitHub Copilot needs your approval to continue.");
+		const fallback = localize('voice.toolConfirmation.fallback', "VEGA IDE needs your approval to continue.");
 		const state = toolInvocation.state.get();
 		if (state.type !== IChatToolInvocation.StateKind.WaitingForConfirmation && state.type !== IChatToolInvocation.StateKind.WaitingForPostApproval) {
 			return fallback;
@@ -7233,7 +7233,7 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 	}
 
 	private _formatToolNarrationFallback(): string {
-		const fallback = localize('voice.toolConfirmation.fallback', "GitHub Copilot needs your approval to continue.");
+		const fallback = localize('voice.toolConfirmation.fallback', "VEGA IDE needs your approval to continue.");
 		return localize('voice.toolConfirmation.title', "tool approval: {0}", fallback);
 	}
 
@@ -7243,7 +7243,7 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 			return undefined;
 		}
 		const serverName = this._visibleConfirmationText(state.server.name);
-		const fallback = localize('voice.authentication.fallback', "GitHub Copilot needs authentication to continue.");
+		const fallback = localize('voice.authentication.fallback', "VEGA IDE needs authentication to continue.");
 		return this._boundedConfirmationLines([
 			localize('voice.authentication.title', "authentication request: MCP authentication required"),
 			serverName

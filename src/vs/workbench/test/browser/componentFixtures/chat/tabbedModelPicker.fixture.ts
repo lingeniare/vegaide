@@ -395,7 +395,7 @@ function createLanguageModelsService(): ILanguageModelsService {
 		upcastPartial<ILanguageModelProviderDescriptor>({ vendor, displayName, isDefault });
 	return upcastPartial<ILanguageModelsService>({
 		getVendors: () => [
-			vendor('copilot', 'GitHub Copilot', true),
+			vendor('copilot', 'VEGA IDE', true),
 			vendor('ollama', 'Ollama', false),
 			vendor('openai', 'OpenAI', false),
 		],
@@ -489,7 +489,7 @@ interface IPickerFixtureOptions {
 function registerPickerServices(registration: ServiceRegistration, vega?: boolean): void {
 	registration.defineInstance(IProductService, upcastPartial<IProductService>({
 		defaultChatAgent: vega ? upcastPartial<IDefaultChatAgent>({
-			provider: upcastPartial<IDefaultChatAgent['provider']>({ default: { id: 'vega', name: 'VEGA' } }),
+			provider: upcastPartial<IDefaultChatAgent['provider']>({ default: { id: 'vega', name: 'VEGA IDE' } }),
 		}) : undefined,
 	}));
 	registration.defineInstance(IAuthenticationService, upcastPartial<IAuthenticationService>({
@@ -692,7 +692,7 @@ export async function renderPicker(context: ComponentFixtureContext, options: IP
 		if (toggle) {
 			toggle.click();
 		} else {
-			// VEGA's pricing is always expanded, so there is no toggle — the catalog
+			// VEGA IDE's pricing is always expanded, so there is no toggle — the catalog
 			// lands asynchronously and can grow the card past the viewport's fold.
 			await waitForFixtureCondition(() => !!container.querySelector('.chat-model-card-pricing-row')
 				&& !container.getAnimations({ subtree: true }).some(animation => animation.playState !== 'finished'), 'Model pricing did not render');
@@ -875,12 +875,12 @@ export default defineThemedFixtureGroup({ path: 'chat/input/tabbedModelPicker' }
 	}),
 	Picker: defineComponentFixture({ render: context => renderPicker(context, { models: COPILOT_ONLY_MODELS }) }),
 	PickerWithAddedModels: defineComponentFixture({ render: context => renderPicker(context) }),
-	/** The VEGA product: the tab and prices are VEGA's, and there is no routing row. */
+	/** The VEGA product: the tab and prices are VEGA IDE's, and there is no routing row. */
 	PickerVega: defineComponentFixture({
 		additionalThemes: ['darkHighContrast', 'lightHighContrast'],
 		render: context => renderPicker(context, { anchored: true, vega: true }),
 	}),
-	/** VEGA's model details, priced in rubles rather than credits. */
+	/** VEGA IDE's model details, priced in rubles rather than credits. */
 	PickerVegaDetails: defineComponentFixture({
 		additionalThemes: ['darkHighContrast', 'lightHighContrast'],
 		render: context => renderPicker(context, { anchored: true, vega: true, pricingExpanded: true }),
@@ -1090,7 +1090,7 @@ export default defineThemedFixtureGroup({ path: 'chat/input/tabbedModelPicker' }
 	PickerWelcome: defineComponentFixture({
 		render: context => renderPicker(context, {
 			models: [],
-			providerPlaceholders: [{ vendor: 'copilot', label: 'GitHub Copilot', message: 'Sign in to see available models.', action: { label: 'Sign in', run: () => { } } }],
+			providerPlaceholders: [{ vendor: 'copilot', label: 'VEGA IDE', message: 'Sign in to see available models.', action: { label: 'Sign in', run: () => { } } }],
 		}),
 	}),
 	CardStandardContext: defineComponentFixture({ render: context => renderCard(context, COPILOT_MODELS[0], false) }),

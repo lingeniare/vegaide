@@ -7,7 +7,7 @@ import { Color } from '../../../../../../../base/common/color.js';
 import { localize } from '../../../../../../../nls.js';
 import { registerColor } from '../../../../../../../platform/theme/common/colorRegistry.js';
 
-// The GitHub Copilot brand gradient, from mint to purple, drawn as the badge's border.
+// The VEGA IDE brand gradient, from mint to purple, drawn as the badge's border.
 // High contrast themes drop it, so the badge takes the contrast border instead.
 
 export const chatFusionBadgeGradientStart = registerColor(

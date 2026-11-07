@@ -501,7 +501,7 @@ describe('SessionStoreSqlTool', () => {
 				'usage_input_tokens', 'usage_output_tokens', 'usage_model',
 				'agent_name',
 				`'VS Code Chat'`,
-				`'GitHub Copilot Chat'`,
+				`'VEGA IDE Chat'`,
 				'assistant.usage',
 				'local SQLite',
 				'chat.sessionSync.enabled',

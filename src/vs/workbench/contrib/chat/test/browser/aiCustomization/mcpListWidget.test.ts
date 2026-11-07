@@ -2257,7 +2257,7 @@ suite('mcpListWidget', () => {
 					displayName: 'Example Extension',
 				}, {
 					identifier: { id: 'GitHub.copilot-chat' },
-					displayName: 'GitHub Copilot Chat',
+					displayName: 'VEGA IDE Chat',
 				}],
 				open: async (extensionId: string) => { openedExtensions.push(extensionId); },
 			} as unknown as IExtensionsWorkbenchService;
@@ -2728,14 +2728,14 @@ suite('mcpListWidget', () => {
 			}, {
 				group: 'builtin',
 				source: {
-					label: 'Built-in: GitHub Copilot Chat',
-					hover: 'Open extension details for GitHub Copilot Chat',
+					label: 'Built-in: VEGA IDE Chat',
+					hover: 'Open extension details for VEGA IDE Chat',
 					tagName: 'A',
-					ariaLabel: 'Open extension details for GitHub Copilot Chat',
+					ariaLabel: 'Open extension details for VEGA IDE Chat',
 					tabIndex: 0,
 				},
-				ariaLabel: 'GitHub, configured in Built-in: GitHub Copilot Chat',
-				detail: { source: undefined, label: 'Built-in: GitHub Copilot Chat', ariaLabel: 'Open extension details for GitHub Copilot Chat' },
+				ariaLabel: 'GitHub, configured in Built-in: VEGA IDE Chat',
+				detail: { source: undefined, label: 'Built-in: VEGA IDE Chat', ariaLabel: 'Open extension details for VEGA IDE Chat' },
 				openedExtensions: ['GitHub.copilot-chat', 'GitHub.copilot-chat'],
 			});
 		});

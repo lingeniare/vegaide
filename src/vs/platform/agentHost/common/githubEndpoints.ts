@@ -14,7 +14,7 @@ export const VEGA_AUTH_SERVER_URL = 'https://api.vega.chat';
 
 /**
  * The VEGA protected resource. Under the VEGA product configuration the agent
- * host authenticates against `api.vega.chat` instead of GitHub Copilot: the
+ * host authenticates against `api.vega.chat` instead of VEGA IDE: the
  * `vega` authentication provider resolves a device-flow session whose access
  * token is the `sk-apivega-...` application key.
  */
@@ -29,13 +29,13 @@ export function vegaChatResource(): ProtectedResourceMetadata {
 }
 
 /**
- * The GitHub Copilot protected resource for the given endpoints. Shared by the
+ * The VEGA IDE protected resource for the given endpoints. Shared by the
  * endpoint service and tests so the resource identity is defined once.
  */
 export function gitHubCopilotResource(endpoints: IGitHubEndpoints): ProtectedResourceMetadata {
 	return {
 		resource: endpoints.apiBaseUri,
-		resource_name: 'GitHub Copilot',
+		resource_name: 'VEGA IDE',
 		authorization_servers: [endpoints.oauthServer],
 		scopes_supported: ['read:user', 'user:email'],
 		required: true,

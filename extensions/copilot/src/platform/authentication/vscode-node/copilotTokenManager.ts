@@ -84,10 +84,10 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 		// round trip exists. The envelope just routes the API base to VEGA.
 		if (providerId === AuthProviderId.Vega) {
 			if (!session) {
-				this._logService.warn('VEGA login failed: no session');
+				this._logService.warn('VEGA IDE login failed: no session');
 				return { kind: 'failure', reason: 'GitHubLoginFailed' };
 			}
-			this._logService.info(`Logged in to VEGA as ${session.account.label}`);
+			this._logService.info(`Logged in to VEGA IDE as ${session.account.label}`);
 			return { kind: 'success', ...createVegaTokenInfo(session) };
 		}
 		const allowNoAuthAccess = providerId === AuthProviderId.GitHub && this.configurationService.getNonExtensionConfig<boolean>('chat.allowAnonymousAccess');

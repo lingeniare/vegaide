@@ -45,7 +45,7 @@ import { ChatAgentLocation } from './constants.js';
 import { ILanguageModelsProviderGroup, ILanguageModelsConfigurationService } from './languageModelsConfiguration.js';
 
 /**
- * Vendor id used for the built-in GitHub Copilot language model provider. Treated as the default
+ * Vendor id used for the built-in VEGA IDE language model provider. Treated as the default
  * vendor across the chat stack (see `ILanguageModelProviderDescriptor.isDefault`).
  */
 export const COPILOT_VENDOR_ID = 'copilot';
@@ -56,7 +56,7 @@ export function isLanguageModelVendorAbsenceConclusive(vendor: string, hasLiveMo
 }
 
 /**
- * Vendor ids of the BYOK language-model providers that ship in-built with the GitHub Copilot Chat
+ * Vendor ids of the BYOK language-model providers that ship in-built with the VEGA IDE Chat
  * extension. Each provider's vendor id is `providerName.toLowerCase()` (see
  * `extensions/copilot/src/extension/byok/vscode-node/*Provider.ts`). This list is intentionally
  * hardcoded: the in-built provider set is stable and known ahead of time, which lets us report these

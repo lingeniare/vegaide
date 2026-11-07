@@ -10,7 +10,7 @@ import { ILogService } from '../../log/common/log.js';
 import { ICommonProperties } from '../../telemetry/common/telemetry.js';
 
 /**
- * Public GitHub Copilot telemetry ingestion keys. These are instrumentation keys, not
+ * Public VEGA IDE telemetry ingestion keys. These are instrumentation keys, not
  * secrets; the iKey selects the destination hydro table:
  *  - standard  -> `copilot_v0_copilot_event`
  *  - enhanced  -> `copilot_v0_restricted_copilot_event`
@@ -144,7 +144,7 @@ export interface IAgentHostRestrictedTelemetry {
 }
 
 /**
- * Emits GitHub Copilot restricted/enhanced telemetry from the agent-host process by POSTing
+ * Emits VEGA IDE restricted/enhanced telemetry from the agent-host process by POSTing
  * Application-Insights envelopes to the Copilot telemetry endpoint (the same wire format the
  * Copilot extension uses). Fire-and-forget; failures are logged, never thrown.
  */

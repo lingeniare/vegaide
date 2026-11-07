@@ -403,7 +403,7 @@ export async function retry<T>(task: ITask<Promise<T>>, delay: number, retries: 
  *  - The class list / attributes of the element matched by
  *    `sendButtonSelector` (if provided) so we can tell whether the button
  *    was `.disabled`, missing, or covered by an overlay when the test gave up.
- *  - The tail (last 80 lines) of the `GitHub Copilot Chat.log` extension
+ *  - The tail (last 80 lines) of the `VEGA IDE Chat.log` extension
  *    host log for every `window*` directory under the suite logs that has
  *    an `exthost/GitHub.copilot-chat/` subfolder. This surfaces extension-side
  *    errors directly in the runner log so a CI failure does not require
@@ -469,17 +469,17 @@ export async function dumpFailureDiagnostics(
 			logger.log(`[${label}] no window* directories found under ${logsPath}`);
 		}
 		for (const w of windowDirs) {
-			const chatLogPath = join(logsPath, w, 'exthost', 'GitHub.copilot-chat', 'GitHub Copilot Chat.log');
+			const chatLogPath = join(logsPath, w, 'exthost', 'GitHub.copilot-chat', 'VEGA IDE Chat.log');
 			try {
 				const stat = await fs.promises.stat(chatLogPath);
 				const content = await fs.promises.readFile(chatLogPath, 'utf8');
 				const lines = content.split(/\r?\n/);
 				const tail = lines.slice(-80);
-				logger.log(`[${label}] --- BEGIN ${w}/GitHub Copilot Chat.log (size=${stat.size}; last ${tail.length} of ${lines.length} lines) ---`);
+				logger.log(`[${label}] --- BEGIN ${w}/VEGA IDE Chat.log (size=${stat.size}; last ${tail.length} of ${lines.length} lines) ---`);
 				for (const ln of tail) {
 					logger.log(`[${label}] | ${ln}`);
 				}
-				logger.log(`[${label}] --- END ${w}/GitHub Copilot Chat.log ---`);
+				logger.log(`[${label}] --- END ${w}/VEGA IDE Chat.log ---`);
 			} catch {
 				// File does not exist for this window (e.g. windows without the
 				// Copilot Chat extension activated). That's expected — skip.
@@ -501,7 +501,7 @@ export async function dumpFailureDiagnostics(
 	//    full, verbose account (run at `trace`). The Chat Sessions editor (Copilot
 	//    CLI / Claude) and Local sessions run the SDK in-process and install their
 	//    own log writer that routes the detailed model/turn diagnostics to
-	//    `logService` (the `GitHub Copilot Chat.log` tailed in step 3), so their
+	//    `logService` (the `VEGA IDE Chat.log` tailed in step 3), so their
 	//    `process-*.log` is usually just the runtime's startup/lifecycle — enough
 	//    to tell whether the runtime came up (if it did but the turn never
 	//    completed, the stall is renderer/extension-side, not the CLI). We copy

@@ -23,7 +23,7 @@ export const LocalModelUseInAutoSettingId = 'chat.copilot.localModel.useInAuto';
 
 /** The agreed safety disclosure for on-device models (the Copilot CLI and app show the same text), shown wherever the user opts in. */
 export function getLocalModelSafetyDisclosure(): string {
-	return localize('localModel.safetyDisclosure', "Local models may not use the same safety filters as GitHub Copilot-provided models and may be more susceptible to malicious instructions, especially when actions are automatically approved.");
+	return localize('localModel.safetyDisclosure', "Local models may not use the same safety filters as VEGA IDE-provided models and may be more susceptible to malicious instructions, especially when actions are automatically approved.");
 }
 
 /** Absolute path to the user's `llama-server`, the only one VS Code runs. Explicit: probe failures are shown, never bypassed. */

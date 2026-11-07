@@ -65,7 +65,7 @@ export class AgentHostRemoteByokNotificationContribution extends Disposable impl
 			id: REMOTE_BYOK_NOTIFICATION_ID,
 			severity: ChatInputNotificationSeverity.Warning,
 			message: localize('agentHost.remoteByok.message', "Bring your own key (BYOK) models aren't supported in remote Copilot sessions."),
-			description: localize('agentHost.remoteByok.description', "Use a GitHub Copilot model for this session, or switch to the local agent harness to use your own models."),
+			description: localize('agentHost.remoteByok.description', "Use a VEGA IDE model for this session, or switch to the local agent harness to use your own models."),
 			actions: [],
 			when: context => this._isEligible(context),
 			onDidShow: context => {

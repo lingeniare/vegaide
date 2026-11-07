@@ -78,7 +78,7 @@ export class LoggingActionsContrib {
 			const nodeFetchConfig = getShadowedConfig<boolean>(this.configurationService, this.experimentationService, ConfigKey.Shared.DebugUseNodeFetchFetcher, ConfigKey.TeamInternal.DebugExpUseNodeFetchFetcher);
 			const ext = vscode.extensions.getExtension(EXTENSION_ID);
 			const product = require(path.join(vscode.env.appRoot, 'product.json'));
-			await appendText(editor, `## GitHub Copilot Chat
+			await appendText(editor, `## VEGA IDE Chat
 
 - Extension: ${this.envService.getVersion()} (${this.envService.getBuildType()})
 - VS Code: ${vscode.version} (${product.commit || 'out-of-source'})
@@ -248,7 +248,7 @@ User Settings:
 							connect: (fetcher, url) => sendRawAITelemetry(fetcher, this.envService, url),
 						},
 					{
-						// GitHub Copilot telemetry endpoint (App Insights-compatible ingestion; the URL already
+						// VEGA IDE telemetry endpoint (App Insights-compatible ingestion; the URL already
 						// ends in `/telemetry`, which is the path production posts telemetry to).
 						url: this.capiClientService.copilotTelemetryURL,
 						fetcher: githubTelemetryFetcher,
@@ -289,7 +289,7 @@ User Settings:
 			if (proxySupport !== 'override') {
 				notes.push(`- The \`"http.proxySupport"\` setting is set to \`"${proxySupport}"\`. The recommended default is \`"override"\`, which generally works best.`);
 			}
-			notes.push(`- For corporate networks also see: [Troubleshooting firewall settings for GitHub Copilot](https://docs.github.com/en/copilot/troubleshooting-github-copilot/troubleshooting-firewall-settings-for-github-copilot).`);
+			notes.push(`- For corporate networks also see: [Troubleshooting firewall settings for VEGA IDE](https://docs.github.com/en/copilot/troubleshooting-github-copilot/troubleshooting-firewall-settings-for-github-copilot).`);
 			await appendText(editor, `
 ## Notes
 

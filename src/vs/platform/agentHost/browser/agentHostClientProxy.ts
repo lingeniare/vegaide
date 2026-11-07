@@ -23,7 +23,7 @@ const clientProxySettings = ['http.useLocalProxyConfiguration', 'http.proxy', 'h
  */
 export class AgentHostClientProxy implements IAgentHostClientProxyProvider {
 
-	/** Hosts of the proxies this client resolved for the agent host or for GitHub Copilot. */
+	/** Hosts of the proxies this client resolved for the agent host or for VEGA IDE. */
 	private readonly _resolvedProxyHosts = new Set<string>();
 	/** Hosts of the proxies this client declined tickets for, to log each once. */
 	private readonly _declinedProxyHosts = new Set<string>();
@@ -69,7 +69,7 @@ export class AgentHostClientProxy implements IAgentHostClientProxyProvider {
 
 	/**
 	 * Tickets are only issued for proxies this client points the agent host at: its `http.proxy` setting, the proxies
-	 * it resolved for the agent host, or the system proxy for GitHub Copilot, which also covers a proxy an earlier window
+	 * it resolved for the agent host, or the system proxy for VEGA IDE, which also covers a proxy an earlier window
 	 * resolved. A configured `http.proxyKerberosServicePrincipal` limits tickets to that principal instead. Both settings
 	 * are read as the native request service issuing the tickets reads them, so remote settings cannot widen access.
 	 */
@@ -100,7 +100,7 @@ export class AgentHostClientProxy implements IAgentHostClientProxyProvider {
 			}
 			return hosts;
 		} catch (error) {
-			this._logService.debug('[AgentHostClientProxy] Failed to resolve the GitHub Copilot proxy', error);
+			this._logService.debug('[AgentHostClientProxy] Failed to resolve the VEGA IDE proxy', error);
 			return [];
 		}
 	}

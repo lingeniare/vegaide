@@ -288,7 +288,7 @@ async function invokeCopilotPluginMarketplaceCommand(input: string, plugins: ICo
 			const defaultMarketplaces = result.marketplaces.filter(marketplace => marketplace.isDefault);
 			const registeredMarketplaces = result.marketplaces.filter(marketplace => !marketplace.isDefault);
 			const lines = [`# ${localize('copilotPlugin.marketplaces', "Plugin marketplaces")}`];
-			appendMarketplaceGroup(lines, localize('copilotPlugin.includedMarketplaces', "Included with GitHub Copilot"), defaultMarketplaces);
+			appendMarketplaceGroup(lines, localize('copilotPlugin.includedMarketplaces', "Included with VEGA IDE"), defaultMarketplaces);
 			appendMarketplaceGroup(lines, localize('copilotPlugin.registeredMarketplaces', "Registered marketplaces"), registeredMarketplaces);
 			return { kind: 'text', text: lines.join('\n'), markdown: true };
 		}

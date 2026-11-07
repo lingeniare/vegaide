@@ -14,7 +14,7 @@ pub(crate) enum PromptResponse {
 	Declined,
 }
 
-/// Offers to install GitHub Copilot CLI and reads the answer. The default answer is No.
+/// Offers to install VEGA IDE CLI and reads the answer. The default answer is No.
 pub(crate) fn prompt_with_io<R: BufRead, W: Write>(
 	input: &mut R,
 	output: &mut W,
@@ -23,7 +23,7 @@ pub(crate) fn prompt_with_io<R: BufRead, W: Write>(
 		output,
 		"Installation instructions: {INSTALL_DOCUMENTATION_URL}"
 	)?;
-	write!(output, "Install GitHub Copilot CLI? [y/N] ")?;
+	write!(output, "Install VEGA IDE CLI? [y/N] ")?;
 	output.flush()?;
 
 	let mut response = Vec::new();

@@ -5,7 +5,7 @@ This is a plain-language companion to the [security requirements](./MISSION_CONT
 - what the requirement means and why it exists;
 - where VS Code stands;
 - what the upstream Copilot Host (`copilotd`) does;
-- what the GitHub Copilot desktop app does;
+- what the VEGA IDE desktop app does;
 - roughly what VS Code would have to build.
 
 ## The short version

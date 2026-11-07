@@ -997,7 +997,7 @@ suite('AbstractAgentHostCustomizationService', () => {
 				status: 'Authenticating Work IQ (Connector)...',
 				operations: ['authorize', 'refresh:workiqmcp'],
 				tokens: ['https://api.github.com'],
-				notifications: [`${Severity.Warning}:Work IQ (Connector) still cannot access Copilot connectors. Authorize Copilot connectors with the same GitHub account that you use for GitHub Copilot, then sign in again.`],
+				notifications: [`${Severity.Warning}:Work IQ (Connector) still cannot access Copilot connectors. Authorize Copilot connectors with the same GitHub account that you use for VEGA IDE, then sign in again.`],
 			});
 		});
 

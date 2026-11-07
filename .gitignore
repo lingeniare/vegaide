@@ -55,3 +55,7 @@ dist
 .v[0-9]*/
 # Local agent validation evidence
 .agent-validation/
+# One-off screenshots/evidence dumps at repo root
+/screenshots/
+# Compiled output of test/mcp (upstream ships its own .gitignore with this)
+test/mcp/out/

@@ -122,7 +122,7 @@ function noAccountDescription(setup: IAgentSdkSetupInfo, displayName: string, in
 		}
 		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.agent', "[Reload the configuration]({1}) if you have set up {0} elsewhere.", name, reload));
 	}
-	const chatProviderName = product.defaultChatAgent?.provider?.default?.name ?? 'GitHub Copilot';
+	const chatProviderName = product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE';
 	if (provider && docs) {
 		return setupMarkdown(localize('agentHost.sdkSetup.noAccountDescription.all', "Sign in to {4} to use {4} models, sign in to {2} to use your {2} subscription, or [reload the configuration]({1}) if you have set up {0} elsewhere. For other ways to set up {0}, [learn more]({3}) on their docs.", name, reload, provider, docs, chatProviderName));
 	}

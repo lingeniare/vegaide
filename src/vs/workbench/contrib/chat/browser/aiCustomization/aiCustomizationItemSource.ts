@@ -103,7 +103,7 @@ export interface IAICustomizationItemSource extends IDisposable {
 
 /**
  * Returns true if the given extension identifier matches the default
- * chat extension (e.g. GitHub Copilot Chat). Used to group items from
+ * chat extension (e.g. VEGA IDE Chat). Used to group items from
  * the chat extension under "Built-in" instead of "Extensions".
  */
 export function isChatExtensionItem(extensionId: ExtensionIdentifier, productService: IProductService): boolean {

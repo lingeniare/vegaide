@@ -362,7 +362,7 @@ suite('chat model picker - languageModelChatProvider visibility regression', () 
 	test('regression: copilot internal model (isUserSelectable: false) is hidden from the picker', () => {
 		const internal = createCopilotModel('internal', 'Internal', { isUserSelectable: false });
 		const lmService = buildLmService([
-			{ vendor: 'copilot', displayName: 'GitHub Copilot', modelIdentifiers: [internal.identifier] },
+			{ vendor: 'copilot', displayName: 'VEGA IDE', modelIdentifiers: [internal.identifier] },
 		]);
 
 		const labels = runPickerPipeline([internal], lmService).map(i => i.label);
@@ -378,7 +378,7 @@ suite('chat model picker - languageModelChatProvider visibility regression', () 
 		// model that omits the flag is now treated as user-selectable.
 		const model = createCopilotModel('public', 'Public', { isUserSelectable: undefined });
 		const lmService = buildLmService([
-			{ vendor: 'copilot', displayName: 'GitHub Copilot', modelIdentifiers: [model.identifier] },
+			{ vendor: 'copilot', displayName: 'VEGA IDE', modelIdentifiers: [model.identifier] },
 		]);
 
 		const labels = runPickerPipeline([model], lmService).map(i => i.label);
@@ -388,7 +388,7 @@ suite('chat model picker - languageModelChatProvider visibility regression', () 
 	test('regression: copilot public model (isUserSelectable: true) is shown in the picker', () => {
 		const pub = createCopilotModel('gpt-4o', 'GPT-4o', { isUserSelectable: true });
 		const lmService = buildLmService([
-			{ vendor: 'copilot', displayName: 'GitHub Copilot', modelIdentifiers: [pub.identifier] },
+			{ vendor: 'copilot', displayName: 'VEGA IDE', modelIdentifiers: [pub.identifier] },
 		]);
 
 		const labels = runPickerPipeline([pub], lmService).map(i => i.label);
@@ -405,7 +405,7 @@ suite('chat model picker - languageModelChatProvider visibility regression', () 
 		const lmService = buildLmService([
 			{
 				vendor: 'copilot',
-				displayName: 'GitHub Copilot',
+				displayName: 'VEGA IDE',
 				modelIdentifiers: [copilotPublic.identifier, copilotInternal.identifier],
 			},
 			{

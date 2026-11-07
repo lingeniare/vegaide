@@ -16,15 +16,15 @@ import { createSessionsSignInDialogOptions, SessionsSigningInDialog } from '../.
 import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup } from '../fixtureUtils.js';
 
 const providers = {
-	default: { name: 'VEGA' },
-	enterprise: { name: 'VEGA' },
+	default: { name: 'VEGA IDE' },
+	enterprise: { name: 'VEGA IDE' },
 	google: { name: 'Google' },
 	apple: { name: 'Apple' },
 	microsoft: { name: 'Microsoft' },
 };
 
 const footerContent = {
-	providerName: 'VEGA',
+	providerName: 'VEGA IDE',
 	termsStatementUrl: 'https://vega.codes/offer',
 	privacyStatementUrl: 'https://vega.codes/privacy',
 	publicCodeMatchesUrl: 'https://example.com/public-code',

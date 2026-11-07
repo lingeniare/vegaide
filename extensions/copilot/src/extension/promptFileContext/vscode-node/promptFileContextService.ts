@@ -64,7 +64,7 @@ export function getAgentFileContext(target: AgentFileTarget, modelNames: readonl
 	const context: Copilot.SupportedContextItem[] = [{
 		name: target
 			? `This is a custom agent file for the ${target} target. Its YAML front matter only supports the following attributes. Do not suggest any other attributes.`
-			: 'This is a custom agent file without an explicit target. Its YAML front matter only supports attributes shared by the VS Code and GitHub Copilot targets. Do not assume a target or suggest target-specific attributes.',
+			: 'This is a custom agent file without an explicit target. Its YAML front matter only supports attributes shared by the VS Code and VEGA IDE targets. Do not assume a target or suggest target-specific attributes.',
 		value: attributes.join(', '),
 	}, {
 		name: '`target` is optional and must be one of the following values',

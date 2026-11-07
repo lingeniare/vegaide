@@ -39,7 +39,7 @@ use windows_sys::Win32::System::Threading::{
 
 const IO_TIMEOUT: Duration = Duration::from_secs(15);
 // ConPTY may render the prompt's trailing space as a cursor movement, so the marker omits it.
-const INSTALL_PROMPT: &[u8] = b"Install GitHub Copilot CLI? [y/N]";
+const INSTALL_PROMPT: &[u8] = b"Install VEGA IDE CLI? [y/N]";
 
 struct OwnedHandle(HANDLE);
 
@@ -458,7 +458,7 @@ fn windows_conpty_ctrl_c_cancels_without_fallback() {
 		.map(|path| path.join("GitHubCopilotCLI").join("copilot.exe"));
 	if installed_cli.as_ref().is_some_and(|path| path.is_file()) {
 		eprintln!(
-			"skipping cancellation test because GitHub Copilot CLI is installed at {}",
+			"skipping cancellation test because VEGA IDE CLI is installed at {}",
 			installed_cli.expect("installed CLI path").display()
 		);
 		return;
@@ -499,7 +499,7 @@ fn windows_conpty_ctrl_c_cancels_without_fallback() {
 	);
 	process.wait_for(INSTALL_PROMPT);
 	process.write(b"y\r");
-	process.wait_for(b"Finding the latest GitHub Copilot CLI release");
+	process.wait_for(b"Finding the latest VEGA IDE CLI release");
 	accepted
 		.recv_timeout(IO_TIMEOUT)
 		.expect("the install should contact the release server");

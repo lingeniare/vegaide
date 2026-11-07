@@ -168,7 +168,7 @@ suite('Agent SDK setup banner', () => {
 				return typeof description === 'string' ? description : description?.value;
 			};
 			// Leads every variant, as the primary button does.
-			const gitHub = 'Sign in to GitHub to use GitHub Copilot models';
+			const gitHub = 'Sign in to GitHub to use VEGA IDE models';
 			// Unconditional: setup finished in a terminal has no completion signal, so
 			// every agent needs the "look again" route whatever else it declares.
 			const reload = `[reload the configuration](command:${AGENT_SDK_SETUP_RELOAD_COMMAND_ID}?%255B%2522claude%2522%255D) if you have set up Claude elsewhere.`;
@@ -201,7 +201,7 @@ suite('Agent SDK setup banner', () => {
 			const name = 'Claude \\[x\\]\\(command:evil\\)';
 
 			assert.strictEqual(typeof description === 'string' ? description : description?.value,
-				`Sign in to GitHub to use GitHub Copilot models, sign in to Chat\\[G\\]PT to use your Chat\\[G\\]PT subscription, or [reload the configuration](command:${AGENT_SDK_SETUP_RELOAD_COMMAND_ID}?%255B%2522claude%2522%255D) if you have set up ${name} elsewhere. For other ways to set up ${name}, [learn more](command:${AGENT_SDK_SETUP_OPEN_DOCS_COMMAND_ID}?%255B%2522claude%2522%255D) on their docs.`);
+				`Sign in to GitHub to use VEGA IDE models, sign in to Chat\\[G\\]PT to use your Chat\\[G\\]PT subscription, or [reload the configuration](command:${AGENT_SDK_SETUP_RELOAD_COMMAND_ID}?%255B%2522claude%2522%255D) if you have set up ${name} elsewhere. For other ways to set up ${name}, [learn more](command:${AGENT_SDK_SETUP_OPEN_DOCS_COMMAND_ID}?%255B%2522claude%2522%255D) on their docs.`);
 		});
 
 		test('the copy is trusted for its own two commands alone, so its links render and reach nothing else', () => {

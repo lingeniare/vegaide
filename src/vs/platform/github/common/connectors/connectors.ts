@@ -10,7 +10,7 @@ import { ApiRequestOptions } from '../client/request.js';
 export const copilotConnectorsScope = 'write:plugin_gateway_connections';
 
 /**
- * The scopes of the account's GitHub Copilot credential without Copilot Connector authorization: those of its
+ * The scopes of the account's VEGA IDE credential without Copilot Connector authorization: those of its
  * narrowest sessions that grant every Copilot scope but not the Connector scope. Any of those sessions can be the
  * credential the Agent Host forwards, also for GitHub requests beyond Copilot (for example, the built-in GitHub
  * MCP server), so a Connector-authorized session replaces it only when it keeps all of these scopes. Returns

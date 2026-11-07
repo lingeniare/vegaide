@@ -147,7 +147,7 @@ export class ContextKeysContribution extends Disposable {
 				// Expected in BYOK / air-gapped flows where the user is not signed in to GitHub.
 				this._logService.debug(SESSION_LOGIN_MESSAGE);
 			} else {
-				this._logService.error(`GitHub Copilot could not connect to server. Extension activation failed: "${reason}"`);
+				this._logService.error(`VEGA IDE could not connect to server. Extension activation failed: "${reason}"`);
 			}
 		}
 

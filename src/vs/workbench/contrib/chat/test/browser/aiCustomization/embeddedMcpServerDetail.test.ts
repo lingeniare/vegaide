@@ -206,7 +206,7 @@ suite('EmbeddedMcpServerDetail', () => {
 			editConfiguration: editConfiguration.style.display !== 'none',
 		});
 		const builtin = { label: 'Built-in: Copilot' };
-		const extension = { label: 'Built-in: GitHub Copilot Chat', ariaLabel: 'Open extension details for GitHub Copilot Chat', open: () => opened.push('extension') };
+		const extension = { label: 'Built-in: VEGA IDE Chat', ariaLabel: 'Open extension details for VEGA IDE Chat', open: () => opened.push('extension') };
 
 		detail.setInput({ ...input, source: undefined, provenance: builtin });
 		const agent = header();
@@ -221,7 +221,7 @@ suite('EmbeddedMcpServerDetail', () => {
 
 		assert.deepStrictEqual({ agent, contributed, unknown, file, opened }, {
 			agent: { label: 'Built-in: Copilot', link: false, ariaLabel: null, provenance: true, editConfiguration: false },
-			contributed: { label: 'Built-in: GitHub Copilot Chat', link: true, ariaLabel: 'Open extension details for GitHub Copilot Chat', provenance: true, editConfiguration: false },
+			contributed: { label: 'Built-in: VEGA IDE Chat', link: true, ariaLabel: 'Open extension details for VEGA IDE Chat', provenance: true, editConfiguration: false },
 			unknown: { label: undefined, link: false, ariaLabel: null, provenance: false, editConfiguration: false },
 			file: { label: 'mcp-config.json', link: true, ariaLabel: 'Open mcp-config.json', provenance: false, editConfiguration: true },
 			opened: ['extension'],

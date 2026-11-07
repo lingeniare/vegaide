@@ -42,7 +42,7 @@ suite('PromptFileContextContribution', () => {
 		assert.notInclude(values, 'gpt-5.6-sol');
 	});
 
-	test('provides GitHub Copilot-specific agent context', () => {
+	test('provides VEGA IDE-specific agent context', () => {
 		const context = getAgentFileContext('github-copilot', models, modelIds);
 		const values = context.map(item => 'value' in item ? item.value : '').join('\n');
 

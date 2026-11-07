@@ -33,13 +33,13 @@ export function hasRawManagedSettings(data: RawManagedSettingsData | undefined):
 	});
 }
 
-/** Windows registry root for GitHub Copilot policies. */
+/** Windows registry root for VEGA IDE policies. */
 export const GITHUB_COPILOT_WIN32_REGISTRY_PATH = 'SOFTWARE\\Policies\\GitHubCopilot';
 
 /** Windows product name passed to the native policy watcher. */
 export const GITHUB_COPILOT_WIN32_POLICY_NAME = 'GitHubCopilot';
 
-/** macOS CFPreferences application ID for GitHub Copilot managed preferences. */
+/** macOS CFPreferences application ID for VEGA IDE managed preferences. */
 export const GITHUB_COPILOT_MACOS_BUNDLE_ID = 'com.github.copilot';
 
 /** MDM key for the V0 managed setting. */

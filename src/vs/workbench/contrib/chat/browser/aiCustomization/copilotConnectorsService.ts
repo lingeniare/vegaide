@@ -353,7 +353,7 @@ export class CopilotConnectorsService extends Disposable implements ICopilotConn
 				throw new CancellationError();
 			}
 			if (session.account.id !== authentication.session.account.id) {
-				throw new CopilotConnectorsError(localize('copilotConnectors.wrongAccount', "Authorize connectors with the same GitHub account that you use for GitHub Copilot."));
+				throw new CopilotConnectorsError(localize('copilotConnectors.wrongAccount', "Authorize connectors with the same GitHub account that you use for VEGA IDE."));
 			}
 			if (!hasConnectorScope(session, false)) {
 				throw new CopilotConnectorsError(localize('copilotConnectors.permissionNotGranted', "GitHub did not grant permission to manage Copilot connectors. Try authorizing connectors again."));
@@ -1089,7 +1089,7 @@ export function toCopilotConnectorMarketplaceEntry(connector: ICopilotConnector)
 		url: connector.documentation,
 		externalUrl: connector.documentation?.toString(true),
 		icon: connector.icon,
-		publisher: localize('copilotConnectors.publisher', "GitHub Copilot"),
+		publisher: localize('copilotConnectors.publisher', "VEGA IDE"),
 		...(publisherUrl ? { publisherUrl } : {}),
 		installation: { kind: 'copilotConnector', name: connector.name },
 	};
@@ -1142,7 +1142,7 @@ function parseConnectors({ plugins }: ConnectorCatalog): readonly ICopilotConnec
 		}
 		const { metadata, connection } = plugin;
 		const displayName = text(metadata.displayName) ?? name;
-		const description = text(plugin.description) ?? localize('copilotConnectors.defaultDescription', "Connect {0} to GitHub Copilot.", displayName);
+		const description = text(plugin.description) ?? localize('copilotConnectors.defaultDescription', "Connect {0} to VEGA IDE.", displayName);
 		const mcpServerEntries = Object.entries(plugin.mcpServers.mcpServers);
 		if (mcpServerEntries.length > maxMcpServersPerConnector) {
 			throw new CopilotConnectorsError(localize('copilotConnectors.invalidResponse', "Copilot connectors returned an invalid response."));

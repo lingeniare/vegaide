@@ -145,7 +145,7 @@ function safeCreatedTime(value: string | undefined): string | undefined {
 }
 
 /**
- * Whether a version is published for GitHub Copilot local use: its system metadata says `modelFlavor: GGUF` and
+ * Whether a version is published for VEGA IDE local use: its system metadata says `modelFlavor: GGUF` and
  * `githubCopilotLocal: true` (typed), the Copilot CLI's and app's only eligibility rule. Tags are never consulted. Pure.
  */
 export function isLocalCodingModel(metadata: unknown): boolean {

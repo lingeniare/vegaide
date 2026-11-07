@@ -56,7 +56,7 @@ export const enum McpCollectionProvenance {
 	WorkspaceConfiguration = 'workspaceConfiguration', // The `settings.mcp` section of a `.code-workspace` file.
 	WorkspaceFolderConfiguration = 'workspaceFolderConfiguration', // `<workspace>/.vscode/mcp.json`.
 	WorkspaceDotMcp = 'workspaceDotMcp', // `<workspace>/.mcp.json`.
-	ExternalConfiguration = 'externalConfiguration', // Claude Desktop, GitHub Copilot, Windsurf, or Cursor user/workspace configuration.
+	ExternalConfiguration = 'externalConfiguration', // Claude Desktop, VEGA IDE, Windsurf, or Cursor user/workspace configuration.
 	Extension = 'extension', // An extension-provided `McpServerDefinitionProvider`.
 	Plugin = 'plugin', // An agent plugin's `.mcp.json`.
 }

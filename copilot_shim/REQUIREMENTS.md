@@ -25,7 +25,7 @@ contains the `code` command, in both client and server builds (see
 ## Purpose
 
 The shim is invoked from a terminal. It finds and launches a real
-GitHub Copilot CLI already available through `PATH`, while preventing recursion
+VEGA IDE CLI already available through `PATH`, while preventing recursion
 through itself or the legacy VS Code shims.
 
 When no usable CLI is available, the shim offers interactive installation on
@@ -165,7 +165,7 @@ This command ownership applies only to `code` and `code-insiders`, not OSS or Ex
 
 ### macOS Shell Command installation
 
-On macOS, the Shell Command action in the Command Palette offers a localized Yes/No choice to also install GitHub Copilot CLI, with Yes initially active:
+On macOS, the Shell Command action in the Command Palette offers a localized Yes/No choice to also install VEGA IDE CLI, with Yes initially active:
 
 - **Yes** starts the packaged shim's [interactive install-only mode](#install) in a visible local transient terminal, then continues the existing code-command installation without waiting for that terminal. Each Yes starts an independent terminal. After that shim process succeeds, fails, or handles cancellation, the dedicated VS Code terminal uses its localized `waitOnExit` message, `Press any key to close this terminal.`, with standard product-message formatting; the Rust shim does not print this hint or wait for input.
 - **No** keeps the existing code-command flow.
@@ -610,7 +610,7 @@ A candidate is legacy only when every marker in one applicable row is present.
 | Legacy form | Required marker conjunction |
 |---|---|
 | macOS/Linux injected launcher | Starts with `#!/bin/sh`; contains `unset NODE_OPTIONS`; contains `ELECTRON_RUN_AS_NODE=1`; contains `copilotCLIShim.js`; contains `"$@"`. |
-| Windows PowerShell bootstrapper | Contains `Windows GitHub Copilot CLI bootstrapper`; contains `function Find-RealCopilot`; contains `function Test-AndLaunchCopilot`; contains `$PackageName = "@github/copilot"`. |
+| Windows PowerShell bootstrapper | Contains `Windows VEGA IDE CLI bootstrapper`; contains `function Find-RealCopilot`; contains `function Test-AndLaunchCopilot`; contains `$PackageName = "@github/copilot"`. |
 | Windows batch/cmd wrapper | Starts with `@echo off`; contains `powershell`; contains `-ExecutionPolicy Bypass`; contains `-File`; references `copilot.ps1` or `copilotCLIShim.ps1`. |
 | Windows Git Bash wrapper | Starts with `#!/bin/sh`; contains `exec`; references `copilot.bat`; contains `"$@"`. |
 
@@ -667,7 +667,7 @@ When discovery finds no usable CLI candidate on a supported automatic-install
 target, display the installation documentation URL and prompt:
 
 ```text
-Install GitHub Copilot CLI? [y/N]
+Install VEGA IDE CLI? [y/N]
 ```
 
 Only a response whose first non-whitespace character is `y` or `Y` is
@@ -1026,7 +1026,7 @@ copilot --vscode-shim install --non-interactive --consent=installer
 `install` runs the Windows installation described under
 [Installation commands](#installation-commands), including its result-file status contract. On macOS x64/arm64 only, `copilot --vscode-shim install --interactive` is an install-only route for the workbench action after it has collected consent: it discovers an existing CLI first without executing, probing, updating, or reinstalling it; otherwise it uses the normal Homebrew-then-temporary-file official-script routes, rediscovery, and installer-owned prompts. It never launches the discovered CLI. Linux and macOS noninteractive setup semantics are unchanged, including their existing-CLI reporting; only macOS interactive mode gains this route.
 
-The macOS interactive install-only route exits `0` after an initial discovery finds an existing usable CLI or post-install rediscovery finds a newly installed one. The existing discovery checks require an eligible executable file and exclude the running, copied, aliased, and legacy shims; they do not execute, version-probe, or canonicalize the discovered `candidate.path`. On stderr, initial discovery prints `GitHub Copilot CLI is already installed.` and post-install rediscovery prints `GitHub Copilot CLI installed successfully.`, each followed by `Location: <discovered absolute candidate.path>`. It exits immediately without launching the CLI. It exits `1` for discovery or installer failures, `10` when a missing CLI can't be installed because the `CopilotCliCommand` policy is disabled, `127` when a missing CLI cannot be installed without an interactive terminal, and `130` for handled cancellation. These are not Windows setup result-file statuses. On macOS, the [workbench action](#macos-shell-command-installation) checks the effective Copilot CLI setting/policy before starting the shim, and the shim reads the policy again before installing.
+The macOS interactive install-only route exits `0` after an initial discovery finds an existing usable CLI or post-install rediscovery finds a newly installed one. The existing discovery checks require an eligible executable file and exclude the running, copied, aliased, and legacy shims; they do not execute, version-probe, or canonicalize the discovered `candidate.path`. On stderr, initial discovery prints `VEGA IDE CLI is already installed.` and post-install rediscovery prints `VEGA IDE CLI installed successfully.`, each followed by `Location: <discovered absolute candidate.path>`. It exits immediately without launching the CLI. It exits `1` for discovery or installer failures, `10` when a missing CLI can't be installed because the `CopilotCliCommand` policy is disabled, `127` when a missing CLI cannot be installed without an interactive terminal, and `130` for handled cancellation. These are not Windows setup result-file statuses. On macOS, the [workbench action](#macos-shell-command-installation) checks the effective Copilot CLI setting/policy before starting the shim, and the shim reads the policy again before installing.
 
 `--non-interactive` requires `--consent=installer`, the consent that setup
 collected on its page or command line. In that mode the command:
@@ -1401,7 +1401,7 @@ The work is complete only when:
   [`product-build.yml`](../build/azure-pipelines/product-build.yml)
 - Product release artifact selection:
   [`publish.ts`](../build/azure-pipelines/common/publish.ts)
-- GitHub Copilot CLI releases, including the MSI and `SHA256SUMS.txt`:
+- VEGA IDE CLI releases, including the MSI and `SHA256SUMS.txt`:
   <https://github.com/github/copilot-cli/releases>
 - GitHub installation guidance:
   <https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli>

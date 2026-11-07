@@ -122,7 +122,7 @@ export const customAgentAttributes: Record<string, IAttributeDefinition> = {
 	},
 	[PromptHeaderAttributes.model]: {
 		type: ['scalar', 'sequence'],
-		description: localize('promptHeader.agent.model', 'Specify the model that runs this custom agent. This is supported by the GitHub Copilot harness. You can also provide an ordered list of model preferences; the first available model will be used.'),
+		description: localize('promptHeader.agent.model', 'Specify the model that runs this custom agent. This is supported by the VEGA IDE harness. You can also provide an ordered list of model preferences; the first available model will be used.'),
 	},
 	[PromptHeaderAttributes.reasoningEffort]: {
 		type: 'scalar',
@@ -461,7 +461,7 @@ export function getAttributeDefinition(attributeName: string, promptType: Prompt
 	}
 }
 
-// The list of tools known to be used by GitHub Copilot custom agents
+// The list of tools known to be used by VEGA IDE custom agents
 export const knownGithubCopilotTools = [
 	{ name: SpecedToolAliases.execute, description: localize('githubCopilot.execute', 'Execute commands') },
 	{ name: SpecedToolAliases.read, description: localize('githubCopilot.read', 'Read files') },

@@ -123,7 +123,7 @@ function classifyModelError(message: string): string {
 
 /**
  * Choose the separator to place between two transcript fragments. Mirrors the
- * GitHub Copilot app's joining rule: no space if the left already ends in an
+ * VEGA IDE app's joining rule: no space if the left already ends in an
  * opener/whitespace or the right begins with whitespace or closing punctuation,
  * otherwise a single space.
  */
@@ -141,7 +141,7 @@ function transcriptSeparator(current: string, next: string): '' | ' ' {
  * spacing), NOT the cumulative partial so far — so they must be concatenated
  * verbatim rather than replaced. Replacing would drop earlier partial words
  * (e.g. interim "hello" then " world" must yield "hello world", not "world").
- * Mirrors the GitHub Copilot app's `appendVoiceTranscriptChunk`.
+ * Mirrors the VEGA IDE app's `appendVoiceTranscriptChunk`.
  */
 function appendTranscriptChunk(current: string, next: string): string {
 	if (!next.trim()) {
@@ -167,7 +167,7 @@ interface IFinalSegment {
  * multiple times as it refines the hypothesis — so finalized segments must be
  * keyed (by their start/end time) and replaced on refinement, then the distinct
  * segments joined in time order. Blindly appending every `is_final` result would
- * duplicate words. Mirrors the GitHub Copilot app's `VoiceTranscriptAccumulator`.
+ * duplicate words. Mirrors the VEGA IDE app's `VoiceTranscriptAccumulator`.
  */
 class TranscriptAccumulator {
 	private readonly _segments = new Map<string, IFinalSegment>();

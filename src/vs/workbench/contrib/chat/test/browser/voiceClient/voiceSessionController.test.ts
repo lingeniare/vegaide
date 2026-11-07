@@ -1012,7 +1012,7 @@ suite('VoiceSessionController', () => {
 
 		assert.strictEqual(controller.isConnecting.get(), false);
 		assert.strictEqual(controller.isConnected.get(), false);
-		assert.deepStrictEqual(notificationService.notifications.map(notification => notification.message), ['Voice Mode requires a paid GitHub Copilot plan.']);
+		assert.deepStrictEqual(notificationService.notifications.map(notification => notification.message), ['Voice Mode requires a paid VEGA IDE plan.']);
 	});
 
 	test('confirms the OpenAI model only on the first successful GPT-Live connection', async () => {
@@ -1521,12 +1521,12 @@ suite('VoiceSessionController', () => {
 				{
 					entitlement: ChatEntitlement.Business,
 					connecting: false,
-					notifications: ['Voice Mode is not available for GitHub Copilot Business or Enterprise accounts.'],
+					notifications: ['Voice Mode is not available for VEGA IDE Business or Enterprise accounts.'],
 				},
 				{
 					entitlement: ChatEntitlement.Enterprise,
 					connecting: false,
-					notifications: ['Voice Mode is not available for GitHub Copilot Business or Enterprise accounts.'],
+					notifications: ['Voice Mode is not available for VEGA IDE Business or Enterprise accounts.'],
 				},
 			],
 			internalConnecting: true,
@@ -2075,7 +2075,7 @@ suite('VoiceSessionController', () => {
 					'options: Terrain maps; Weather readings; a custom response is also available',
 					'4. What visual style should Mars use?',
 					'options: Photorealistic; Illustrated; a custom response is also available',
-					'The questionnaire is open in GitHub Copilot.',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 			},
 			immediateRequestCount: 1,
@@ -2094,7 +2094,7 @@ suite('VoiceSessionController', () => {
 					'options: Terrain maps; Weather readings; a custom response is also available',
 					'4. What visual style should Mars use?',
 					'options: Photorealistic; Illustrated; a custom response is also available',
-					'The questionnaire is open in GitHub Copilot.',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 			}],
 			containsInternalIds: false,
@@ -2314,7 +2314,7 @@ suite('VoiceSessionController', () => {
 			parameters: {
 				questions: [{
 					header: 'internal_scope',
-					question: 'Which Mars scope should GitHub Copilot use?',
+					question: 'Which Mars scope should VEGA IDE use?',
 					options: [{
 						label: 'Comparison view',
 						description: 'Show Earth and Mars side-by-side',
@@ -2350,9 +2350,9 @@ suite('VoiceSessionController', () => {
 				confirmationType: 'questionnaire',
 				text: [
 					'questionnaire: 1 question',
-					'1. Which Mars scope should GitHub Copilot use?',
+					'1. Which Mars scope should VEGA IDE use?',
 					'options: Comparison view - Show Earth and Mars side-by-side; a custom response is also available',
-					'The questionnaire is open in GitHub Copilot.',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 			},
 			containsHiddenMetadata: false,
@@ -2421,7 +2421,7 @@ suite('VoiceSessionController', () => {
 			id: 'hidden-question-id',
 			type: 'singleSelect',
 			title: 'Hidden title key',
-			message: 'Which deployment should GitHub Copilot use?',
+			message: 'Which deployment should VEGA IDE use?',
 			options: [{ id: 'hidden-option-id', label: 'Preview deployment', value: 'hidden-option-value' }],
 		}], true);
 		const pendingConfirmation = observableValue<{ detail?: string } | undefined>('pending', { detail: 'Needs approval' });
@@ -2474,9 +2474,9 @@ suite('VoiceSessionController', () => {
 				agent_state: 'waiting_for_confirmation',
 				agent_state_detail: [
 					'questionnaire: 1 question',
-					'1. Which deployment should GitHub Copilot use?',
+					'1. Which deployment should VEGA IDE use?',
 					'options: Preview deployment; a custom response is also available',
-					'The questionnaire is open in GitHub Copilot.',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 				confirmation_type: 'questionnaire',
 				pending: {
@@ -2487,7 +2487,7 @@ suite('VoiceSessionController', () => {
 					questions: [{
 						id: 'hidden-question-id',
 						type: 'singleSelect',
-						title: 'Which deployment should GitHub Copilot use?',
+						title: 'Which deployment should VEGA IDE use?',
 						allow_freeform: true,
 						options: [{ label: 'Preview deployment', value: 'hidden-option-value' }],
 					}],
@@ -2635,7 +2635,7 @@ suite('VoiceSessionController', () => {
 					fromDetail: [
 						'plan approval: Review the implementation plan',
 						'choices: Implement Plan',
-						'The plan is open in GitHub Copilot.',
+						'The plan is open in VEGA IDE.',
 					].join('\n'),
 					fromType: 'plan',
 					expectedType: 'generic',
@@ -3248,8 +3248,8 @@ suite('VoiceSessionController', () => {
 				detail: [
 					'questionnaire: 1 question',
 					'1. What should we call the Mars explorer?',
-					'response: enter a free-form answer in GitHub Copilot',
-					'The questionnaire is open in GitHub Copilot.',
+					'response: enter a free-form answer in VEGA IDE',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 			},
 			{
@@ -3262,8 +3262,8 @@ suite('VoiceSessionController', () => {
 				detail: [
 					'questionnaire: 1 question',
 					'1. I need your input in the open questionnaire.',
-					'response: enter a free-form answer in GitHub Copilot',
-					'The questionnaire is open in GitHub Copilot.',
+					'response: enter a free-form answer in VEGA IDE',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 			},
 			{
@@ -3273,7 +3273,7 @@ suite('VoiceSessionController', () => {
 					'questionnaire: 1 question',
 					'1. Choose a navigation mode.',
 					'options: Guided route',
-					'The questionnaire is open in GitHub Copilot.',
+					'The questionnaire is open in VEGA IDE.',
 				].join('\n'),
 			},
 		]);
@@ -3298,7 +3298,7 @@ suite('VoiceSessionController', () => {
 		assert.deepStrictEqual({
 			withinLimit: detail.length <= 2_400,
 			includesOptionOmission: detail.includes('3 more options'),
-			includesQuestionOmission: detail.includes('2 more questions are open in GitHub Copilot.'),
+			includesQuestionOmission: detail.includes('2 more questions are open in VEGA IDE.'),
 			containsInternalIds: detail.includes('internal_question_') || detail.includes('internal_option_') || detail.includes('hidden_value_'),
 		}, {
 			withinLimit: true,
@@ -3317,7 +3317,7 @@ suite('VoiceSessionController', () => {
 		], true, undefined, 'internal_plan_resolve_id');
 		const elicitation = new ChatElicitationRequestPart(
 			new MarkdownString('Choose a deployment target'),
-			'Select where GitHub Copilot should deploy the preview.',
+			'Select where VEGA IDE should deploy the preview.',
 			'Your choice is required before continuing.',
 			'Continue',
 			'Cancel',
@@ -3342,7 +3342,7 @@ suite('VoiceSessionController', () => {
 				detail: [
 					'plan approval: Review the Mars implementation plan',
 					'choices: Implement Plan - Start making the changes; Continue in Autopilot - Proceed automatically',
-					'The plan is open in GitHub Copilot.',
+					'The plan is open in VEGA IDE.',
 				].join('\n'),
 			},
 			{
@@ -3351,7 +3351,7 @@ suite('VoiceSessionController', () => {
 				detail: [
 					'input request: Choose a deployment target',
 					'Your choice is required before continuing.',
-					'Select where GitHub Copilot should deploy the preview.',
+					'Select where VEGA IDE should deploy the preview.',
 					'choices: Continue; Cancel',
 				].join('\n'),
 			},

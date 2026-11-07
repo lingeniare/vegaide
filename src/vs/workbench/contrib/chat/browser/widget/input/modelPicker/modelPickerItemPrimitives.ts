@@ -190,8 +190,8 @@ export function createUnavailableModelItem(
 	manageSettingsUrl: string | undefined,
 	updateStateType: StateType,
 	chatEntitlementService: IChatEntitlementService,
-	/** Names the built-in provider in the upgrade copy, e.g. "GitHub Copilot" or "VEGA". */
-	providerName = 'GitHub Copilot',
+	/** Names the built-in provider in the upgrade copy, e.g. "VEGA IDE" or "VEGA". */
+	providerName = 'VEGA IDE',
 ): IActionListItem<IActionWidgetDropdownAction> {
 	let description: string | MarkdownString | undefined;
 	if (reason === 'upgrade') {

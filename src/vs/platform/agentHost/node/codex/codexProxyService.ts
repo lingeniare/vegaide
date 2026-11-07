@@ -25,7 +25,7 @@ import {
  *
  * The handle owns a nonce that the codex CLI passes as `Bearer <nonce>` on
  * every request. The proxy validates that nonce, then re-issues the request
- * to CAPI using the **current** GitHub Copilot token — which can rotate
+ * to CAPI using the **current** VEGA IDE token — which can rotate
  * underneath the codex process without affecting it. Call
  * {@link setToken} when the upstream token changes; in-flight requests keep
  * using the value they captured at dispatch time, new requests pick up the
@@ -42,7 +42,7 @@ export interface ICodexProxyHandle extends ILoopbackProxyHandle {
 	/** Random per-process nonce used as `Bearer <nonce>` by the codex CLI. */
 	readonly nonce: string;
 	/**
-	 * Replace the GitHub Copilot token used for outbound CAPI calls. The
+	 * Replace the VEGA IDE token used for outbound CAPI calls. The
 	 * codex process and its nonce are unchanged.
 	 */
 	setToken(githubToken: string): void;

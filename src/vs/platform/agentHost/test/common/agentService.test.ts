@@ -668,7 +668,7 @@ suite('protectedResourcesRequireGitHubCopilotSignIn', () => {
 			copilotRequiredFalse: [githubCopilotRequiredFalse],
 			// Only unrelated resources are advertised.
 			onlyOtherResource: [otherRequiredResource],
-			// Mixed: an optional GitHub Copilot resource alongside a required other one.
+			// Mixed: an optional VEGA IDE resource alongside a required other one.
 			optionalCopilotWithOtherRequired: [githubCopilotRequiredFalse, otherRequiredResource],
 		};
 

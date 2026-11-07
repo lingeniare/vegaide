@@ -176,7 +176,7 @@ export class PromptValidator {
 		let userHome: URI | undefined;
 		for (const ref of body.fileReferences) {
 			if (target === Target.GitHubCopilot && !ref.isMarkdownLink) {
-				report(toMarker(localize('promptValidator.copilotFileReferenceUnsupported', "Local '#file:' references are not expanded by the GitHub Copilot harness."), ref.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
+				report(toMarker(localize('promptValidator.copilotFileReferenceUnsupported', "Local '#file:' references are not expanded by the VEGA IDE harness."), ref.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
 				continue;
 			}
 			if (isPromptFileTildePath(ref.content)) {
@@ -206,14 +206,14 @@ export class PromptValidator {
 		if (target === Target.GitHubCopilot) {
 			for (const placeholder of body.placeholderReferences) {
 				if (!Object.hasOwn(githubCopilotBodyPlaceholders, placeholder.name)) {
-					report(toMarker(localize('promptValidator.unknownCopilotPlaceholder', "Unknown GitHub Copilot placeholder '{{{0}}}'.", placeholder.name), placeholder.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
+					report(toMarker(localize('promptValidator.unknownCopilotPlaceholder', "Unknown VEGA IDE placeholder '{{{0}}}'.", placeholder.name), placeholder.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
 				}
 			}
 			for (const variable of body.variableReferences) {
 				const tool = this.languageModelToolsService.getToolByFullReferenceName(variable.name);
 				const message = tool && isToolSet(tool)
-					? localize('promptValidator.copilotToolSetReferenceUnsupported', "Tool set '{0}' is not supported by the GitHub Copilot harness. List individual tools in the 'tools' frontmatter attribute.", variable.name)
-					: localize('promptValidator.copilotToolReferenceUnsupported', "Local '#tool:' reference '{0}' is not expanded by the GitHub Copilot harness.", variable.name);
+					? localize('promptValidator.copilotToolSetReferenceUnsupported', "Tool set '{0}' is not supported by the VEGA IDE harness. List individual tools in the 'tools' frontmatter attribute.", variable.name)
+					: localize('promptValidator.copilotToolReferenceUnsupported', "Local '#tool:' reference '{0}' is not expanded by the VEGA IDE harness.", variable.name);
 				report(toMarker(message, variable.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
 			}
 		}
@@ -424,27 +424,27 @@ export class PromptValidator {
 				const localTool = this.languageModelToolsService.getToolByFullReferenceName(item.value);
 				report(localTool && isToolSet(localTool)
 					? toMarker(
-						localize('promptValidator.copilotToolSetUnsupported', "Tool set '{0}' is not supported by the GitHub Copilot harness. List individual tools instead.", item.value),
+						localize('promptValidator.copilotToolSetUnsupported', "Tool set '{0}' is not supported by the VEGA IDE harness. List individual tools instead.", item.value),
 						item.range,
 						MarkerSeverity.Hint,
 						[MarkerTag.Unnecessary],
 					)
 					: toMarker(
-						localize('promptValidator.copilotToolUnknown', "Tool '{0}' is not recognized by the matching GitHub Copilot harness.", item.value),
+						localize('promptValidator.copilotToolUnknown', "Tool '{0}' is not recognized by the matching VEGA IDE harness.", item.value),
 						item.range,
 						MarkerSeverity.Hint,
 						[MarkerTag.Unnecessary],
 					));
 			} else if (availability === 'disabled') {
 				report(toMarker(
-					localize('promptValidator.copilotToolDisabled', "Tool '{0}' is recognized but disabled for the matching GitHub Copilot harness.", item.value),
+					localize('promptValidator.copilotToolDisabled', "Tool '{0}' is recognized but disabled for the matching VEGA IDE harness.", item.value),
 					item.range,
 					MarkerSeverity.Hint,
 					[MarkerTag.Unnecessary],
 				));
 			} else if (availability === 'unavailable') {
 				report(toMarker(
-					localize('promptValidator.copilotToolUnavailable', "Tool '{0}' is recognized but currently unavailable for the matching GitHub Copilot harness.", item.value),
+					localize('promptValidator.copilotToolUnavailable', "Tool '{0}' is recognized but currently unavailable for the matching VEGA IDE harness.", item.value),
 					item.range,
 					MarkerSeverity.Hint,
 					[MarkerTag.Unnecessary],
@@ -469,21 +469,21 @@ export class PromptValidator {
 			const availability = getEffectiveAgentFileSkillAvailability(resolveAgentFileSkillIdentifiers(item.value, catalogue.skills));
 			if (!availability) {
 				report(toMarker(
-					localize('promptValidator.copilotSkillUnknown', "Skill '{0}' is not recognized by the matching GitHub Copilot harness.", item.value),
+					localize('promptValidator.copilotSkillUnknown', "Skill '{0}' is not recognized by the matching VEGA IDE harness.", item.value),
 					item.range,
 					MarkerSeverity.Hint,
 					[MarkerTag.Unnecessary],
 				));
 			} else if (availability === 'disabled') {
 				report(toMarker(
-					localize('promptValidator.copilotSkillDisabled', "Skill '{0}' is recognized but disabled for the matching GitHub Copilot harness.", item.value),
+					localize('promptValidator.copilotSkillDisabled', "Skill '{0}' is recognized but disabled for the matching VEGA IDE harness.", item.value),
 					item.range,
 					MarkerSeverity.Hint,
 					[MarkerTag.Unnecessary],
 				));
 			} else if (availability === 'unavailable') {
 				report(toMarker(
-					localize('promptValidator.copilotSkillUnavailable', "Skill '{0}' is recognized but currently unavailable for the matching GitHub Copilot harness.", item.value),
+					localize('promptValidator.copilotSkillUnavailable', "Skill '{0}' is recognized but currently unavailable for the matching VEGA IDE harness.", item.value),
 					item.range,
 					MarkerSeverity.Hint,
 					[MarkerTag.Unnecessary],
@@ -525,7 +525,7 @@ export class PromptValidator {
 		}
 		for (const model of modelValues) {
 			if (!resolveAgentFileModelIdentifier(model.value, catalogue.models)) {
-				report(toMarker(localize('promptValidator.copilotModelUnavailable', "Model '{0}' is not available for the GitHub Copilot harness.", model.value), model.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
+				report(toMarker(localize('promptValidator.copilotModelUnavailable', "Model '{0}' is not available for the VEGA IDE harness.", model.value), model.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
 			}
 		}
 	}
@@ -582,7 +582,7 @@ export class PromptValidator {
 						break;
 					case PromptsType.agent:
 						if (target === Target.GitHubCopilot) {
-							report(toMarker(localize('promptValidator.unknownAttribute.github-agent', "Attribute '{0}' is not supported in custom GitHub Copilot agent files. Supported: {1}.", attribute.key, supportedNames.value), attribute.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
+							report(toMarker(localize('promptValidator.unknownAttribute.github-agent', "Attribute '{0}' is not supported in custom VEGA IDE agent files. Supported: {1}.", attribute.key, supportedNames.value), attribute.range, MarkerSeverity.Hint, [MarkerTag.Unnecessary]));
 						} else if (target === Target.Claude) {
 							// ignore for now as we don't have a full list of supported attributes for claude target
 						} else {

@@ -224,7 +224,7 @@ suite('TerminalInstallActions', () => {
 		strictEqual(services.nativeInstallCount, 1);
 		deepStrictEqual(services.terminalConfigs, [{
 			config: {
-				name: 'Install GitHub Copilot CLI',
+				name: 'Install VEGA IDE CLI',
 				executable: URI.file('/Applications/Code Insiders.app/Contents/Resources/app/bin/copilot-shim/copilot').fsPath,
 				args: ['--vscode-shim', 'install', '--interactive'],
 				useShellEnvironment: true,
@@ -294,7 +294,7 @@ suite('TerminalInstallActions', () => {
 
 		deepStrictEqual(services.terminalConfigs, [{
 			config: {
-				name: 'Install GitHub Copilot CLI',
+				name: 'Install VEGA IDE CLI',
 				executable: URI.file('/Applications/Code Insiders\' Test.app/Contents/Resources/app/bin/copilot-shim/copilot').fsPath,
 				args: ['--vscode-shim', 'install', '--interactive'],
 				useShellEnvironment: true,

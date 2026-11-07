@@ -142,7 +142,7 @@ export class OTelContrib extends Disposable implements IExtensionContribution {
 				if (beforeReload) {
 					void this._promptReload(vscode.l10n.t("Your organization's Copilot telemetry policy could not be applied automatically. Reload the window to apply it."), true, beforeReload);
 				} else {
-					void vscode.window.showWarningMessage(vscode.l10n.t("Your organization's Copilot telemetry policy is still not applied after reloading. Check the GitHub Copilot Chat output log for details."));
+					void vscode.window.showWarningMessage(vscode.l10n.t("Your organization's Copilot telemetry policy is still not applied after reloading. Check the VEGA IDE Chat output log for details."));
 				}
 			},
 			promptReload: (current, beforeReload) => {

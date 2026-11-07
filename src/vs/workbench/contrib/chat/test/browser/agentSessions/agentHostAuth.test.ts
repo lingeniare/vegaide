@@ -3186,7 +3186,7 @@ suite('resolveAuthenticationInteractively', () => {
 					telemetrySource: 'agentHost',
 					forceSignInDialog: true,
 					additionalScopes: ['read'],
-					dialogTitle: 'Sign in to use GitHub Copilot',
+					dialogTitle: 'Sign in to use VEGA IDE',
 					disableChatViewReveal: true,
 					returnResult: true,
 				}],

@@ -5,7 +5,7 @@
 
 /**
  * Integration tests for {@link CopilotApiService.utilityChatCompletion} that
- * hit live GitHub Copilot CAPI. Opt-in only: requires a real GitHub OAuth
+ * hit live VEGA IDE CAPI. Opt-in only: requires a real GitHub OAuth
  * token with Copilot entitlement in the `COPILOT_GITHUB_TOKEN` environment
  * variable. We deliberately do NOT read `GITHUB_TOKEN` — GitHub Actions
  * sets it for every workflow run but it lacks Copilot access, which would

@@ -826,7 +826,7 @@ suite('SessionTypePicker', () => {
 
 	test('retains a committed backend label and model target without offering it for new sessions', () => {
 		const cloud = sessionType('cloud', 'cloud', 'Cloud');
-		const backend = sessionType('agenthost-environment', 'copilot', 'GitHub Copilot', 'remote-environment-copilot');
+		const backend = sessionType('agenthost-environment', 'copilot', 'VEGA IDE', 'remote-environment-copilot');
 		management.setQuickChatSessionTypes([cloud]);
 		const picker = createPicker(disposables, session, management, storage, undefined, undefined, [], {
 			providers: [upcastPartial<ISessionsProvider>({
@@ -850,7 +850,7 @@ suite('SessionTypePicker', () => {
 			offered: ['cloud'],
 			selected: { providerId: backend.providerId, sessionTypeId: backend.sessionType.id },
 			modelTarget: 'remote-environment-copilot',
-			label: 'GitHub Copilot',
+			label: 'VEGA IDE',
 		});
 	});
 

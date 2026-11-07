@@ -1,4 +1,4 @@
-﻿# Windows GitHub Copilot CLI bootstrapper
+﻿# Windows VEGA IDE CLI bootstrapper
 $PackageName = "@github/copilot"
 function Find-RealCopilot {
 }

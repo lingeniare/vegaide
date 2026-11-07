@@ -801,7 +801,7 @@ export const CopilotCLISessionType: ISessionType = {
  * crosses the agent-host IPC boundary and already updates reactively, so it is
  * the signal rather than a parallel field providers would have to keep in sync.
  *
- * An agent that still requires the GitHub Copilot protected resource needs
+ * An agent that still requires the VEGA IDE protected resource needs
  * sign-in; one that has dropped the requirement is running on its own
  * credentials. Note both Claude and Codex encode "not required" by *keeping* the
  * Copilot resource and marking it `required: false` rather than omitting it —

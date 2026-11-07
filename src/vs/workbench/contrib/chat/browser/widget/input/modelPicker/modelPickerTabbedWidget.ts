@@ -920,7 +920,7 @@ export class TabbedModelPicker extends Disposable {
 		return this._storageService.getBoolean(SORT_BY_COST_STORAGE_KEY, StorageScope.APPLICATION, false);
 	}
 
-	/** The model's sortable cost: VEGA's catalog pricing, or the provider's request multiplier. */
+	/** The model's sortable cost: VEGA IDE's catalog pricing, or the provider's request multiplier. */
 	private _modelSortCost(model: ILanguageModelChatMetadataAndIdentifier): number | undefined {
 		if (this._isVegaProduct) {
 			return vegaPricingCost(vegaPricingForModel(this._vegaPricing, model));
@@ -1415,7 +1415,7 @@ export class TabbedModelPicker extends Disposable {
 	private _createDetailsAction(model: ILanguageModelChatMetadataAndIdentifier, name: string, summary?: string): IAction {
 		return toAction({
 			id: MODEL_DETAILS_ACTION_ID,
-			// VEGA's rows are unconfigured, so the button is its chevron alone.
+			// VEGA IDE's rows are unconfigured, so the button is its chevron alone.
 			label: this._isVegaProduct ? '' : (summary ?? localize('chat.modelPicker.details', "Details")),
 			tooltip: summary
 				? localize('chat.modelPicker.configurationDetails', "{0} Details, {1}", name, summary)

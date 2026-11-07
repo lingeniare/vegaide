@@ -24509,7 +24509,7 @@ suite('AgentService (node dispatcher)', () => {
 			});
 		});
 
-		test('stores GitHub Copilot token for operation handlers', async () => {
+		test('stores VEGA IDE token for operation handlers', async () => {
 			registerTestAgentProvider(service, copilotAgent);
 			const changes: { resource: string; token: string | undefined }[] = [];
 			disposables.add(getAuthenticationService(service).onDidChangeAuthToken(event => changes.push({ resource: event.resource, token: event.token })));
@@ -24631,7 +24631,7 @@ suite('AgentService (node dispatcher)', () => {
 		test('fans out to every provider that owns the resource', async () => {
 			// Two providers share the same protected resource (the real
 			// motivating example: both Copilot CLI and Claude consume the
-			// GitHub Copilot token). Both must see the token — the
+			// VEGA IDE token). Both must see the token — the
 			// previous for-loop short-circuit only delivered to the first.
 			const claudeAgent = new MockAgent('claude');
 			claudeAgent.getProtectedResources = () => [{ resource: 'https://api.github.com', authorization_servers: ['https://github.com/login/oauth'], required: true }];

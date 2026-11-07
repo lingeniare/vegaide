@@ -92,7 +92,7 @@ function registerMockAuth(vscode) {
 // ---------------------------------------------------------------------------
 
 /**
- * Registers mock command handlers that stand in for the real GitHub Copilot
+ * Registers mock command handlers that stand in for the real VEGA IDE
  * extension commands. These allow the Code Review and Create PR buttons to
  * function in the e2e test environment.
  *

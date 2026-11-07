@@ -312,7 +312,7 @@ fn prepare_workflow<R: Runtime>(
 		) {
 			let directory =
 				crate::install::official_install_directory(runtime, target).map_err(|error| {
-					runtime.write_message(&format!("Could not locate GitHub Copilot CLI: {error}"));
+					runtime.write_message(&format!("Could not locate VEGA IDE CLI: {error}"));
 					ApplicationExit::InternalFailure
 				})?;
 			if let Some(directory) = directory {
@@ -333,7 +333,7 @@ fn prepare_workflow<R: Runtime>(
 			}
 			DiscoveryCycle::AfterInstall(_) => {
 				runtime.write_message(
-					"The installation completed, but no usable GitHub Copilot CLI was found on PATH or in the expected installation location. Source your shell profile, restart the terminal, or update PATH and retry.",
+					"The installation completed, but no usable VEGA IDE CLI was found on PATH or in the expected installation location. Source your shell profile, restart the terminal, or update PATH and retry.",
 				);
 				return Err(ApplicationExit::InternalFailure);
 			}
@@ -372,9 +372,9 @@ pub(crate) fn run<R: Runtime>(
 			.map(|action| match action {
 				WorkflowAction::Launch(candidate, cycle) => {
 					let message = match cycle {
-						DiscoveryCycle::Initial => "GitHub Copilot CLI is already installed.",
+						DiscoveryCycle::Initial => "VEGA IDE CLI is already installed.",
 						DiscoveryCycle::AfterInstall(_) => {
-							"GitHub Copilot CLI installed successfully."
+							"VEGA IDE CLI installed successfully."
 						}
 					};
 					runtime.write_message(&format!(
@@ -435,7 +435,7 @@ fn launch_candidate<R: Runtime>(
 		Ok(command) => command,
 		Err(error) => {
 			runtime.write_message(&format!(
-				"Could not start GitHub Copilot CLI at {}: {error:?}",
+				"Could not start VEGA IDE CLI at {}: {error:?}",
 				candidate.path.display()
 			));
 			return ApplicationExit::InternalFailure;
@@ -458,7 +458,7 @@ fn launch_candidate<R: Runtime>(
 		}) => ApplicationExit::Code(CANCELLED_EXIT_CODE),
 		Err(error) => {
 			runtime.write_message(&format!(
-				"Could not start GitHub Copilot CLI: {}",
+				"Could not start VEGA IDE CLI: {}",
 				describe_process_error(&error)
 			));
 			ApplicationExit::InternalFailure
@@ -472,7 +472,7 @@ fn request_install<R: Runtime>(
 ) -> Result<Option<InstallerRoute>, ApplicationExit> {
 	if runtime.copilot_cli_command_disabled() {
 		runtime.write_message(&format!(
-			"GitHub Copilot CLI was not found. Installing it from VS Code is turned off by the {} policy; contact your administrator.",
+			"VEGA IDE CLI was not found. Installing it from VS Code is turned off by the {} policy; contact your administrator.",
 			setup::COPILOT_CLI_COMMAND_POLICY
 		));
 		return Err(ApplicationExit::Code(
@@ -482,10 +482,10 @@ fn request_install<R: Runtime>(
 	if !runtime.can_prompt() {
 		let message = match consent {
 			InstallConsent::Prompt => format!(
-				"GitHub Copilot CLI was not found. Run copilot in a terminal to install it, or see {INSTALL_DOCUMENTATION_URL}"
+				"VEGA IDE CLI was not found. Run copilot in a terminal to install it, or see {INSTALL_DOCUMENTATION_URL}"
 			),
 			InstallConsent::AlreadyCollected => format!(
-				"GitHub Copilot CLI was not found. The install-only command requires an interactive terminal to install it; run it in a terminal, or see {INSTALL_DOCUMENTATION_URL}"
+				"VEGA IDE CLI was not found. The install-only command requires an interactive terminal to install it; run it in a terminal, or see {INSTALL_DOCUMENTATION_URL}"
 			),
 		};
 		runtime.write_message(&message);
@@ -534,7 +534,7 @@ fn request_install<R: Runtime>(
 				));
 			} else {
 				runtime.write_message(&format!(
-					"GitHub Copilot CLI couldn't be installed. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
+					"VEGA IDE CLI couldn't be installed. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
 				));
 				if !runtime.diagnostics_enabled() {
 					runtime.write_message(VERBOSE_HINT);
@@ -564,11 +564,11 @@ fn unsupported_target(target: HostTarget) -> Option<UnsupportedTarget> {
 fn report_unsupported_target<R: Runtime>(runtime: &R, unsupported: Option<UnsupportedTarget>) {
 	match unsupported {
 		Some(target) => runtime.write_message(&format!(
-			"GitHub Copilot CLI was not found. {}",
+			"VEGA IDE CLI was not found. {}",
 			target.guidance()
 		)),
 		None => runtime.write_message(&format!(
-			"GitHub Copilot CLI was not found, and it can't be installed automatically on this system. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
+			"VEGA IDE CLI was not found, and it can't be installed automatically on this system. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
 		)),
 	}
 }
@@ -579,7 +579,7 @@ fn report_installer_plan_error<R: Runtime>(runtime: &R, error: &InstallerPlanErr
 			report_unsupported_target(runtime, Some(*target));
 		}
 		InstallerPlanError::MissingPrerequisites(tools) => runtime.write_message(&format!(
-			"GitHub Copilot CLI can't be installed because none of {} is available. Install one of them, or see {INSTALL_DOCUMENTATION_URL}",
+			"VEGA IDE CLI can't be installed because none of {} is available. Install one of them, or see {INSTALL_DOCUMENTATION_URL}",
 			tools
 				.iter()
 				.map(|tool| tool.command())
@@ -612,7 +612,7 @@ fn report_installer_attempt<R: Runtime>(runtime: &R, attempt: &InstallerAttempt)
 
 fn report_discovery_error<R: Runtime>(runtime: &R, error: &DiscoveryError) {
 	runtime.write_message(&format!(
-		"Could not start GitHub Copilot CLI: the running copilot command{} couldn't be identified: {}",
+		"Could not start VEGA IDE CLI: the running copilot command{} couldn't be identified: {}",
 		error
 			.path
 			.as_ref()
@@ -1436,7 +1436,7 @@ mod tests {
 				0,
 				true,
 				vec![format!(
-					"GitHub Copilot CLI couldn't be installed. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
+					"VEGA IDE CLI couldn't be installed. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
 				)],
 			)
 		);
@@ -1516,7 +1516,7 @@ mod tests {
 				127,
 				0,
 				vec![format!(
-					"GitHub Copilot CLI was not found. Run copilot in a terminal to install it, or see {INSTALL_DOCUMENTATION_URL}"
+					"VEGA IDE CLI was not found. Run copilot in a terminal to install it, or see {INSTALL_DOCUMENTATION_URL}"
 				)]
 			)
 		);
@@ -1582,7 +1582,7 @@ mod tests {
 						0,
 						0,
 						vec![String::from(
-							"GitHub Copilot CLI is already installed.\nLocation: /cli/copilot"
+							"VEGA IDE CLI is already installed.\nLocation: /cli/copilot"
 						)],
 					),
 					(
@@ -1590,7 +1590,7 @@ mod tests {
 						0,
 						0,
 						vec![String::from(
-							"GitHub Copilot CLI is already installed.\nLocation: /cli/copilot"
+							"VEGA IDE CLI is already installed.\nLocation: /cli/copilot"
 						)],
 					),
 				],
@@ -1602,13 +1602,13 @@ mod tests {
 					PathBuf::from("/tools/bash"),
 				],
 				vec![String::from(
-					"GitHub Copilot CLI installed successfully.\nLocation: /home/test/.local/bin/copilot"
+					"VEGA IDE CLI installed successfully.\nLocation: /home/test/.local/bin/copilot"
 				)],
 				127,
 				0,
 				0,
 				vec![format!(
-					"GitHub Copilot CLI was not found. The install-only command requires an interactive terminal to install it; run it in a terminal, or see {INSTALL_DOCUMENTATION_URL}"
+					"VEGA IDE CLI was not found. The install-only command requires an interactive terminal to install it; run it in a terminal, or see {INSTALL_DOCUMENTATION_URL}"
 				)],
 			)
 		);
@@ -1657,12 +1657,12 @@ mod tests {
 				0,
 				vec![PathBuf::from("/tools/brew")],
 				vec![String::from(
-					"GitHub Copilot CLI installed successfully.\nLocation: /tools/copilot"
+					"VEGA IDE CLI installed successfully.\nLocation: /tools/copilot"
 				)],
 				0,
 				vec![PathBuf::from("/tools/curl"), PathBuf::from("/tools/bash")],
 				vec![String::from(
-					"GitHub Copilot CLI installed successfully.\nLocation: /home/test/.local/bin/copilot"
+					"VEGA IDE CLI installed successfully.\nLocation: /home/test/.local/bin/copilot"
 				)],
 			)
 		);
@@ -1717,7 +1717,7 @@ mod tests {
 				0,
 				vec![PathBuf::from("/tools/curl")],
 				vec![format!(
-					"GitHub Copilot CLI couldn't be installed. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
+					"VEGA IDE CLI couldn't be installed. To install it manually, see {INSTALL_DOCUMENTATION_URL}"
 				), String::from(VERBOSE_HINT)],
 				130,
 				0,
@@ -1726,7 +1726,7 @@ mod tests {
 				0,
 				vec![PathBuf::from("/tools/curl"), PathBuf::from("/tools/bash")],
 				vec![String::from(
-					"The installation completed, but no usable GitHub Copilot CLI was found on PATH or in the expected installation location. Source your shell profile, restart the terminal, or update PATH and retry."
+					"The installation completed, but no usable VEGA IDE CLI was found on PATH or in the expected installation location. Source your shell profile, restart the terminal, or update PATH and retry."
 				)],
 			)
 		);
@@ -1787,7 +1787,7 @@ mod tests {
 		assert_eq!(
 			fallback_without_terminal.messages.borrow().clone(),
 			vec![String::from(
-				"GitHub Copilot CLI is already installed.\nLocation: /home/test/.local/bin/copilot"
+				"VEGA IDE CLI is already installed.\nLocation: /home/test/.local/bin/copilot"
 			)]
 		);
 	}
@@ -1827,7 +1827,7 @@ mod tests {
 				10,
 				0,
 				vec![String::from(
-					"GitHub Copilot CLI was not found. Installing it from VS Code is turned off by the CopilotCliCommand policy; contact your administrator."
+					"VEGA IDE CLI was not found. Installing it from VS Code is turned off by the CopilotCliCommand policy; contact your administrator."
 				)],
 				1,
 				7,
@@ -1986,7 +1986,7 @@ mod tests {
 				1,
 				0,
 				vec![String::from(
-					"GitHub Copilot CLI couldn't be installed: installing GitHub Copilot CLI from VS Code is turned off by the CopilotCliCommand policy"
+					"VEGA IDE CLI couldn't be installed: installing VEGA IDE CLI from VS Code is turned off by the CopilotCliCommand policy"
 				)],
 			)
 		);
@@ -2052,7 +2052,7 @@ mod tests {
 				130,
 				1,
 				vec![String::from(
-					"Could not start GitHub Copilot CLI: /failed: PermissionDenied",
+					"Could not start VEGA IDE CLI: /failed: PermissionDenied",
 				)],
 			)
 		);

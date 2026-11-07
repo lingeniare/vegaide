@@ -362,7 +362,7 @@ export class ModelCard extends DisposableStore {
 		if (context) {
 			this._renderContextSection(context);
 		} else if (!isRoutingModel && !this._options.vegaPricing) {
-			// VEGA's whole catalog shares one context window, so it isn't worth a line.
+			// VEGA IDE's whole catalog shares one context window, so it isn't worth a line.
 			this._renderContextWindow(metadata);
 		}
 		// After the settings every model has, so those keep one position whether or not
@@ -820,7 +820,7 @@ export class ModelCard extends DisposableStore {
 	}
 
 	/**
-	 * VEGA's pricing, rendered like the credit breakdown: token rows share one
+	 * VEGA IDE's pricing, rendered like the credit breakdown: token rows share one
 	 * per-1M-tokens caption, while flat request and image fees name their unit.
 	 * VEGA users always see the numbers, so the section never folds away.
 	 */

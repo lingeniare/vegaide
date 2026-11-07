@@ -4072,7 +4072,7 @@ export class AICustomizationManagementEditor extends EditorPane {
 		if (type === PromptsType.hook) {
 			const preferredStorage = target === 'user' ? PromptsStorage.user : PromptsStorage.local;
 			if (this.workspaceService.isSessionsWindow) {
-				// Sessions: show hooks filtered to Copilot CLI (GitHub Copilot) hook types
+				// Sessions: show hooks filtered to Copilot CLI (VEGA IDE) hook types
 				await this.instantiationService.invokeFunction(showConfigureHooksQuickPick, {
 					openEditor: async (resource) => {
 						await this.showEmbeddedEditor(resource, basename(resource), PromptsType.hook, preferredStorage, preferredStorage === PromptsStorage.local);

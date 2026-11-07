@@ -795,7 +795,7 @@ class AgentHostCopilotConnectorAuthorization {
 	notifyStillUnauthorized(label: string): void {
 		this._notificationService.notify({
 			severity: Severity.Warning,
-			message: localize('agentHost.mcpConnectorStillUnauthorized', "{0} still cannot access Copilot connectors. Authorize Copilot connectors with the same GitHub account that you use for GitHub Copilot, then sign in again.", label),
+			message: localize('agentHost.mcpConnectorStillUnauthorized', "{0} still cannot access Copilot connectors. Authorize Copilot connectors with the same GitHub account that you use for VEGA IDE, then sign in again.", label),
 		});
 	}
 }

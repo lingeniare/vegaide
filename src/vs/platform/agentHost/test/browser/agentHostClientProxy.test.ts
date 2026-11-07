@@ -65,7 +65,7 @@ suite('AgentHostClientProxy', () => {
 		return { authorizations, resolvedUrls };
 	}
 
-	test('only issues tickets for the proxies configured or resolved for GitHub Copilot', async () => {
+	test('only issues tickets for the proxies configured or resolved for VEGA IDE', async () => {
 		const results = {
 			systemProxy: await lookUp(['http://proxy.corp:8080', 'http://PROXY.CORP', 'https://backup.corp:443', 'http://intranet.corp:8080', 'not a URL'], {
 				resolveProxy: () => 'PROXY proxy.corp:8080; HTTPS backup.corp:443; DIRECT',

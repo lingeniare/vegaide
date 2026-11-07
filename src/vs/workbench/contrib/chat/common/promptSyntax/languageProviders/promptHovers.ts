@@ -74,7 +74,7 @@ export class PromptHoverProvider implements HoverProvider {
 				if (placeholder.range.containsPosition(position)) {
 					const description = Object.hasOwn(githubCopilotBodyPlaceholders, placeholder.name)
 						? githubCopilotBodyPlaceholders[placeholder.name]
-						: localize('promptBody.githubCopilot.unknownPlaceholder', 'This placeholder is not recognized by the GitHub Copilot harness.');
+						: localize('promptBody.githubCopilot.unknownPlaceholder', 'This placeholder is not recognized by the VEGA IDE harness.');
 					return this.createHover(description, placeholder.range);
 				}
 			}
@@ -82,14 +82,14 @@ export class PromptHoverProvider implements HoverProvider {
 				if (ref.range.containsPosition(position)) {
 					const tool = this.languageModelToolsService.getToolByFullReferenceName(ref.name);
 					const message = tool && isToolSet(tool)
-						? localize('promptBody.githubCopilot.toolSetUnsupported', 'Tool sets are not supported by the GitHub Copilot harness. List individual tools in the `tools` frontmatter attribute.')
-						: localize('promptBody.githubCopilot.localReferenceUnsupported', 'Local `#tool:` references are not expanded by the GitHub Copilot harness.');
+						? localize('promptBody.githubCopilot.toolSetUnsupported', 'Tool sets are not supported by the VEGA IDE harness. List individual tools in the `tools` frontmatter attribute.')
+						: localize('promptBody.githubCopilot.localReferenceUnsupported', 'Local `#tool:` references are not expanded by the VEGA IDE harness.');
 					return this.createHover(message, ref.range);
 				}
 			}
 			for (const ref of body.fileReferences) {
 				if (!ref.isMarkdownLink && ref.range.containsPosition(position)) {
-					return this.createHover(localize('promptBody.githubCopilot.fileReferenceUnsupported', 'Local `#file:` references are not expanded by the GitHub Copilot harness.'), ref.range);
+					return this.createHover(localize('promptBody.githubCopilot.fileReferenceUnsupported', 'Local `#file:` references are not expanded by the VEGA IDE harness.'), ref.range);
 				}
 			}
 			return undefined;
@@ -147,7 +147,7 @@ export class PromptHoverProvider implements HoverProvider {
 				if (promptType === PromptsType.agent && target === Target.GitHubCopilot) {
 					const localDescription = getAttributeDefinition(attribute.key, promptType, Target.Undefined)?.description;
 					if (localDescription) {
-						return this.createHover(localDescription + '\n\n' + localize('promptHeader.attribute.notUsedByCopilot', 'Note: This attribute is not used by the GitHub Copilot harness.'), attribute.range);
+						return this.createHover(localDescription + '\n\n' + localize('promptHeader.attribute.notUsedByCopilot', 'Note: This attribute is not used by the VEGA IDE harness.'), attribute.range);
 					}
 				}
 			}
@@ -183,9 +183,9 @@ export class PromptHoverProvider implements HoverProvider {
 						const lines = [...getAgentFileSkillDetails(matches)];
 						const availability = getEffectiveAgentFileSkillAvailability(matches);
 						if (availability === 'disabled') {
-							lines.push(localize('promptHeader.githubCopilot.skillDisabled', 'This skill is recognized but disabled for the matching GitHub Copilot harness.'));
+							lines.push(localize('promptHeader.githubCopilot.skillDisabled', 'This skill is recognized but disabled for the matching VEGA IDE harness.'));
 						} else if (availability === 'unavailable') {
-							lines.push(localize('promptHeader.githubCopilot.skillUnavailable', 'This skill is recognized but currently unavailable for the matching GitHub Copilot harness.'));
+							lines.push(localize('promptHeader.githubCopilot.skillUnavailable', 'This skill is recognized but currently unavailable for the matching VEGA IDE harness.'));
 						}
 						return this.createHover(lines.join('\n\n') || skillName.value, skillName.range);
 					}
@@ -211,14 +211,14 @@ export class PromptHoverProvider implements HoverProvider {
 			if (matches.length > 0) {
 				const lines = [...new Set(matches.map(match => match.description).filter((description): description is string => !!description))];
 				if (availability === 'disabled') {
-					lines.push(localize('promptHeader.githubCopilot.toolDisabled', 'This tool is recognized but disabled for the matching GitHub Copilot harness.'));
+					lines.push(localize('promptHeader.githubCopilot.toolDisabled', 'This tool is recognized but disabled for the matching VEGA IDE harness.'));
 				} else if (availability === 'unavailable') {
-					lines.push(localize('promptHeader.githubCopilot.toolUnavailable', 'This tool is recognized but currently unavailable for the matching GitHub Copilot harness.'));
+					lines.push(localize('promptHeader.githubCopilot.toolUnavailable', 'This tool is recognized but currently unavailable for the matching VEGA IDE harness.'));
 				}
 				return this.createHover(lines.join('\n\n') || toolName, range);
 			}
 			if (catalogue.isResolved && tool && isToolSet(tool)) {
-				return this.createHover(localize('promptHeader.githubCopilot.toolSetUnsupported', 'Tool sets are not supported by the GitHub Copilot harness. List individual tools in the `tools` frontmatter attribute.'), range);
+				return this.createHover(localize('promptHeader.githubCopilot.toolSetUnsupported', 'Tool sets are not supported by the VEGA IDE harness. List individual tools in the `tools` frontmatter attribute.'), range);
 			}
 			return undefined;
 		}
@@ -461,7 +461,7 @@ export class PromptHoverProvider implements HoverProvider {
 	private getHandsOffHover(attribute: IHeaderAttribute, position: Position, target: Target): Hover | undefined {
 		const handoffsBaseMessage = getAttributeDefinition(PromptHeaderAttributes.handOffs, PromptsType.agent, target)?.description!;
 		if (!isVSCodeOrDefaultTarget(target)) {
-			return this.createHover(handoffsBaseMessage + '\n\n' + localize('promptHeader.agent.handoffs.githubCopilot', 'Note: This attribute is not used in GitHub Copilot or Claude targets.'), attribute.range);
+			return this.createHover(handoffsBaseMessage + '\n\n' + localize('promptHeader.agent.handoffs.githubCopilot', 'Note: This attribute is not used in VEGA IDE or Claude targets.'), attribute.range);
 		}
 		return this.createHover(handoffsBaseMessage, attribute.range);
 

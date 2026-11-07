@@ -35,7 +35,7 @@ export interface IAgentHostGitHubEndpointService {
 	 */
 	readonly onDidChange: Event<void>;
 
-	/** The GitHub Copilot protected resource, computed against the configured endpoints. */
+	/** The VEGA IDE protected resource, computed against the configured endpoints. */
 	getCopilotResource(): ProtectedResourceMetadata;
 
 	/** The GitHub repository protected resource, computed against the configured endpoints. */

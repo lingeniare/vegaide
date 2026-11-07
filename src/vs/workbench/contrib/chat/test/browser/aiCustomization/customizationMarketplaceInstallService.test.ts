@@ -762,7 +762,7 @@ suite('CustomizationMarketplaceInstallService', () => {
 		const cases = [
 			{ name: 'Claude root', manifestPath: '.claude-plugin/plugin.json', installedRoot: '', catalogVersion: '1.0.0', installedVersion: '1.0.0', installed: true },
 			{ name: 'nested Claude root', manifestPath: 'plugins/demo/.claude-plugin/plugin.json', installedRoot: 'plugins/demo', catalogVersion: '1.0.0', installedVersion: '1.0.0', installed: true },
-			{ name: 'GitHub Copilot root', manifestPath: '.github/plugin/plugin.json', installedRoot: '', catalogVersion: '1.0.0', installedVersion: '1.0.0', installed: true },
+			{ name: 'VEGA IDE root', manifestPath: '.github/plugin/plugin.json', installedRoot: '', catalogVersion: '1.0.0', installedVersion: '1.0.0', installed: true },
 			{ name: 'OpenPlugin root', manifestPath: '.plugin/plugin.json', installedRoot: '', catalogVersion: '1.0.0', installedVersion: '1.0.0', installed: true },
 			{ name: 'plain manifest root', manifestPath: 'plugins/demo/plugin.json', installedRoot: 'plugins/demo', catalogVersion: '1.0.0', installedVersion: '1.0.0', installed: true },
 			{ name: 'different version', manifestPath: '.claude-plugin/plugin.json', installedRoot: '', catalogVersion: '2.0.0', installedVersion: '1.0.0', installed: false },

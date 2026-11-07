@@ -265,7 +265,7 @@ export class PromptHeaderAutocompletion implements CompletionItemProvider {
 							}
 							return [...suggestions.values()];
 						} else if (this.environmentService.isSessionsWindow) {
-							// for GitHub Copilot targets and the Sessions Window, we only suggest the known set of tools that are supported by GitHub Copilot, instead of all tools that the user has defined, because many tools won't work in these contexts and it would be frustrating for users to select a tool that doesn't work
+							// for VEGA IDE targets and the Sessions Window, we only suggest the known set of tools that are supported by VEGA IDE, instead of all tools that the user has defined, because many tools won't work in these contexts and it would be frustrating for users to select a tool that doesn't work
 							return knownGithubCopilotTools;
 						} else if (target === Target.Claude) {
 							return knownClaudeTools;

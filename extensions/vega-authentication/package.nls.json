@@ -1,5 +1,5 @@
 {
-	"displayName": "VEGA Authentication",
-	"description": "VEGA sign-in provider (device flow) for api.vega.chat",
-	"authProviderLabel": "VEGA"
+	"displayName": "VEGA IDE Authentication",
+	"description": "VEGA IDE sign-in provider (device flow) for api.vega.chat",
+	"authProviderLabel": "VEGA IDE"
 }
