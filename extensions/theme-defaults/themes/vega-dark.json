@@ -35,6 +35,7 @@
 		"peekViewResult.matchHighlightBackground": "#05966933",
 		"peekViewResult.selectionBackground": "#05966926",
 		"editorGutter.addedBackground": "#34D399",
+		"editorGutter.modifiedBackground": "#059669",
 		"diffEditor.insertedLineBackground": "#05966926",
 		"diffEditor.insertedTextBackground": "#34D3994d",
 		"editorOverviewRuler.findMatchForeground": "#34D39999",
@@ -46,7 +47,9 @@
 		"statusBarItem.focusBorder": "#059669B3",
 		"statusBarItem.prominentBackground": "#059669",
 		"statusBarItem.prominentHoverBackground": "#059669",
+		"statusBarItem.remoteBackground": "#059669",
 		"tab.activeBorderTop": "#059669",
+		"tab.selectedBorderTop": "#34D399",
 		"extensionButton.prominentBackground": "#059669",
 		"extensionButton.prominentHoverBackground": "#10B981",
 		"quickInputList.focusBackground": "#047857",
@@ -57,12 +60,15 @@
 		"notificationLink.foreground": "#34D399",
 		"notificationsInfoIcon.foreground": "#34D399",
 		"chat.inputWorkingBorderColor1": "#059669",
+		"chat.slashCommandBackground": "#05966966",
+		"chat.slashCommandForeground": "#34D399",
 		"editorCommentsWidget.rangeBackground": "#05966926",
 		"editorCommentsWidget.rangeActiveBackground": "#05966946",
 		"charts.green": "#34D399",
 		"agentsGradient.tintColor": "#059669",
 		"agentsChatInput.focusBorder": "#059669B3",
 		"agentsBadge.background": "#047857",
-		"agentsUnreadBadge.background": "#047857"
+		"agentsUnreadBadge.background": "#047857",
+		"welcomePage.progress.foreground": "#059669"
 	}
 }
