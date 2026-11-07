@@ -228,9 +228,9 @@
 	],
 	"onboardingThemes": [
 		{
-			"id": "dark-2026",
-			"label": "Dark 2026",
-			"themeId": "Dark 2026",
+			"id": "vega-dark",
+			"label": "VEGA Dark",
+			"themeId": "VEGA Dark",
 			"type": "dark"
 		},
 		{
@@ -246,9 +246,9 @@
 			"type": "dark"
 		},
 		{
-			"id": "light-2026",
-			"label": "Light 2026",
-			"themeId": "Light 2026",
+			"id": "vega-light",
+			"label": "VEGA Light",
+			"themeId": "VEGA Light",
 			"type": "light"
 		},
 		{
