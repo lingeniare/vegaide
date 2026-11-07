@@ -22,6 +22,9 @@ const commonResourcePatterns = [
 	'vs/editor/common/languages/highlights/*.scm',
 	'vs/editor/common/languages/injections/*.scm',
 
+	// Fonts referenced from CSS via @font-face
+	'vs/base/browser/media/fonts/*.ttf',
+
 	// SVGs referenced from CSS (needed for transpile/dev builds where CSS is copied as-is)
 	'vs/workbench/browser/media/code-icon.svg',
 	'vs/workbench/browser/parts/editor/media/letterpress*.svg',
