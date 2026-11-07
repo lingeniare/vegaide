@@ -94,12 +94,12 @@ else {
 				chatExtensionId: 'GitHub.copilot-chat',
 				provider: {
 					default: {
-						id: 'github',
-						name: 'GitHub',
+						id: 'vega',
+						name: 'VEGA IDE',
 					},
 					enterprise: {
-						id: 'github-enterprise',
-						name: 'GitHub Enterprise',
+						id: 'vega',
+						name: 'VEGA IDE',
 					}
 				},
 				providerScopes: []

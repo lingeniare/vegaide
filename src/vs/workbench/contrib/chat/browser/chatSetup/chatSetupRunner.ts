@@ -90,9 +90,9 @@ export interface IChatSetupDialogButton {
 export interface IChatSetupDialogProviders {
 	readonly default: { readonly name: string };
 	readonly enterprise: { readonly name: string };
-	readonly apple: { readonly name: string };
-	readonly google: { readonly name: string };
-	readonly microsoft: { readonly name: string };
+	readonly apple?: { readonly name: string };
+	readonly google?: { readonly name: string };
+	readonly microsoft?: { readonly name: string };
 }
 
 export interface IChatSetupDialogFooterContent {

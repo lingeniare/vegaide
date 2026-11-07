@@ -137,18 +137,6 @@
 			"enterprise": {
 				"id": "vega",
 				"name": "VEGA IDE"
-			},
-			"google": {
-				"id": "google",
-				"name": "Google"
-			},
-			"apple": {
-				"id": "apple",
-				"name": "Apple"
-			},
-			"microsoft": {
-				"id": "microsoft",
-				"name": "Microsoft"
 			}
 		},
 		"providerExtensionId": "vscode.vega-authentication",

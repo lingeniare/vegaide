@@ -14,6 +14,18 @@
   "contributes": {
     "themes": [
       {
+        "id": "VEGA Dark",
+        "label": "%vegaDarkThemeLabel%",
+        "uiTheme": "vs-dark",
+        "path": "./themes/vega-dark.json"
+      },
+      {
+        "id": "VEGA Light",
+        "label": "%vegaLightThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/vega-light.json"
+      },
+      {
         "id": "Light 2026",
         "label": "%light2026ThemeLabel%",
         "uiTheme": "vs",
