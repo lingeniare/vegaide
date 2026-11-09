@@ -20,7 +20,7 @@ import { getAlignedSession, getAnyAuthSession } from './session';
 // messages come from a hardcoded Russian copy, `l10n.t` serves other locales.
 const isRussian = env.language === 'ru';
 const vegaProviderMessage = () => isRussian
-	? 'Вход через GitHub недоступен: чат в этой сборке предоставляется ВЕГА Редактор.'
+	? 'Вход через GitHub недоступен: чат в этой сборке предоставляется ВЕГА IDE.'
 	: l10n.t('GitHub sign-in is not available because chat in this build is provided by VEGA IDE.');
 
 export class AuthenticationService extends BaseAuthenticationService {

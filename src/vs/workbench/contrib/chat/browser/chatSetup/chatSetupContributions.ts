@@ -32,6 +32,7 @@ import { ILogService } from '../../../../../platform/log/common/log.js';
 import { IMarkerService } from '../../../../../platform/markers/common/markers.js';
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
 import product from '../../../../../platform/product/common/product.js';
+import { ruLabel } from '../../../../../platform/product/common/vegaBranding.js';
 import { GitHubPaths, IDefaultAccountService } from '../../../../../platform/defaultAccount/common/defaultAccount.js';
 import { IProductService } from '../../../../../platform/product/common/productService.js';
 import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
@@ -339,7 +340,7 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 			constructor() {
 				super({
 					id: 'workbench.action.chat.triggerSetupForceSignIn',
-					title: localize2('forceSignIn', "Sign in to use VEGA IDE")
+					title: ruLabel(localize2('forceSignIn', "Sign in to use VEGA IDE"), 'Войдите, чтобы использовать ВЕГА IDE')
 				});
 			}
 
@@ -377,7 +378,7 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 			constructor() {
 				super({
 					id: 'workbench.action.chat.triggerSetupFromAccounts',
-					title: localize2('triggerChatSetupFromAccounts', "Sign in to use VEGA IDE..."),
+					title: ruLabel(localize2('triggerChatSetupFromAccounts', "Sign in to use VEGA IDE"), 'Войдите, чтобы использовать ВЕГА IDE'),
 					menu: {
 						id: MenuId.AccountsContext,
 						group: ACCOUNTS_SHARED_SIGN_IN_GROUP,
@@ -456,7 +457,7 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 			constructor() {
 				super({
 					id: 'workbench.action.chat.upgradePlan',
-					title: localize2('managePlan', "Upgrade to Copilot Pro"),
+					title: ruLabel(localize2('managePlan', "Upgrade to Copilot Pro"), 'Повысить статус до Copilot Pro'),
 					category: localize2('chat.category', 'Chat'),
 					f1: true,
 					precondition: ContextKeyExpr.and(
@@ -524,7 +525,7 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 			constructor() {
 				super({
 					id: 'workbench.action.chat.manageAdditionalSpend',
-					title: localize2('manageAdditionalSpend', "Manage VEGA IDE Budget"),
+					title: ruLabel(localize2('manageAdditionalSpend', "Manage VEGA IDE Budget"), 'Управление бюджетом ВЕГА IDE'),
 					category: localize2('chat.category', 'Chat'),
 					f1: true,
 					precondition: ContextKeyExpr.and(

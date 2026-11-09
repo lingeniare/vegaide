@@ -122,6 +122,8 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 	private _detectedEditorIds: Set<string> | undefined;
 	private _userSignedIn = false;
 	private selectedAiMode: AiCollaborationMode = AiCollaborationMode.Balanced;
+	private _signInInFlight = false;
+	private _vegaSignInBtn: HTMLButtonElement | undefined;
 
 	constructor(
 		@ILayoutService private readonly layoutService: ILayoutService,
@@ -169,7 +171,7 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		this.overlay = append(container, $('.onboarding-a-overlay'));
 		this.overlay.setAttribute('role', 'dialog');
 		this.overlay.setAttribute('aria-modal', 'true');
-		this.overlay.setAttribute('aria-label', ruLabel(localize('onboarding.a.aria', "Welcome to VEGA IDE"), 'Добро пожаловать в ВЕГА Редактор'));
+		this.overlay.setAttribute('aria-label', ruLabel(localize('onboarding.a.aria', "Welcome to VEGA IDE"), 'Добро пожаловать в ВЕГА IDE'));
 
 		// Card
 		this.card = append(this.overlay, $('.onboarding-a-card'));
@@ -459,7 +461,7 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		const content = append(wrapper, $('.onboarding-a-signin-content'));
 		const contentMain = append(content, $('.onboarding-a-signin-content-main'));
 		const title = append(contentMain, $('h2.onboarding-a-signin-title'));
-		title.textContent = ruLabel(localize('onboarding.signIn.heroTitle', "Welcome to VEGA IDE"), 'Добро пожаловать в ВЕГА Редактор');
+		title.textContent = ruLabel(localize('onboarding.signIn.heroTitle', "Welcome to VEGA IDE"), 'Добро пожаловать в ВЕГА IDE');
 
 		const subtitle = append(contentMain, $('p.onboarding-a-signin-subtitle'));
 		subtitle.textContent = ruLabel(localize('onboarding.signIn.heroSubtitle', "Sign in to use {0}.", defaultChat.provider.default.name), `Войдите, чтобы использовать ${withRuBrandNames(defaultChat.provider.default.name)}.`);
@@ -476,28 +478,29 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		} else {
 			this._renderSignInActions(actions);
 		}
-
-		const footer = append(wrapper, $('.onboarding-a-signin-footer'));
-
-		const disclaimerCol = append(footer, $('.onboarding-a-signin-disclaimer-col'));
-
-		// VEGA sign-in disclaimer
-		const disclaimer = append(disclaimerCol, $('.onboarding-a-signin-disclaimer'));
-		disclaimer.append(localize('onboarding.signIn.disclaimer.intro', "After logging in, you will receive a test deposit on your account and access to free AI models. By using the software, you agree to the "));
-		this._createInlineLink(disclaimer, localize('onboarding.signIn.disclaimer.terms', "terms of service"), defaultChat.termsStatementUrl);
-		disclaimer.append(localize('onboarding.signIn.disclaimer.middle', " and the "));
-		this._createInlineLink(disclaimer, localize('onboarding.signIn.disclaimer.privacy', "personal data processing and privacy policy"), defaultChat.privacyStatementUrl);
-		disclaimer.append(localize('onboarding.signIn.disclaimer.suffix', "."));
 	}
 
 	private _renderSignInActions(actions: HTMLElement): void {
-		const vegaBtn = this._registerStepFocusable(this._createSignInButton(actions, ruLabel(localize('onboarding.signIn.vega', "Sign in with {0}", defaultChat.provider.default.name), `Войти через ${withRuBrandNames(defaultChat.provider.default.name)}`), {
+		const vegaBtn = this._registerStepFocusable(this._createSignInButton(actions, ruLabel(localize('onboarding.signIn.vega', "Sign in with VEGA"), 'Войти через ВЕГА'), {
 			emphasized: true,
 		}));
+		this._vegaSignInBtn = vegaBtn;
 		this.stepDisposables.add(addDisposableListener(vegaBtn, EventType.CLICK, () => {
+			if (this._signInInFlight) {
+				return;
+			}
 			this._logAction('signIn', undefined, defaultChat.provider.default.id);
-			this._handleSignIn();
+			this._setSignInBusy(true);
+			this._handleSignIn().finally(() => this._setSignInBusy(false));
 		}));
+	}
+
+	private _setSignInBusy(busy: boolean): void {
+		this._signInInFlight = busy;
+		if (this._vegaSignInBtn) {
+			this._vegaSignInBtn.disabled = busy;
+			this._vegaSignInBtn.classList.toggle('busy', busy);
+		}
 	}
 
 	private _createSignInButton(parent: HTMLElement, label: string, options?: { emphasized?: boolean }): HTMLButtonElement {
@@ -857,19 +860,6 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		const kbd = $('kbd.onboarding-a-kbd');
 		kbd.textContent = label;
 		return kbd;
-	}
-
-	private _createInlineLink(parent: HTMLElement, label: string, href: string | undefined): void {
-		if (!href) {
-			parent.append(label);
-			return;
-		}
-
-		const link = this._registerStepFocusable(append(parent, $<HTMLAnchorElement>('a.onboarding-a-inline-link')));
-		link.textContent = label;
-		link.href = href;
-		link.target = '_blank';
-		link.rel = 'noopener';
 	}
 
 	// =====================================================================

@@ -12,6 +12,7 @@ import * as semver from '../../../../../../../base/common/semver/semver.js';
 import Severity from '../../../../../../../base/common/severity.js';
 import { ThemeIcon } from '../../../../../../../base/common/themables.js';
 import { localize } from '../../../../../../../nls.js';
+import { ruLabel } from '../../../../../../../platform/product/common/vegaBranding.js';
 import { ActionListItemKind, IActionListItem } from '../../../../../../../platform/actionWidget/browser/actionList.js';
 import { IActionWidgetDropdownAction } from '../../../../../../../platform/actionWidget/browser/actionWidgetDropdown.js';
 import { withSeverityPrefix } from '../../../../../../../platform/notification/common/notification.js';
@@ -208,9 +209,9 @@ export function createUnavailableModelItem(
 	if (reason === 'upgrade') {
 		hoverContent = new MarkdownString('', { isTrusted: true, supportThemeIcons: true });
 		if (chatEntitlementService.entitlement === ChatEntitlement.Pro) {
-			hoverContent.appendMarkdown(localize('chat.modelPicker.upgradeHoverProPlus', "[Upgrade to {0} Pro+](command:workbench.action.chat.upgradePlan \" \") to use the best models.", providerName));
+			hoverContent.appendMarkdown(ruLabel(localize('chat.modelPicker.upgradeHoverProPlus', "[Upgrade to {0} Pro+](command:workbench.action.chat.upgradePlan \" \") to use the best models.", providerName), `[Повысьте статус до ${providerName} Pro+](command:workbench.action.chat.upgradePlan " "), чтобы использовать лучшие модели.`));
 		} else {
-			hoverContent.appendMarkdown(localize('chat.modelPicker.upgradeHover', "[Upgrade to {0} Pro](command:workbench.action.chat.upgradePlan \" \") to use the best models.", providerName));
+			hoverContent.appendMarkdown(ruLabel(localize('chat.modelPicker.upgradeHover', "[Upgrade to {0} Pro](command:workbench.action.chat.upgradePlan \" \") to use the best models.", providerName), `[Повысьте статус до ${providerName} Pro](command:workbench.action.chat.upgradePlan " "), чтобы использовать лучшие модели.`));
 		}
 	} else if (reason === 'update') {
 		hoverContent = getUpdateHoverContent(updateStateType);

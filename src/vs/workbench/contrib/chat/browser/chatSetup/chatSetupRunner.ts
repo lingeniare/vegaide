@@ -26,6 +26,7 @@ import { IKeybindingService } from '../../../../../platform/keybinding/common/ke
 import { ILayoutService } from '../../../../../platform/layout/browser/layoutService.js';
 import { ILogService } from '../../../../../platform/log/common/log.js';
 import product from '../../../../../platform/product/common/product.js';
+import { ruLabel } from '../../../../../platform/product/common/vegaBranding.js';
 import { ITelemetryService, TelemetryLevel } from '../../../../../platform/telemetry/common/telemetry.js';
 import { IWorkspaceTrustManagementService, IWorkspaceTrustRequestService } from '../../../../../platform/workspace/common/workspaceTrust.js';
 import { IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
@@ -287,7 +288,10 @@ export function getChatSetupDialogFooter(
 		return localize({ key: 'settingsWithoutLink', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}'] }, "By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these settings anytime.", content.providerName, content.termsStatementUrl, content.privacyStatementUrl, content.providerName, content.publicCodeMatchesUrl);
 	}
 
-	return localize({ key: 'settings', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}', '{Locked="]({5})"}'] }, "By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these [settings]({5}) anytime.", content.providerName, content.termsStatementUrl, content.privacyStatementUrl, content.providerName, content.publicCodeMatchesUrl, settingsUrl);
+	return ruLabel(
+		localize({ key: 'settings', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}', '{Locked="]({5})"}'] }, "By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these [settings]({5}) anytime.", content.providerName, content.termsStatementUrl, content.privacyStatementUrl, content.providerName, content.publicCodeMatchesUrl, settingsUrl),
+		`Продолжая, вы принимаете [условия](${content.termsStatementUrl}) ${content.providerName} и [заявление о конфиденциальности](${content.privacyStatementUrl}). ${content.providerName} может показывать предложения [общедоступного кода](${content.publicCodeMatchesUrl}) и использовать ваши данные для улучшения продукта. Вы можете изменить эти [параметры](${settingsUrl}) в любое время.`
+	);
 }
 
 export class ChatSetup {
@@ -533,7 +537,7 @@ export class ChatSetup {
 		}
 
 		if (this.context.state.entitlement === ChatEntitlement.Unknown || options?.forceSignInDialog) {
-			return localize('signIn', "Sign in to use {0}", defaultChat.provider.default.name);
+			return ruLabel(localize('signIn', "Sign in to use {0}", defaultChat.provider.default.name), `Войдите, чтобы использовать ${defaultChat.provider.default.name}`);
 		}
 
 		return localize('startUsing', "Start using AI Features");

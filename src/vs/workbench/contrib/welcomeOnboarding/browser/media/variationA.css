@@ -288,7 +288,7 @@
 	border: none;
 	background: transparent;
 	box-shadow: none;
-	background-image: url('../../../../browser/media/code-icon.svg');
+	background-image: url('../../../../browser/media/code-icon.png');
 	background-repeat: no-repeat;
 	background-position: center center;
 	background-size: 148px;
@@ -338,71 +338,6 @@
 	min-width: 0;
 }
 
-.onboarding-a-signin-footer {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	text-align: left;
-	gap: 8px;
-}
-
-.onboarding-a-signin-inline-link {
-	padding: 0;
-	border: none;
-	background: none;
-	color: var(--vscode-textLink-foreground, #3794ff);
-	font-size: 12px;
-	font-family: inherit;
-	text-align: left;
-	cursor: pointer;
-	width: fit-content;
-	max-width: 100%;
-}
-
-.onboarding-a-signin-inline-link:hover {
-	text-decoration: underline;
-}
-
-.onboarding-a-signin-inline-link:focus-visible {
-	outline: 2px solid var(--vscode-focusBorder);
-	outline-offset: 2px;
-	border-radius: 4px;
-}
-
-.onboarding-a-signin-disclaimer-col {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.onboarding-a-signin-disclaimer {
-	font-size: 11px;
-	line-height: 1.4;
-	color: var(--vscode-descriptionForeground);
-	white-space: normal;
-}
-
-.onboarding-a-signin-disclaimer strong {
-	color: var(--vscode-editor-foreground);
-}
-
-.onboarding-a-signin-disclaimer p {
-	margin: 0;
-}
-
-.onboarding-a-signin-disclaimer a {
-	color: var(--vscode-textLink-foreground, #3794ff);
-	text-decoration: none;
-}
-
-.onboarding-a-signin-disclaimer a:hover {
-	text-decoration: underline;
-}
-
 .onboarding-a-signin-btn {
 	display: flex;
 	align-items: center;
@@ -422,7 +357,7 @@
 	transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.onboarding-a-signin-btn:hover {
+.onboarding-a-signin-btn:hover:not(:disabled) {
 	background: var(--vscode-list-hoverBackground);
 	border-color: var(--vscode-focusBorder);
 }
@@ -430,6 +365,27 @@
 .onboarding-a-signin-btn:focus-visible {
 	outline: 2px solid var(--vscode-focusBorder);
 	outline-offset: 2px;
+}
+
+.onboarding-a-signin-btn:disabled {
+	cursor: progress;
+	opacity: 0.85;
+}
+
+.onboarding-a-signin-btn.busy .onboarding-a-provider-mark {
+	background-image: none;
+	width: 14px;
+	height: 14px;
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: onboarding-a-spin 0.8s linear infinite;
+}
+
+@keyframes onboarding-a-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .onboarding-a-signin-btn-label {
@@ -457,7 +413,7 @@
 }
 
 .onboarding-a-provider-mark.vega {
-	background-image: url('../../../../browser/media/code-icon.svg');
+	background-image: url('../../../../browser/media/code-icon.png');
 }
 
 /* Personalize step */

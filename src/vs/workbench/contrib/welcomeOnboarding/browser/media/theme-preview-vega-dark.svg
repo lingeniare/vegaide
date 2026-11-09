@@ -7,7 +7,7 @@
 	<rect x="22" y="0" width="258" height="18" fill="#191A1B"/>
 	<line x1="22" y1="18" x2="280" y2="18" stroke="#858889" stroke-opacity="0.25"/>
 	<text x="30" y="12" font-family="monospace" font-size="7" fill="#BBBEBF">index.ts</text>
-	<line x1="30" y1="16" x2="64" y2="16" stroke="#34D399" stroke-width="1.5"/>
+	<line x1="30" y1="16" x2="64" y2="16" stroke="#564592" stroke-width="1.5"/>
 	<text x="70" y="12" font-family="monospace" font-size="7" fill="#858889" opacity="0.4">app.ts</text>
 	<text x="28" y="32" font-family="monospace" font-size="9"><tspan fill="#ff7b72">function </tspan><tspan fill="#d2a8ff">greet</tspan><tspan fill="#BBBEBF">() {</tspan></text>
 	<text x="39" y="45" font-family="monospace" font-size="9"><tspan fill="#8b949e">// hello</tspan></text>

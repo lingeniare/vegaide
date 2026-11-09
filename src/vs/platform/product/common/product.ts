@@ -86,9 +86,9 @@ else {
 			dataFolderName: '.vegaide',
 			urlProtocol: 'vegaide',
 			reportIssueUrl: 'https://github.com/microsoft/vscode/issues/new',
-			licenseName: 'MIT',
-			licenseUrl: 'https://github.com/microsoft/vscode/blob/main/LICENSE.txt',
-			serverLicenseUrl: 'https://github.com/microsoft/vscode/blob/main/LICENSE.txt',
+			licenseName: 'LicenseRef-proprietary',
+			licenseUrl: 'https://vega.codes/offer',
+			serverLicenseUrl: 'https://vega.codes/offer',
 			defaultChatAgent: {
 				extensionId: 'GitHub.copilot',
 				chatExtensionId: 'GitHub.copilot-chat',

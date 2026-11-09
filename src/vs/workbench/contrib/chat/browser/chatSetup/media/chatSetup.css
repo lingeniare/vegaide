@@ -58,14 +58,23 @@
 		color: var(--vscode-descriptionForeground);
 	}
 
-	/* VEGA star header icon */
+	/* VEGA star header icon — tinted with the primary accent color. The
+	   glyph is painted by the global `[class*="codicon-copilot"]::before`
+	   star mask in workbench style.css (which wins on specificity and
+	   fills with `currentColor`), so the accent goes on the icon's
+	   `color` instead of the pseudo-element's `background-color`. */
 
-	&.align-vertical .dialog-message-row > .dialog-icon.codicon {
-		margin-top: 16px;
-		margin-bottom: 12px;
+	&.monaco-dialog-box.align-vertical .dialog-message-row {
+		padding: 0 var(--vscode-spacing-size200);
 	}
 
-	&.align-vertical .dialog-message-row > .dialog-icon.codicon::before {
+	&.monaco-dialog-box.align-vertical .dialog-message-row > .dialog-icon.codicon {
+		margin-top: var(--vscode-spacing-size160);
+		margin-bottom: var(--vscode-spacing-size160);
+		color: var(--vscode-button-background);
+	}
+
+	&.monaco-dialog-box.align-vertical .dialog-message-row > .dialog-icon.codicon::before {
 		content: "" !important;
 		display: inline-block;
 		width: 1em;
@@ -79,6 +88,20 @@
 		mask-repeat: no-repeat;
 		-webkit-mask-position: center;
 		mask-position: center;
+		filter: drop-shadow(0 0 12px color-mix(in srgb, var(--vscode-button-background) 45%, transparent));
+	}
+
+	/* Buttons sit compact and centered with equal air above and below */
+
+	&.monaco-dialog-box.align-vertical .dialog-buttons-row {
+		padding: var(--vscode-spacing-size200) 0 var(--vscode-spacing-size120);
+	}
+
+	&.monaco-dialog-box.align-vertical .dialog-buttons-row > .dialog-buttons > .monaco-button:not(.link-button) {
+		width: fit-content;
+		min-width: 180px;
+		margin: var(--vscode-spacing-size40) auto;
+		padding: var(--vscode-spacing-size60) var(--vscode-spacing-size200);
 	}
 
 	/* ChatSetupDialog passes a single-space detail only to force the title
@@ -105,4 +128,16 @@
 
 .chat-setup-dialog .dialog-buttons-row > .dialog-buttons > .monaco-button.continue-button.microsoft::before {
 	background-image: url('./microsoft-dark.svg');
+}
+
+/* High contrast: the accent-colored star can lose contrast, keep it neutral */
+
+.monaco-workbench.hc-black .chat-setup-dialog.align-vertical .dialog-message-row > .dialog-icon.codicon,
+.monaco-workbench.hc-light .chat-setup-dialog.align-vertical .dialog-message-row > .dialog-icon.codicon {
+	color: inherit;
+}
+
+.monaco-workbench.hc-black .chat-setup-dialog.align-vertical .dialog-message-row > .dialog-icon.codicon::before,
+.monaco-workbench.hc-light .chat-setup-dialog.align-vertical .dialog-message-row > .dialog-icon.codicon::before {
+	filter: none;
 }

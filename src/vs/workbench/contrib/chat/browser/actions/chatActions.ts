@@ -22,6 +22,7 @@ import { ICodeEditor } from '../../../../../editor/browser/editorBrowser.js';
 import { EditorAction2 } from '../../../../../editor/browser/editorExtensions.js';
 import { IRange } from '../../../../../editor/common/core/range.js';
 import { localize, localize2 } from '../../../../../nls.js';
+import { ruLabel } from '../../../../../platform/product/common/vegaBranding.js';
 import { Action2, ICommandPaletteOptions, MenuId, MenuRegistry, registerAction2 } from '../../../../../platform/actions/common/actions.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { ConfigurationTarget, IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
@@ -1309,7 +1310,7 @@ export function registerChatActions() {
 		constructor() {
 			super({
 				id: OPEN_CHAT_QUOTA_EXCEEDED_DIALOG,
-				title: localize('upgradeChat', "Upgrade Copilot Plan")
+				title: ruLabel(localize('upgradeChat', "Upgrade Copilot Plan"), 'Повысить статус плана Copilot')
 			});
 		}
 
@@ -1337,18 +1338,18 @@ export function registerChatActions() {
 			}
 
 			const free = chatEntitlementService.entitlement === ChatEntitlement.Free;
-			const upgradeToPro = free ? localize('upgradeToPro', "Upgrade to Copilot Pro for:\n- Unlimited inline suggestions\n- Unlimited chat messages\n- Access to premium models") : undefined;
+			const upgradeToPro = free ? ruLabel(localize('upgradeToPro', "Upgrade to Copilot Pro for:\n- Unlimited inline suggestions\n- Unlimited chat messages\n- Access to premium models"), "Повысьте статус до Copilot Pro для получения следующих возможностей:\n– Неограниченные встроенные предложения\n– Неограниченные сообщения в чате\n– Доступ к премиум-моделям") : undefined;
 
 			await dialogService.prompt({
 				type: 'none',
-				message: localize('copilotQuotaReached', "VEGA IDE Quota Reached"),
+				message: ruLabel(localize('copilotQuotaReached', "VEGA IDE Quota Reached"), 'Достигнута квота ВЕГА IDE'),
 				cancelButton: {
 					label: localize('dismiss', "Dismiss"),
 					run: () => { /* noop */ }
 				},
 				buttons: [
 					{
-						label: free ? localize('upgradePro', "Upgrade to Copilot Pro") : localize('upgradePlan', "Upgrade Copilot Plan"),
+						label: free ? ruLabel(localize('upgradePro', "Upgrade to Copilot Pro"), 'Повысить статус до Copilot Pro') : ruLabel(localize('upgradePlan', "Upgrade Copilot Plan"), 'Повысить статус плана Copilot'),
 						run: () => {
 							const commandId = 'workbench.action.chat.upgradePlan';
 							telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: commandId, from: 'chat-dialog' });

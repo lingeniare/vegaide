@@ -12,9 +12,10 @@ import { localize } from '../../../nls.js';
 import { IHoverService } from '../../../platform/hover/browser/hover.js';
 import { IKeybindingService } from '../../../platform/keybinding/common/keybinding.js';
 import { IProductService } from '../../../platform/product/common/productService.js';
+import { ruLabel } from '../../../platform/product/common/vegaBranding.js';
 
 /**
- * Renders the "Open in VS Code" titlebar entry as an icon-only button that
+ * Renders the "Open in Editor" titlebar entry as an icon-only button that
  * expands to reveal a label on hover / keyboard focus.
  */
 export class OpenInVSCodeTitleBarWidget extends BaseActionViewItem {
@@ -36,15 +37,14 @@ export class OpenInVSCodeTitleBarWidget extends BaseActionViewItem {
 		container.classList.add('open-in-vscode-titlebar-widget');
 		container.setAttribute('role', 'button');
 
-		// Set quality attribute for distro icon selection. Only set when quality is
-		// known so that the CSS fallback icon is used in dev builds.
+		// Expose the product quality on the widget for tests and tooling.
 		const quality = this.productService.quality;
 		if (quality) {
 			container.setAttribute('data-product-quality', quality);
 		}
 
 		const label = this.action.label;
-		const hoverText = this.keybindingService.appendKeybinding(localize('openInVSCodeHover', "Open in VS Code Editor Window"), this.keybindingCommandId);
+		const hoverText = this.keybindingService.appendKeybinding(ruLabel(localize('openInVSCodeHover', "Open in VEGA IDE Editor Window"), 'Открыть в окне редактора ВЕГА IDE'), this.keybindingCommandId);
 		container.setAttribute('aria-label', hoverText);
 		this._register(this.hoverService.setupManagedHover(this.options.hoverDelegate ?? getDefaultHoverDelegate('element'), container, hoverText));
 

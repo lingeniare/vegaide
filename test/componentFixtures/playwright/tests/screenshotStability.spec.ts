@@ -58,7 +58,7 @@ for (const theme of ['Dark', 'Light', 'DarkHighContrast', 'LightHighContrast']) 
 				{ label: 'Go Forward One Session', disabled: true },
 				{ label: 'Show Sessions: microsoft/vscode', disabled: false },
 				{ label: 'Run Task is not available for this session type', disabled: true },
-				{ label: 'Open in VS Code Editor Window', disabled: false },
+				{ label: 'Open in VEGA IDE Editor Window', disabled: false },
 				{ label: 'Show Panel', disabled: false },
 				{ label: 'Toggle Side Panel', disabled: false },
 				{ label: 'Signed in as Developer with GitHub', disabled: false },

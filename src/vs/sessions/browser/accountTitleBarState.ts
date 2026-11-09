@@ -8,6 +8,7 @@ import { FileAccess } from '../../base/common/network.js';
 import { ThemeIcon } from '../../base/common/themables.js';
 import { URI } from '../../base/common/uri.js';
 import { localize } from '../../nls.js';
+import { ruLabel } from '../../platform/product/common/vegaBranding.js';
 import { ChatEntitlement, IChatSentiment, IQuotaSnapshot } from '../../workbench/services/chat/common/chatEntitlementService.js';
 import { IDefaultAccountService } from '../../platform/defaultAccount/common/defaultAccount.js';
 import { IAuthenticationService } from '../../workbench/services/authentication/common/authentication.js';
@@ -185,8 +186,8 @@ function getCopilotPresentation(
 			icon: Codicon.account,
 			label: localize('copilotUnavailable', "Copilot Unavailable"),
 			ariaLabel: sentiment.untrusted
-				? localize('copilotUnavailableUntrustedAria', "VEGA IDE is unavailable in untrusted workspaces")
-				: localize('copilotUnavailableDisabledAria', "VEGA IDE is disabled"),
+				? ruLabel(localize('copilotUnavailableUntrustedAria', "VEGA IDE is unavailable in untrusted workspaces"), 'ВЕГА IDE недоступен в недоверенных рабочих областях')
+				: ruLabel(localize('copilotUnavailableDisabledAria', "VEGA IDE is disabled"), 'ВЕГА IDE отключён'),
 		};
 	}
 
@@ -212,7 +213,7 @@ function getCopilotPresentation(
 			label: localize('copilotTokensRemaining', "Tokens Remaining"),
 			badge: `${remainingPercent}%`,
 			dotBadge: remainingPercent <= 10 ? 'error' : 'warning',
-			ariaLabel: localize('copilotTokensRemainingAria', "{0}% Copilot tokens remaining", remainingPercent),
+			ariaLabel: ruLabel(localize('copilotTokensRemainingAria', "{0}% Copilot tokens remaining", remainingPercent), `Осталось ${remainingPercent}% токенов Copilot`),
 		};
 	}
 
@@ -236,12 +237,12 @@ function getLowestPositivePercent(...quotas: Array<IQuotaSnapshot | undefined>):
 
 function getQuotaReachedAriaLabel(chatQuotaExceeded: boolean, completionsQuotaExceeded: boolean): string {
 	if (chatQuotaExceeded && completionsQuotaExceeded) {
-		return localize('copilotAllQuotaReachedAria', "VEGA IDE chat and inline suggestion quota reached");
+		return ruLabel(localize('copilotAllQuotaReachedAria', "VEGA IDE chat and inline suggestion quota reached"), 'Достигнута квота чата и встроенных предложений ВЕГА IDE');
 	}
 
 	if (chatQuotaExceeded) {
-		return localize('copilotChatQuotaReachedAria', "VEGA IDE chat quota reached");
+		return ruLabel(localize('copilotChatQuotaReachedAria', "VEGA IDE chat quota reached"), 'Достигнута квота чата ВЕГА IDE');
 	}
 
-	return localize('copilotCompletionsQuotaReachedAria', "VEGA IDE inline suggestion quota reached");
+	return ruLabel(localize('copilotCompletionsQuotaReachedAria', "VEGA IDE inline suggestion quota reached"), 'Достигнута квота встроенных предложений ВЕГА IDE');
 }

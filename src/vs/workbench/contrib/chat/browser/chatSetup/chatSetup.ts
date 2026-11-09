@@ -11,6 +11,7 @@ import { RawContextKey } from '../../../../../platform/contextkey/common/context
 import { ExtensionIdentifier } from '../../../../../platform/extensions/common/extensions.js';
 import { ILogService } from '../../../../../platform/log/common/log.js';
 import product from '../../../../../platform/product/common/product.js';
+import { ruLabel } from '../../../../../platform/product/common/vegaBranding.js';
 import { localize } from '../../../../../nls.js';
 import { EnablementState } from '../../../../services/extensionManagement/common/extensionManagement.js';
 import { IExtensionsWorkbenchService } from '../../../extensions/common/extensions.js';
@@ -175,7 +176,7 @@ export async function maybeEnableAuthExtension(
 		logService.info(`[chat setup] auth provider extension '${defaultChat.providerExtensionId}' is disabled, re-enabling it`);
 		try {
 			await extensionsWorkbenchService.setEnablement([providerExtension], EnablementState.EnabledGlobally);
-			await extensionsWorkbenchService.updateRunningExtensions(localize('enableAuthExtension', "Enabling GitHub Authentication"));
+			await extensionsWorkbenchService.updateRunningExtensions(ruLabel(localize('enableAuthExtension', "Enabling VEGA IDE Authentication"), 'Включение аутентификации ВЕГА'));
 			return true;
 		} catch (error) {
 			logService.error(`[chat setup] failed to re-enable auth provider extension '${defaultChat.providerExtensionId}'`, error);

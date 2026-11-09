@@ -8,6 +8,7 @@ import { CancellationToken } from '../../../base/common/cancellation.js';
 import { captureCredentialSource, type IAgentHostCredentialSource } from '../common/agentHostCredentials.js';
 import { URI } from '../../../base/common/uri.js';
 import { localize } from '../../../nls.js';
+import { ruLabel, withRuBrandNames } from '../../../platform/product/common/vegaBranding.js';
 import { IAgentHostAuthenticationService } from './agentHostAuthenticationService.js';
 import { IAgentHostGitHubEndpointService } from './agentHostGitHubEndpointService.js';
 import { parseChangesetUri } from '../common/changesetUri.js';
@@ -104,7 +105,7 @@ export class AgentHostCommitOperationHandler implements IChangesetOperationHandl
 		if (!authToken) {
 			throw new ProtocolError(
 				AHP_AUTH_REQUIRED,
-				localize('agentHost.changeset.commit.authRequired', "Sign in to {0} to generate a commit message.", copilotResource.resource_name),
+				ruLabel(localize('agentHost.changeset.commit.authRequired', "Sign in to {0} to generate a commit message.", copilotResource.resource_name), `Войдите в ${withRuBrandNames(copilotResource.resource_name ?? 'VEGA IDE')}, чтобы создать сообщение фиксации.`),
 				[copilotResource],
 			);
 		}
@@ -125,7 +126,7 @@ export class AgentHostCommitOperationHandler implements IChangesetOperationHandl
 			if (this._isAuthFailure(err)) {
 				throw new ProtocolError(
 					AHP_AUTH_REQUIRED,
-					localize('agentHost.changeset.commit.authExpired', "Authentication is required to generate a commit message. Please sign in to {0} and try again.", copilotResource.resource_name),
+					ruLabel(localize('agentHost.changeset.commit.authExpired', "Authentication is required to generate a commit message. Please sign in to {0} and try again.", copilotResource.resource_name), `Для создания сообщения фиксации требуется проверка подлинности. Войдите в ${withRuBrandNames(copilotResource.resource_name ?? 'VEGA IDE')} и повторите попытку.`),
 					[copilotResource],
 				);
 			}

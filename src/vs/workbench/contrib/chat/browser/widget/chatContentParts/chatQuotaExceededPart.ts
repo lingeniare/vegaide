@@ -13,6 +13,7 @@ import { ThemeIcon } from '../../../../../../base/common/themables.js';
 import { assertType } from '../../../../../../base/common/types.js';
 import { IMarkdownRenderer } from '../../../../../../platform/markdown/browser/markdownRenderer.js';
 import { localize } from '../../../../../../nls.js';
+import { ruLabel } from '../../../../../../platform/product/common/vegaBranding.js';
 import { ICommandService } from '../../../../../../platform/commands/common/commands.js';
 import { ITelemetryService } from '../../../../../../platform/telemetry/common/telemetry.js';
 import { defaultButtonStyles } from '../../../../../../platform/theme/browser/defaultStyles.js';
@@ -56,7 +57,7 @@ export class ChatQuotaExceededPart extends Disposable implements IChatContentPar
 				primaryButtonLabel = localize('manageBudget', "Manage Budget");
 				break;
 			case ChatEntitlement.Free:
-				primaryButtonLabel = localize('upgradeToCopilotPro', "Upgrade to Copilot Pro");
+				primaryButtonLabel = ruLabel(localize('upgradeToCopilotPro', "Upgrade to Copilot Pro"), 'Повысить статус до Copilot Pro');
 				break;
 		}
 

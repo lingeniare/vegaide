@@ -176,6 +176,7 @@ export const indentationFilter = Object.freeze<string[]>([
 export const copyrightFilter = Object.freeze<string[]>([
 	'**',
 	'!**/*.desktop',
+	'!**/*.rtf',
 	'!**/*.json',
 	'!**/*.jsonc',
 	'!**/*.jsonl',

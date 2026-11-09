@@ -9,6 +9,7 @@ import { Disposable, DisposableStore, IDisposable } from '../../../../../base/co
 import { URI } from '../../../../../base/common/uri.js';
 import { ServicesAccessor } from '../../../../../editor/browser/editorExtensions.js';
 import { localize, localize2 } from '../../../../../nls.js';
+import { ruLabel } from '../../../../../platform/product/common/vegaBranding.js';
 import { Action2, registerAction2 } from '../../../../../platform/actions/common/actions.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { ILogService } from '../../../../../platform/log/common/log.js';
@@ -78,7 +79,7 @@ export class GrowthSessionController extends Disposable implements IChatSessionI
 		return [{
 			resource: GrowthSessionController.SESSION_URI,
 			label: localize('growthSession.label', "Try Copilot"),
-			description: localize('growthSession.description', "VEGA IDE is available. Try it for free."),
+			description: ruLabel(localize('growthSession.description', "VEGA IDE is available. Try it for free."), 'Доступен ВЕГА IDE. Попробовать бесплатно.'),
 			status: ChatSessionStatus.NeedsInput,
 			iconPath: Codicon.lightbulb,
 			timing: {
@@ -128,9 +129,9 @@ export class GrowthSessionOpenerParticipant implements ISessionOpenerParticipant
 			query: '',
 			isPartialQuery: true,
 			previousRequests: [{
-				request: localize('growthSession.previousRequest', "Tell me about VEGA IDE!"),
+				request: ruLabel(localize('growthSession.previousRequest', "Tell me about VEGA IDE!"), 'Расскажите мне о ВЕГА IDE!'),
 				// allow-any-unicode-next-line
-				response: localize('growthSession.previousResponse', "Welcome to VEGA IDE, your AI coding assistant! Here are some things you can try:\n\n- 🐛 *\"Help me debug this error\"* — paste an error message and get a fix\n- 🧪 *\"Write tests for my function\"* — select code and ask for unit tests\n- 💡 *\"Explain this code\"* — highlight something unfamiliar and ask what it does\n- 🚀 *\"Scaffold a REST API\"* — describe what you want and let Agent mode build it\n- 🎨 *\"Refactor this to be more readable\"* — select messy code and clean it up\n\nType anything below to get started!"),
+				response: ruLabel(localize('growthSession.previousResponse', "Welcome to VEGA IDE, your AI coding assistant! Here are some things you can try:\n\n- 🐛 *\"Help me debug this error\"* — paste an error message and get a fix\n- 🧪 *\"Write tests for my function\"* — select code and ask for unit tests\n- 💡 *\"Explain this code\"* — highlight something unfamiliar and ask what it does\n- 🚀 *\"Scaffold a REST API\"* — describe what you want and let Agent mode build it\n- 🎨 *\"Refactor this to be more readable\"* — select messy code and clean it up\n\nType anything below to get started!"), 'Добро пожаловать в ВЕГА IDE — вашего помощника по программированию на основе ИИ! Вот что вы можете попробовать:\n\n- 🐛 *"Помоги мне отладить эту ошибку"* — вставьте сообщение об ошибке и получите решение\n- 🧪 *"Напиши тесты для моей функции"* — выберите код и запросите модульные тесты.\n- 💡 *"Объясни этот код"* — выделите что-то незнакомое и спросите, что оно делает.\n- 🚀 *"Создай REST API"* — опишите, что вам нужно, и пусть режим агента создаст его.\n- 🎨 *"Перепиши этот код, чтобы он стал более читабельным"* — выберите неряшливый код и приведите его в порядок.\n\nВведите любой текст ниже, чтобы начать!'),
 			}],
 		};
 		await commandService.executeCommand(CHAT_OPEN_ACTION_ID, opts);

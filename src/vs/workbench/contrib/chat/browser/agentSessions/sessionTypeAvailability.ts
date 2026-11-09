@@ -5,6 +5,7 @@
 
 import { IMarkdownString, MarkdownString } from '../../../../../base/common/htmlContent.js';
 import { localize } from '../../../../../nls.js';
+import { ruLabel, withRuBrandNames } from '../../../../../platform/product/common/vegaBranding.js';
 import product from '../../../../../platform/product/common/product.js';
 import { ChatEntitlement, IChatEntitlementService } from '../../../../services/chat/common/chatEntitlementService.js';
 import { IChatSessionsService, SessionType } from '../../common/chatSessionsService.js';
@@ -172,7 +173,7 @@ export function getSessionTypeUnavailableHover(availability: SessionTypeAvailabi
 	switch (availability) {
 		case SessionTypeAvailability.SignInRequired: {
 			const hover = new MarkdownString('', { isTrusted: { enabledCommands: ['workbench.action.chat.triggerSetup'] }, supportThemeIcons: true });
-			hover.appendMarkdown(localize('chat.sessionType.signInHover', "[Sign in to {0}](command:workbench.action.chat.triggerSetup) to use this agent.", product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE'));
+			hover.appendMarkdown(ruLabel(localize('chat.sessionType.signInHover', "[Sign in to {0}](command:workbench.action.chat.triggerSetup) to use this agent.", product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE'), `[Войдите в ${withRuBrandNames(product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE')}](command:workbench.action.chat.triggerSetup), чтобы использовать этот агент.`));
 			return hover;
 		}
 		case SessionTypeAvailability.UpgradeRequired: {
@@ -198,7 +199,7 @@ export function getSessionTypeUnavailableLabel(availability: SessionTypeAvailabi
 		case SessionTypeAvailability.SignInRequired:
 			return localize('chat.sessionType.signInMobile', "Requires sign in");
 		case SessionTypeAvailability.UpgradeRequired:
-			return localize('chat.sessionType.upgradeMobile', "Requires Copilot Pro");
+			return ruLabel(localize('chat.sessionType.upgradeMobile', "Requires Copilot Pro"), 'Требуется Copilot Pro');
 		case SessionTypeAvailability.NoModels:
 			return localize('chat.sessionType.noModels', "No models available");
 		case SessionTypeAvailability.DisabledByPolicy:

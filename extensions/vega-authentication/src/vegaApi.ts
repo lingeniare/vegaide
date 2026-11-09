@@ -25,6 +25,9 @@ export const VEGA_SCOPE = 'api';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' };
 
+/** Bounds every API call so a slow or unreachable api.vega.chat fails fast instead of freezing the sign-in UI. */
+const REQUEST_TIMEOUT_MS = 15_000;
+
 export class VegaApiError extends Error {
 	constructor(
 		message: string,
@@ -41,6 +44,7 @@ async function postJson<T>(url: string, body: unknown, bearer?: string): Promise
 		method: 'POST',
 		headers: { ...JSON_HEADERS, ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
 		body: JSON.stringify(body),
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 	});
 	if (!response.ok) {
 		let code: string | undefined;
@@ -95,6 +99,7 @@ export async function pollDeviceToken(deviceCode: string): Promise<VegaDeviceTok
 	const response = await fetch(`${VEGA_API_ORIGIN}/api/auth/device/token`, {
 		method: 'POST',
 		headers: JSON_HEADERS,
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 		body: JSON.stringify({
 			grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
 			device_code: deviceCode,
@@ -147,6 +152,7 @@ export interface IVegaAccountInfo {
 export async function getAccountInfo(apiKey: string): Promise<IVegaAccountInfo> {
 	const response = await fetch(`${VEGA_API_ORIGIN}/api/v1/account`, {
 		headers: { Accept: 'application/json', Authorization: `Bearer ${apiKey}` },
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 	});
 	if (!response.ok) {
 		throw new VegaApiError(`${response.status} ${response.statusText}`, response.status);

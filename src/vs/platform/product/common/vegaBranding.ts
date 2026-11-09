@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { language } from '../../../base/common/platform.js';
+import type { ILocalizedString } from '../../../nls.js';
 
 /**
  * Russian spellings of the VEGA product names. The bundled language packs
@@ -12,8 +13,8 @@ import { language } from '../../../base/common/platform.js';
  * come first so a substring replacement cannot split a longer name.
  */
 const RU_BRAND_NAMES: ReadonlyArray<readonly [from: string, to: string]> = [
-	['VEGA IDE', 'ВЕГА Редактор'],
-	['VEGA Code', 'ВЕГА Редактор'],
+	['VEGA IDE', 'ВЕГА IDE'],
+	['VEGA Code', 'ВЕГА IDE'],
 	['VEGA', 'ВЕГА'],
 ];
 
@@ -35,8 +36,15 @@ export function withRuBrandNames(text: string): string {
  * Picks the Russian copy on a Russian UI; every other locale keeps the
  * localized default. Same approach as `pricingLabel` in the model picker:
  * the language packs predate the fork's strings, so `localize` alone would
- * leave them English.
+ * leave them English. The `ILocalizedString` overload serves `localize2`
+ * call sites (action/menu titles) — it swaps only the display `value` and
+ * keeps `original` untouched.
  */
-export function ruLabel(localized: string, russian: string): string {
-	return language === 'ru' ? russian : localized;
+export function ruLabel(localized: string, russian: string): string;
+export function ruLabel(localized: ILocalizedString, russian: string): ILocalizedString;
+export function ruLabel(localized: string | ILocalizedString, russian: string): string | ILocalizedString {
+	if (language !== 'ru') {
+		return localized;
+	}
+	return typeof localized === 'string' ? russian : { ...localized, value: russian };
 }

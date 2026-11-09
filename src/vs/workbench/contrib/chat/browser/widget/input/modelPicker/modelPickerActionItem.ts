@@ -13,6 +13,7 @@ import { escapeMarkdownSyntaxTokens, MarkdownString } from '../../../../../../..
 import { MutableDisposable } from '../../../../../../../base/common/lifecycle.js';
 import { autorun, IObservable } from '../../../../../../../base/common/observable.js';
 import { localize } from '../../../../../../../nls.js';
+import { ruLabel, withRuBrandNames } from '../../../../../../../platform/product/common/vegaBranding.js';
 import type { IAgentConnection } from '../../../../../../../platform/agentHost/common/agentService.js';
 import { IContextKeyService } from '../../../../../../../platform/contextkey/common/contextkey.js';
 import product from '../../../../../../../platform/product/common/product.js';
@@ -240,7 +241,8 @@ export class ModelPickerActionItem extends BaseActionViewItem {
 			return this._appendComparisonAction(localize('chat.modelPicker.restrictedHover', "{0} • Unavailable while in Restricted mode. Trust Workspace to enable models.", label));
 		}
 		if (this._pickerWidget.isSetupRequired()) {
-			return this._appendComparisonAction(localize('chat.modelPicker.setupRequiredHover', "{0} • Sign in to {1} to choose a model.", label, product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE'));
+			const providerName = product.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE';
+			return this._appendComparisonAction(ruLabel(localize('chat.modelPicker.setupRequiredHover', "{0} • Sign in to {1} to choose a model.", label, providerName), `${label} • Войдите в ${withRuBrandNames(providerName)}, чтобы выбрать модель.`));
 		}
 		const comparisonSummary = this.delegate.comparison?.summary.get();
 		if (comparisonSummary) {

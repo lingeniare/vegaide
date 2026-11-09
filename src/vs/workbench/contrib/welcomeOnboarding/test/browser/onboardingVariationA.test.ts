@@ -52,23 +52,7 @@ suite('OnboardingVariationA', () => {
 		assert.strictEqual(container.querySelector('.onboarding-a-signin-subtitle')?.textContent, `Sign in to use ${providerName}.`);
 
 		const buttons = Array.from(container.querySelectorAll<HTMLElement>('.onboarding-a-signin-actions button'));
-		assert.deepStrictEqual(buttons.map(button => button.getAttribute('aria-label')), [`Sign in with ${providerName}`]);
-	});
-
-	test('disclaimer links to the terms of service and the privacy policy', () => {
-		const { container } = createOnboarding();
-
-		const disclaimer = container.querySelector('.onboarding-a-signin-disclaimer');
-		assert.ok(disclaimer);
-		assert.ok(disclaimer.textContent?.includes('test deposit'));
-		assert.ok(disclaimer.textContent?.includes('free AI models'));
-		assert.deepStrictEqual(
-			Array.from(disclaimer.querySelectorAll('a')).map(link => ({ label: link.textContent, href: link.getAttribute('href') })),
-			[
-				{ label: 'terms of service', href: product.defaultChatAgent?.termsStatementUrl },
-				{ label: 'personal data processing and privacy policy', href: product.defaultChatAgent?.privacyStatementUrl },
-			]
-		);
+		assert.deepStrictEqual(buttons.map(button => button.getAttribute('aria-label')), ['Sign in with VEGA']);
 	});
 
 	test('VEGA button runs the default account sign-in and triggers chat setup', async () => {
