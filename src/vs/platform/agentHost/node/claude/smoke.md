@@ -31,7 +31,7 @@ refs that change between runs.
 - `@playwright/cli` available (`npx @playwright/cli --version` should work).
 - A real VEGA IDE login. Models only populate after authenticate, and
   the Anthropic catalog is only visible to authenticated Copilot accounts.
-  The `~/.vscode-oss-sessions-dev` user-data-dir caches login state across
+  The `~/.vegaide-sessions-dev` user-data-dir caches login state across
   runs, so you only need to sign in once.
 - `ClaudeAgent` registration is opt-in. Pick **either**:
   - Set `chat.agentHost.claudeAgent.enabled: true` in user settings (the
@@ -271,7 +271,7 @@ The session URI is observable in the IPC log, **not** as a
 already captures these to `claude-session-uris.log`, but you can re-grep:
 
 ```bash
-LOG=$(ls -td ~/.vscode-oss-sessions-dev/logs/*/ | head -1)
+LOG=$(ls -td ~/.vegaide-sessions-dev/logs/*/ | head -1)
 WIN=$(ls -td "$LOG"window1/output_*/ | head -1)
 grep -oE '"session":\s*"claude:[^"]+"' "$WIN"agenthost.*.log | sort -u
 ```
@@ -287,7 +287,7 @@ which appears in the IPC log as `"uri": "vscode-synced-customization:/agent-host
 lsof -t -i :9224 | xargs -r kill
 ```
 
-The `~/.vscode-oss-sessions-dev` data dir is intentionally preserved so
+The `~/.vegaide-sessions-dev` data dir is intentionally preserved so
 the next run skips GitHub login.
 
 ## 7. Attach to the PR

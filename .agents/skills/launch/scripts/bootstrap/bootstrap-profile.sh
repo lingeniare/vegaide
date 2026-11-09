@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
-USER_DATA_DIR="${CODE_OSS_DEV_AUTHED_USER_DATA_DIR:-$HOME/.vscode-oss-dev}"
+USER_DATA_DIR="${CODE_OSS_DEV_AUTHED_USER_DATA_DIR:-$HOME/.vegaide-dev}"
 EXIT_MARKER=""
 
 while [[ $# -gt 0 ]]; do
@@ -42,7 +42,7 @@ fi
 mkdir -p "$USER_DATA_DIR"
 USER_DATA_DIR=$(cd "$USER_DATA_DIR" && pwd -P)
 unset ELECTRON_RUN_AS_NODE
-LOG_FILE=$(mktemp "${TMPDIR:-/tmp}/code-oss-profile-bootstrap.XXXXXX.log")
+LOG_FILE=$(mktemp "${TMPDIR:-/tmp}/vegaide-profile-bootstrap.XXXXXX.log")
 CDP_PORT=$(node -e '
 const net = require("net");
 const server = net.createServer();

@@ -12,6 +12,7 @@ import { StopWatch } from '../../../../base/common/stopwatch.js';
 import { localize } from '../../../../nls.js';
 import { ILogService } from '../../../log/common/log.js';
 import { AgentPolicyError } from '../../common/agent.js';
+import { isVegaApiKey } from '../shared/copilotApiService.js';
 import { classifyCopilotClientOperationFailure } from './copilotFailureTelemetry.js';
 
 export const AGENT_HOST_COPILOT_CLIENT_NAME = 'vscode-agent-host';
@@ -158,6 +159,16 @@ export async function resolveCopilotManagedSettings(
 ): Promise<ManagedSettingsResult> {
 	if (cancellationToken.isCancellationRequested) {
 		throw new CancellationError();
+	}
+	if (isVegaApiKey(token)) {
+		// VEGA application keys have no GitHub organization policy to resolve;
+		// the runtime's account path rejects them with a 401, which would
+		// otherwise fail every caller — including the model-catalog refresh.
+		return {
+			resolved: { source: 'none', serverManaged: false, deviceManaged: false, failClosed: false, bypassPermissionsDisabled: false, managedKeys: [] },
+			layers: [],
+			diagnostics: [],
+		};
 	}
 	try {
 		const result = await raceCancellationError(raceTimeout(managedSettings.resolve({

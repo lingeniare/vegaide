@@ -405,7 +405,7 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 					.pipe(replace('@@COMMIT@@', String(commit)))
 					.pipe(replace('@@APPNAME@@', product.applicationName))
 					.pipe(replace('@@VERSIONFOLDER@@', versionedResourcesFolder))
-					.pipe(replace('@@SERVERDATAFOLDER@@', product.serverDataFolderName || '.vscode-remote'))
+					.pipe(replace('@@SERVERDATAFOLDER@@', product.serverDataFolderName || '.vegaide-remote'))
 					.pipe(replace('@@QUALITY@@', quality!))
 					.pipe(rename(function (f) { f.basename = product.applicationName; f.extname = ''; })));
 			} else {
@@ -419,7 +419,7 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 					.pipe(replace('@@VERSION@@', version))
 					.pipe(replace('@@COMMIT@@', String(commit)))
 					.pipe(replace('@@APPNAME@@', product.applicationName))
-					.pipe(replace('@@SERVERDATAFOLDER@@', product.serverDataFolderName || '.vscode-remote'))
+					.pipe(replace('@@SERVERDATAFOLDER@@', product.serverDataFolderName || '.vegaide-remote'))
 					.pipe(replace('@@QUALITY@@', String(quality)))
 					.pipe(rename(function (f) { f.basename = product.applicationName; f.extname = ''; })));
 			}
@@ -436,7 +436,7 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 						quality: String(quality),
 						applicationName: product.applicationName,
 						dataFolderName: product.dataFolderName,
-						serverDataFolderName: product.serverDataFolderName || '.vscode-remote',
+						serverDataFolderName: product.serverDataFolderName || '.vegaide-remote',
 					}));
 					this.emit('data', file);
 				}))

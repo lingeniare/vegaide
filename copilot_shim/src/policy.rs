@@ -36,6 +36,7 @@ const MACOS_POLICY_DOMAINS: &[&str] = &[
 	"com.microsoft.VSCodeInsiders",
 	"com.microsoft.VSCodeExploration",
 	"com.visualstudio.code.oss",
+	"chat.vega.ide",
 ];
 
 #[cfg(target_os = "macos")]
@@ -198,6 +199,7 @@ mod tests {
 					"com.microsoft.VSCodeInsiders",
 					"com.microsoft.VSCodeExploration",
 					"com.visualstudio.code.oss",
+					"chat.vega.ide",
 				]
 			);
 		}

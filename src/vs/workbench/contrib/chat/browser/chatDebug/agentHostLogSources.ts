@@ -521,6 +521,7 @@ export async function readRemoteAgentHostLog(
 			candidates.add(serverDataFolderName.slice(0, -'-dev'.length));
 		}
 	}
+	candidates.add('.vegaide-server');
 	candidates.add('.vscode-server');
 	candidates.add('.vscode-server-insiders');
 	candidates.add('.vscode-server-oss');

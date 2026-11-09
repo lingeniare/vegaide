@@ -31,6 +31,7 @@ import { createDecorator } from '../../../../platform/instantiation/common/insta
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { INotificationService, NeverShowAgainScope } from '../../../../platform/notification/common/notification.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import product from '../../../../platform/product/common/product.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { asJson, IRequestService } from '../../../../platform/request/common/request.js';
 import { IQuickInputService, IQuickPickItem, QuickInputHideReason } from '../../../../platform/quickinput/common/quickInput.js';
@@ -843,6 +844,9 @@ export interface ILanguageModelsService {
 export function getLanguageModelProviderDisplayName(languageModelsService: ILanguageModelsService, vendor: string): string {
 	if (vendor === 'copilotcli') {
 		// @vritant24: This is temporary until we have distinct vendors for Copilot CLI and Copilot Chat.
+		if (product.defaultChatAgent?.provider?.default?.id === 'vega') {
+			return product.defaultChatAgent.provider.default.name ?? 'VEGA IDE';
+		}
 		return localize('chat.languageModelProvider.copilot', "Copilot");
 	}
 	const descriptor = languageModelsService.getVendors().find(candidate => candidate.vendor === vendor);

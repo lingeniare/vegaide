@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
 	[string]$Repo = (Get-Location).Path,
-	[string]$UserDataDir = $(if ($env:CODE_OSS_DEV_AUTHED_USER_DATA_DIR) { $env:CODE_OSS_DEV_AUTHED_USER_DATA_DIR } else { Join-Path $env:USERPROFILE '.vscode-oss-dev' }),
+	[string]$UserDataDir = $(if ($env:CODE_OSS_DEV_AUTHED_USER_DATA_DIR) { $env:CODE_OSS_DEV_AUTHED_USER_DATA_DIR } else { Join-Path $env:USERPROFILE '.vegaide-dev' }),
 	[switch]$WaitForExit,
 	[string]$ExitMarker = '',
 	[int]$ReadyTimeoutMs = 90000
@@ -42,7 +42,7 @@ $sharedDataDir = if ($env:CODE_OSS_DEV_AUTHED_SHARED_DATA_DIR) {
 } elseif ($env:VSCODE_PORTABLE) {
 	Join-Path $env:VSCODE_PORTABLE 'shared-data'
 } else {
-	$folderName = '.vscode-oss-shared'
+	$folderName = '.vegaide-shared'
 	$productJson = Join-Path $Repo 'product.json'
 	if (Test-Path -LiteralPath $productJson -PathType Leaf) {
 		$product = Get-Content -LiteralPath $productJson -Raw | ConvertFrom-Json
@@ -57,7 +57,7 @@ New-Item -ItemType Directory -Force -Path $UserDataDir, $sharedDataDir | Out-Nul
 $UserDataDir = (Resolve-Path -LiteralPath $UserDataDir).Path
 $sharedDataDir = (Resolve-Path -LiteralPath $sharedDataDir).Path
 $runId = [guid]::NewGuid().ToString('N')
-$logFile = Join-Path $env:TEMP "code-oss-profile-bootstrap-$runId.log"
+$logFile = Join-Path $env:TEMP "vegaide-profile-bootstrap-$runId.log"
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
 try {
 	$listener.Start()

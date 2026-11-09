@@ -11,8 +11,8 @@ Find and display logs from the most recent Code OSS or Agents app dev run.
 
 | Launch | Default User Data Dir | Logs Path |
 |-----|-----------------------|-----------|
-| `scripts/code.sh` | `code-oss-dev` in the platform app-data dir (`~/Library/Application Support` on macOS, `~/.config` on Linux, `%APPDATA%` on Windows) | `<dir>/logs/` |
-| `.vscode/launch.json` | `$HOME/.vscode-oss-dev` | `$HOME/.vscode-oss-dev/logs/` |
+| `scripts/code.sh` | `vegaide-dev` in the platform app-data dir (`~/Library/Application Support` on macOS, `~/.config` on Linux, `%APPDATA%` on Windows) | `<dir>/logs/` |
+| `.vscode/launch.json` | `$HOME/.vegaide-dev` | `$HOME/.vegaide-dev/logs/` |
 
 If Code OSS was launched with `--user-data-dir=<dir>`, use `<dir>/logs/` instead of the defaults above. Launch and debugging helpers often create temporary user data dirs under `.build/`; always prefer the exact user data dir from the launch command when it is known.
 

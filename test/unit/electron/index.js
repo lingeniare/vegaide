@@ -139,7 +139,7 @@ let workerCount = 1;
 try {
 	workerCount = getWorkerCount(args.workers);
 } catch (error) {
-	console.error(/** @type {Error} */ (error).message);
+	console.error(/** @type {Error} */(error).message);
 	app.exit(1);
 }
 const workersApply = workerCount > 1 && !args.run && !args.runGlob && !args.grep && !args.testSplit && !args.dev && !args.waitServer && !args.coverage && !args['per-test-coverage'];
@@ -534,9 +534,9 @@ app.on('ready', async () => {
 				version: '1.x.y',
 				nameShort: 'VEGA IDE Dev',
 				nameLong: 'VEGA IDE Dev',
-				applicationName: 'code-oss',
-				dataFolderName: '.vscode-oss',
-				urlProtocol: 'code-oss',
+				applicationName: 'vegaide',
+				dataFolderName: '.vegaide',
+				urlProtocol: 'vegaide',
 			}
 		};
 	});

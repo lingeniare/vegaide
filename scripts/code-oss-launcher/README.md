@@ -19,7 +19,7 @@ On macOS/Linux, use `scripts/code-oss-launcher/launch.ts` and appropriate paths.
 | `--skip-prelaunch` | Skip `build/lib/preLaunch.ts`; Electron, compiled output and built-ins must already exist. Without this flag, normal source prelaunch runs first. |
 | `--session-title TITLE` | Set the isolated window title; with `--agents`, set the Agents command-center title instead. |
 | `--disable-workspace-trust` | Forward this opt-in development setting to Code OSS. |
-| `--source-user-data-dir DIR` | Seed from this Code OSS profile; defaults to `CODE_OSS_DEV_AUTHED_USER_DATA_DIR` or `~/.vscode-oss-dev`. A missing profile starts empty. |
+| `--source-user-data-dir DIR` | Seed from this Code OSS profile; defaults to `CODE_OSS_DEV_AUTHED_USER_DATA_DIR` or `~/.vegaide-dev`. A missing profile starts empty. |
 | `--copy-extensions` | Copy all source-profile extensions. Default: empty isolated extensions directory. `--clone-extensions` is an alias. |
 | `--copy-extensions=publisher.one,publisher.two` | Copy selected extensions and filter the extension manifest. Unknown IDs are usage errors. |
 | `--full` | Copy the complete source profile, including extensions, instead of omitting caches, locks, logs and workspace history. |

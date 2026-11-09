@@ -61,6 +61,8 @@ find_shim() {
 		"${VSCODE_AGENT_FOLDER:-/nonexistent}"/bin/*/bin/copilot-shim/copilot \
 		"${VSCODE_AGENT_FOLDER:-/nonexistent}"/cli/servers/*/server/bin/copilot-shim/copilot \
 		"${VSCODE_CLI_DATA_DIR:-/nonexistent}"/servers/*/server/bin/copilot-shim/copilot \
+		"${HOME:-/nonexistent}"/.vegaide-server*/bin/*/bin/copilot-shim/copilot \
+		"${HOME:-/nonexistent}"/.vegaide*/cli/servers/*/server/bin/copilot-shim/copilot \
 		"${HOME:-/nonexistent}"/.vscode-server*/bin/*/bin/copilot-shim/copilot \
 		"${HOME:-/nonexistent}"/.vscode*/cli/servers/*/server/bin/copilot-shim/copilot \
 		2>/dev/null | while IFS= read -r candidate; do

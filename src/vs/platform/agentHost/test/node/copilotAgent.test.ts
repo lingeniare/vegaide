@@ -6030,19 +6030,23 @@ suite('CopilotAgent', () => {
 		]);
 	});
 
-	test('advertises Copilot as its display name', async () => {
+	test('advertises the product provider name as its display name', async () => {
 		const agent = createTestAgent(disposables);
 		afterTest(() => disposeAgent(agent));
+		const githubAgent = createTestAgent(disposables, { productService: GITHUB_PRODUCT_SERVICE });
+		afterTest(() => disposeAgent(githubAgent));
 		assert.deepStrictEqual({
 			descriptor: agent.getDescriptor(),
+			githubDisplayName: githubAgent.getDescriptor().displayName,
 			agentHostCapabilities: agent.agentHostCapabilities,
 		}, {
 			descriptor: {
 				provider: 'copilotcli',
-				displayName: 'Copilot',
+				displayName: 'VEGA IDE',
 				description: 'Copilot SDK agent running in the local agent host process',
 				capabilities: { multipleChats: { fork: true, sideChat: true }, multipleWorkingDirectories: { immutablePrimary: true } },
 			},
+			githubDisplayName: 'Copilot',
 			agentHostCapabilities: { workspaceConversion: true },
 		});
 	});

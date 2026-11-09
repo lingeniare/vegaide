@@ -333,7 +333,7 @@ function anonymizeFilePaths(stack: string, relativePathRootPatterns: RegExp[], u
 	// 1. User extensions: .vscode/extensions/, .vscode-insiders/extensions/, .vscode-server/extensions/, .vscode-server-insiders/extensions/, etc.
 	// 2. Built-in extensions: resources/app/extensions/
 	// Capture everything from the vscode folder or resources/app/extensions onwards
-	const vscodeExtensionsPathRegex = /^(.*?)((?:\.vscode(?:-[a-z]+)*|resources[\\\/]app)[\\\/]extensions[\\\/].*)$/i;
+	const vscodeExtensionsPathRegex = /^(.*?)((?:\.(?:vscode|vegaide)(?:-[a-z]+)*|resources[\\\/]app)[\\\/]extensions[\\\/].*)$/i;
 	const fileRegex = /(file:\/\/)?([a-zA-Z]:(\\\\|\\|\/)|(\\\\|\\|\/))?([\w\-\._@]+(\\\\|\\|\/))+[\w\-\._@]*/g;
 	let lastIndex = 0;
 	updatedStack = '';

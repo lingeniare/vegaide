@@ -37,7 +37,7 @@ export interface IRunState {
 
 /**
  * Where launches create run directories, in order of preference:
- * `CODE_OSS_DEV_RUN_ROOT`; on Windows `<volume>\.code-oss-dev` when the repo is on a Dev Drive
+ * `CODE_OSS_DEV_RUN_ROOT`; on Windows `<volume>\.vegaide-dev` when the repo is on a Dev Drive
  * (ReFS, listed by the PowerShell wrapper in `CODE_OSS_DEV_REFS_VOLUMES`), whose performance-mode
  * virus scanning makes copies several times faster; otherwise a folder in the temp directory.
  */
@@ -49,7 +49,7 @@ export function getRunRoot(repo: string): string {
 		const repoVolume = path.parse(path.resolve(repo)).root.toLowerCase();
 		const refsVolumes = (process.env.CODE_OSS_DEV_REFS_VOLUMES ?? '').split(';').map(volume => volume.toLowerCase());
 		if (refsVolumes.includes(repoVolume)) {
-			return path.join(path.parse(path.resolve(repo)).root, '.code-oss-dev');
+			return path.join(path.parse(path.resolve(repo)).root, '.vegaide-dev');
 		}
 	}
 	return getTempRunRoot();
@@ -62,11 +62,11 @@ export function getRunRoot(repo: string): string {
 export function getTempRunRoot(): string {
 	const temp = realpathSync.native(os.tmpdir());
 	if (process.platform === 'win32') {
-		return path.join(temp, 'code-oss-dev');
+		return path.join(temp, 'vegaide-dev');
 	}
 	// Per user, since the temp directory may be shared, as /tmp is on Linux. macOS's default TMPDIR
 	// is too long for Electron's unix socket below a run directory.
-	const name = `code-oss-dev-${os.userInfo().uid}`;
+	const name = `vegaide-dev-${os.userInfo().uid}`;
 	const root = path.join(temp, name);
 	return Buffer.byteLength(root) + '/20261020-120000-xxxxxx/'.length + UNIX_SOCKET_PATH_RESERVE <= 103 ? root : path.join('/tmp', name);
 }
@@ -98,7 +98,7 @@ export function isInRunRoot(runDir: string): boolean {
 		return isSamePath(process.env.CODE_OSS_DEV_RUN_ROOT, parent);
 	}
 	const roots = [getTempRunRoot()];
-	const isVolumeRoot = process.platform === 'win32' && path.basename(parent) === '.code-oss-dev' && path.dirname(parent) === path.parse(parent).root;
+	const isVolumeRoot = process.platform === 'win32' && path.basename(parent) === '.vegaide-dev' && path.dirname(parent) === path.parse(parent).root;
 	return isVolumeRoot || roots.some(root => isSamePath(root, parent));
 }
 

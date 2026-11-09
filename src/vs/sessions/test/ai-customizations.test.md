@@ -218,7 +218,7 @@ This tests the transition from the empty state to having an active workspace sel
 3. Select a name `<name>` when the quickpick appears and confirm
 4. Verify the file opens in the embedded editor
 5. Verify the file path shown in the editor header is `~/.copilot/instructions/<name>.instructions.md`
-6. Confirm the path is NOT the VS Code profile folder (e.g., NOT `~/.vscode-oss-sessions-dev/User/...`)
+6. Confirm the path is NOT the VS Code profile folder (e.g., NOT `~/.vegaide-sessions-dev/User/...`)
 7. Press the back button to return to the list
 8. Observe the new instruction appears in the "User" group
 9. Observe the sidebar badge count reflects the new user instruction

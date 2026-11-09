@@ -968,7 +968,7 @@ The VS Code policy `CopilotCliCommand` controls the core setting `chat.copilotCl
 On Windows the shim reads the policy from the registry: a `REG_DWORD`
 `CopilotCliCommand` value of `0` under
 `SOFTWARE\Policies\Microsoft\<quality key>` disables it. Quality keys are
-`VSCode`, `VSCodeInsiders`, `VSCodeExploration`, and `CodeOSS`. For each
+`VSCode`, `VSCodeInsiders`, `VSCodeExploration`, `CodeOSS`, and `VegaIDE`. For each
 quality, the `HKLM` value takes precedence over the `HKCU` value, as in VS Code.
 A disabled policy in any quality wins, because the shim of any installed quality
 can be the one on `PATH`; VS Code setup applies the same rule.
@@ -977,7 +977,7 @@ On Linux the native shim reads `/etc/vscode/policy.json`. Only an object member 
 
 The Linux shim doesn't read an ordinary per-user VS Code setting. The DEB/RPM scripts use its `policy` command to manage the system link; a link that predates the policy remains until the next upgrade or reconfiguration, and the shim then still refuses installation. The Copilot extension still controls integrated-terminal exposure through the setting.
 
-On macOS the native shim reads the effective `CopilotCliCommand` preference with `CFPreferencesCopyAppValue` in the `com.microsoft.VSCode`, `com.microsoft.VSCodeInsiders`, `com.microsoft.VSCodeExploration`, and `com.visualstudio.code.oss` domains, which configuration profiles manage. Only a `CFBoolean` `false` disables installation; missing values and other types are non-disabling. As on Windows, a disabled policy in any quality wins. The reader matches VS Code's scalar policy semantics and doesn't require `CFPreferencesAppValueIsForced`. The Copilot extension also applies the policy through the effective setting for integrated terminals, and the macOS workbench Shell Command action applies that setting before advertising or invoking its install-only shim route; the shim enforces the policy again when that route runs.
+On macOS the native shim reads the effective `CopilotCliCommand` preference with `CFPreferencesCopyAppValue` in the `com.microsoft.VSCode`, `com.microsoft.VSCodeInsiders`, `com.microsoft.VSCodeExploration`, `com.visualstudio.code.oss`, and `chat.vega.ide` domains, which configuration profiles manage. Only a `CFBoolean` `false` disables installation; missing values and other types are non-disabling. As on Windows, a disabled policy in any quality wins. The reader matches VS Code's scalar policy semantics and doesn't require `CFPreferencesAppValueIsForced`. The Copilot extension also applies the policy through the effective setting for integrated terminals, and the macOS workbench Shell Command action applies that setting before advertising or invoking its install-only shim route; the shim enforces the policy again when that route runs.
 
 `CopilotCliCommand` is the only local control over the shim and installation.
 It doesn't turn Copilot CLI itself on or off: that's a GitHub organization or

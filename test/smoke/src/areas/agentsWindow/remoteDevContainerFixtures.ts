@@ -72,7 +72,7 @@ export function getDevContainerCliInstallCommand(codePath?: string): string {
 	assertCliQuality(quality);
 	const archive = quality === 'stable' ? 'code' : quality === 'exploration' ? 'code-exploration' : 'code-insiders';
 	const legacyDirectory = quality === 'stable' ? '.vscode-cli' : `.vscode-cli-${quality}`;
-	const serverDirectory = product.serverDataFolderName ?? '.vscode-server-oss';
+	const serverDirectory = product.serverDataFolderName ?? '.vegaide-server';
 	if (!/^[\w.-]+$/.test(serverDirectory)) {
 		throw new Error(`Invalid CLI server data folder: ${serverDirectory}`);
 	}
@@ -170,6 +170,7 @@ function findTunnelCli(): ITunnelCli {
 		if (result.status === 0 && /Usage:.*tunnel/.test(result.stdout)) {
 			const consentFile = [
 				process.env.VSCODE_CLI_DATA_DIR,
+				path.join(os.homedir(), '.vegaide', 'cli'),
 				path.join(os.homedir(), '.vscode-insiders', 'cli'),
 				path.join(os.homedir(), '.vscode', 'cli'),
 				path.join(os.homedir(), '.vscode-oss', 'cli'),

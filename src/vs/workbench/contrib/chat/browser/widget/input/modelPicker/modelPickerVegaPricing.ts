@@ -138,7 +138,12 @@ function parsePricingEntries(json: unknown, currency: VegaPricingCurrency): Map<
 /**
  * Finds a model's VEGA pricing. Model identifiers are OpenRouter ids such as
  * `z-ai/glm-4.6`; rows may also carry a provider prefix the catalog does not
- * use, so progressively shorter tail segments are tried as well.
+ * use, so progressively shorter tail segments are tried as well. Agent-host
+ * selection ids (`@provider=<provider>:<model>`, the encoding the Codex and
+ * Claude harnesses share, possibly nested inside the `vendor:…` identifier)
+ * are re-joined as `provider/model`, a bare slug is tried under the model's
+ * group vendor, and as a last resort a slug that matches exactly one catalog
+ * entry's tail wins.
  */
 export function vegaPricingForModel(
 	pricing: ReadonlyMap<string, IVegaModelPricing> | undefined,
@@ -147,16 +152,91 @@ export function vegaPricingForModel(
 	if (!pricing?.size) {
 		return undefined;
 	}
-	const candidates = [model.metadata.id, model.identifier, model.metadata.modelGroup?.id];
-	for (const candidate of candidates) {
-		for (let id = candidate?.toLowerCase(); id; id = id.includes('/') ? id.slice(id.indexOf('/') + 1) : '') {
-			const hit = pricing.get(id);
+	const groupId = model.metadata.modelGroup?.id?.toLowerCase();
+	const misses: string[] = [];
+	for (const candidate of [model.metadata.id, model.identifier, model.metadata.modelGroup?.id]) {
+		for (const id of lookupIdForms(candidate)) {
+			const hit = pricing.get(id) ?? (groupId ? pricing.get(`${groupId}/${id}`) : undefined);
 			if (hit) {
 				return hit;
 			}
+			misses.push(id);
+		}
+	}
+	for (const id of new Set(misses)) {
+		const hit = uniqueSlugSuffixMatch(pricing, id);
+		if (hit) {
+			return hit;
 		}
 	}
 	return undefined;
+}
+
+const PROVIDER_QUALIFIED_PREFIX = '@provider=';
+
+/**
+ * The id shapes to look up for one candidate, in preference order: an
+ * agent-host `@provider=` selection id re-joined as `provider/model` plus its
+ * bare model id, a `vendor:slug` pair's slug half when nothing else fits, and
+ * each tail segment after the first `/`.
+ */
+function* lookupIdForms(candidate: string | undefined): Generator<string> {
+	if (!candidate) {
+		return;
+	}
+	const qualified = parseProviderQualifiedId(candidate);
+	const forms = qualified
+		? [`${qualified.provider}/${qualified.modelId}`, qualified.modelId]
+		: candidate.includes(':') && !candidate.includes('/')
+			? [candidate, candidate.slice(candidate.indexOf(':') + 1)]
+			: [candidate];
+	for (const form of forms) {
+		for (let id = form.toLowerCase(); id; id = id.includes('/') ? id.slice(id.indexOf('/') + 1) : '') {
+			yield id;
+		}
+	}
+}
+
+/**
+ * Splits an agent-host selection id (`@provider=<enc>:<enc>`) into its halves,
+ * wherever it sits inside the candidate — the picker's identifier prepends
+ * its own `vendor:` prefix. Both halves are url-encoded by the producer.
+ */
+function parseProviderQualifiedId(candidate: string): { readonly provider: string; readonly modelId: string } | undefined {
+	const start = candidate.indexOf(PROVIDER_QUALIFIED_PREFIX);
+	if (start < 0) {
+		return undefined;
+	}
+	const separator = candidate.indexOf(':', start + PROVIDER_QUALIFIED_PREFIX.length);
+	if (separator < 0) {
+		return undefined;
+	}
+	try {
+		return {
+			provider: decodeURIComponent(candidate.slice(start + PROVIDER_QUALIFIED_PREFIX.length, separator)),
+			modelId: decodeURIComponent(candidate.slice(separator + 1)),
+		};
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * The catalog entry whose `vendor/slug` id ends in this bare slug — only when
+ * exactly one does, so an ambiguous slug stays unknown rather than guessing a
+ * vendor's price.
+ */
+function uniqueSlugSuffixMatch(pricing: ReadonlyMap<string, IVegaModelPricing>, slug: string): IVegaModelPricing | undefined {
+	let match: IVegaModelPricing | undefined;
+	for (const [id, entry] of pricing) {
+		if (id.endsWith(`/${slug}`)) {
+			if (match) {
+				return undefined;
+			}
+			match = entry;
+		}
+	}
+	return match;
 }
 
 /**

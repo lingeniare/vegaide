@@ -139,7 +139,7 @@ async function main(): Promise<number> {
 		throw new UsageError(options.repo ? `Could not find a Code OSS launcher at ${codeScript}. Pass --repo <vscode-repo-root>.` : `Could not find a vscode checkout in ${repo}. Pass --repo <vscode-repo-root>.`);
 	}
 
-	const sourceUserDataDir = path.resolve(options.sourceUserDataDir ?? process.env.CODE_OSS_DEV_AUTHED_USER_DATA_DIR ?? path.join(os.homedir(), '.vscode-oss-dev'));
+	const sourceUserDataDir = path.resolve(options.sourceUserDataDir ?? process.env.CODE_OSS_DEV_AUTHED_USER_DATA_DIR ?? path.join(os.homedir(), '.vegaide-dev'));
 	const sourceProfileExists = await isDirectory(sourceUserDataDir);
 	if (!sourceProfileExists) {
 		log(`no source profile at ${sourceUserDataDir}; launching with an empty isolated profile so the user can sign in.`);
@@ -362,7 +362,7 @@ function getSourceSharedDataDir(repo: string): string {
 	if (process.env.VSCODE_PORTABLE) {
 		return path.join(process.env.VSCODE_PORTABLE, 'shared-data');
 	}
-	return path.join(os.homedir(), readProduct(repo).sharedDataFolderName ?? '.vscode-oss-shared');
+	return path.join(os.homedir(), readProduct(repo).sharedDataFolderName ?? '.vegaide-shared');
 }
 
 /**

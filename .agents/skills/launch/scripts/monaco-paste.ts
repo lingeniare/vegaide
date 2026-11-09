@@ -182,7 +182,7 @@ const code = `async page => page.evaluate(async ({ text, verify }) => {
 	};
 }, { text: ${JSON.stringify(text)}, verify: ${verify} })`;
 
-const temporaryDirectory = mkdtempSync(join(tmpdir(), 'code-oss-monaco-paste-'));
+const temporaryDirectory = mkdtempSync(join(tmpdir(), 'vegaide-monaco-paste-'));
 const codeFile = join(temporaryDirectory, 'paste.js');
 const pasteResult = (() => {
 	try {

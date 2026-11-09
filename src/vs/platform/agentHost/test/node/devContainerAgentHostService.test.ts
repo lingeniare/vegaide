@@ -137,7 +137,7 @@ class TestDevContainerAgentHostMainService extends DevContainerAgentHostMainServ
 			logService,
 			new class extends mock<IProductService>() {
 				override readonly quality = 'insider';
-				override readonly serverDataFolderName = '.vscode-server-oss';
+				override readonly serverDataFolderName = '.vegaide-server';
 				override readonly commit = commit;
 			}(),
 			NullTelemetryService,
@@ -842,10 +842,10 @@ suite('Dev Container Agent Host Main Service', () => {
 				['read-configuration', '--log-level', 'debug', '--workspace-folder', '/workspace', '--include-merged-configuration'],
 				['up', '--log-level', 'debug', '--workspace-folder', '/workspace', '--mount', devContainerServerCacheMount],
 			],
-			relayCommand: '~/.vscode-server-oss/code-insiders --cli-data-dir ~/.vscode-server-oss/cli agent relay \'instance\' --user-data-dir \'/home/vscode/.config/Code\'',
+			relayCommand: '~/.vegaide-server/code-insiders --cli-data-dir ~/.vegaide-server/cli agent relay \'instance\' --user-data-dir \'/home/vscode/.config/Code\'',
 			sent: ['{"jsonrpc":"2.0"}'],
 			disposed: true,
-			output: ['connection:Starting Dev Container\n', 'connection:Using shared server cache at /vscode/vscode-server-oss/cli/servers/linux-x64\n'],
+			output: ['connection:Starting Dev Container\n', 'connection:Using shared server cache at /vscode/vegaide-server/cli/servers/linux-x64\n'],
 		});
 	});
 
@@ -952,7 +952,7 @@ suite('Dev Container Agent Host Main Service', () => {
 					up: sandboxEnabled ? 0 : 1,
 					warnings: [
 						'[DevContainerAgentHost] Cannot add optional shared server cache mount',
-						...sandboxEnabled ? [] : ['[DevContainerAgentHost] Desktop has no product commit; falling back to non-pinned CLI install at ~/.vscode-server-oss/code-insiders.'],
+						...sandboxEnabled ? [] : ['[DevContainerAgentHost] Desktop has no product commit; falling back to non-pinned CLI install at ~/.vegaide-server/code-insiders.'],
 					],
 				});
 			});
@@ -1056,7 +1056,7 @@ suite('Dev Container Agent Host Main Service', () => {
 			await service.connect({ connectionId: platform, workspaceFolder: '/workspace', name: 'Project' });
 			const cacheCommandIndex = service.execCommands.findIndex(command => command.includes('ln -sT'));
 			assert.ok(cacheCommandIndex !== -1 && cacheCommandIndex < service.execCommands.findIndex(command => command.includes('agent endpoints')));
-			assert.ok(service.execCommands[cacheCommandIndex].includes(`/vscode/vscode-server-oss/cli/servers/${platform}`));
+			assert.ok(service.execCommands[cacheCommandIndex].includes(`/vscode/vegaide-server/cli/servers/${platform}`));
 			assert.ok(service.localCommands.some(command => command.command === 'docker' && command.args.slice(0, 4).join(' ') === 'exec --user root container-id'));
 		}
 	});
@@ -1095,7 +1095,7 @@ suite('Dev Container Agent Host Main Service', () => {
 			await service.connect({ connectionId: platform, workspaceFolder: '/workspace', name: 'Project' });
 			const cacheCommand = service.execCommands.find(command => command.includes('flock 9'));
 			assert.deepStrictEqual({
-				path: cacheCommand?.includes(`/vscode/vscode-server-oss/cli/bin/${platform}`),
+				path: cacheCommand?.includes(`/vscode/vegaide-server/cli/bin/${platform}`),
 				copies: cacheCommand?.includes('cp "$entry/$archive" "$private_tmp/$archive"'),
 				privateDownloads: service.execCommands.filter(command => command.includes('curl') && !command.includes('flock 9')).length,
 			}, { path: true, copies: true, privateDownloads: 0 });

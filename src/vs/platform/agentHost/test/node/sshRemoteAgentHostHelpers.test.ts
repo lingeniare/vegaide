@@ -204,8 +204,8 @@ suite('SSH Remote Agent Host Helpers', () => {
 
 		test('returns non-keyed path when commit is undefined (dev build)', () => {
 			assert.strictEqual(
-				getRemoteCLIBin('.vscode-server-oss', 'insider'),
-				'~/.vscode-server-oss/code-insiders',
+				getRemoteCLIBin('.vegaide-server', 'insider'),
+				'~/.vegaide-server/code-insiders',
 			);
 			assert.strictEqual(
 				getRemoteCLIBin('.vscode-server', 'stable'),

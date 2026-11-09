@@ -20,13 +20,13 @@ suite('Dev Container server cache', () => {
 		assert.deepStrictEqual([
 			getDevContainerServerCachePath('.vscode-server-insiders', { os: 'linux', arch: 'arm64' }),
 			getDevContainerServerCachePath('.vscode-server', { os: 'alpine', arch: 'x64' }),
-			getDevContainerServerCachePath('.vscode-server-oss', { os: 'linux', arch: 'armhf' }),
+			getDevContainerServerCachePath('.vegaide-server', { os: 'linux', arch: 'armhf' }),
 			getDevContainerCliCachePath('.vscode-server-insiders', { os: 'linux', arch: 'arm64' }),
 			getDevContainerCliCachePath('.vscode-server', { os: 'alpine', arch: 'x64' }),
 		], [
 			'/vscode/vscode-server-insiders/cli/servers/linux-arm64',
 			'/vscode/vscode-server/cli/servers/alpine-x64',
-			'/vscode/vscode-server-oss/cli/servers/linux-armhf',
+			'/vscode/vegaide-server/cli/servers/linux-armhf',
 			'/vscode/vscode-server-insiders/cli/bin/linux-arm64',
 			'/vscode/vscode-server/cli/bin/alpine-x64',
 		]);

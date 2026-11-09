@@ -554,8 +554,8 @@
 			},
 			"args": [
 				"--agents",
-				"--user-data-dir=${userHome}/.vscode-oss-dev",
-				"--extensions-dir=${userHome}/.vscode-oss-dev/extensions"
+				"--user-data-dir=${userHome}/.vegaide-dev",
+				"--extensions-dir=${userHome}/.vegaide-dev/extensions"
 			],
 			"inAgents": true,
 			"problemMatcher": []

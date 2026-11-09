@@ -614,7 +614,7 @@ suite('ChatModelsViewModel', () => {
 	});
 
 	test('should filter by text matching vendor name', () => {
-		const results = viewModel.filter('GitHub');
+		const results = viewModel.filter('VEGA');
 
 		const models = results.filter(r => !isLanguageModelProviderEntry(r) && !isLanguageModelGroupEntry(r)) as ILanguageModelEntry[];
 		assert.strictEqual(models.length, 2);
@@ -1147,7 +1147,7 @@ suite('ChatModelsViewModel', () => {
 		const others = ['status: fetch failed', 'gpt-3.5-turbo', 'gpt-4-vision'];
 		assert.deepStrictEqual(listed, {
 			local: ['gpt-4', 'gpt-4o', ...others],
-			'agent-host-copilotcli': ['ah-cli', ...others],
+			'agent-host-copilotcli': [...others, 'ah-cli'],
 			'agent-host-copilot': ['status: models failed to load', ...others],
 		});
 	});

@@ -2419,9 +2419,12 @@ export class CopilotAgent extends Disposable implements IAgent {
 	// ---- auth ---------------------------------------------------------------
 
 	getDescriptor(): IAgentDescriptor {
+		// Under the VEGA product the Copilot agent is backed by the `vega`
+		// provider, so it presents as VEGA IDE rather than Copilot.
+		const vega = this._productService.defaultChatAgent?.provider?.default?.id === 'vega';
 		return {
 			provider: 'copilotcli',
-			displayName: 'Copilot',
+			displayName: vega ? this._productService.defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE' : 'Copilot',
 			description: localize('copilotAgent.description', "Copilot SDK agent running in the local agent host process"),
 			capabilities: {
 				multipleChats: { fork: true, sideChat: true },
@@ -3856,7 +3859,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 						const providerTiers = startup.dynamicAutoTiers ? catalog.autoTierMetadata : undefined;
 						const models = [
 							...this._presentModels(catalog.models, catalog.autoTierMetadata, policy),
-							...this._getUnlistedHydraFusionModels(providerTiers, catalog.models, true).map(model => this._withModelConfigAliases(model)),
+							...this._getUnlistedHydraFusionModels(providerTiers, catalog.models, !isVegaApiKey(credential.token)).map(model => this._withModelConfigAliases(model)),
 						];
 						created.catalog = { ...catalog, models };
 						return models;
@@ -4049,7 +4052,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 	 * HydraFusion models the runtime's catalog omits, as the runtime does not list HydraFusion itself. With CAPI's tiers,
 	 * one for each HydraFusion tier the account can run; otherwise, those the HydraFusion setting enables.
 	 */
-	private _getUnlistedHydraFusionModels(providerTiers: CopilotAutoTierMetadata | undefined, capiModels = this._capiModels, signedIn = !!this._githubCredentials.token): IAgentModelInfo[] {
+	private _getUnlistedHydraFusionModels(providerTiers: CopilotAutoTierMetadata | undefined, capiModels = this._capiModels, signedIn = !!this._githubCredentials.token && !isVegaApiKey(this._githubCredentials.token)): IAgentModelInfo[] {
 		const hydraFusionModels: IAgentModelInfo[] = [];
 		// Outside CAPI's tiers, these rows follow the runtime's HydraFusion, which dynamic Auto tiers also turn on.
 		const hydraFusionEnabled = this._isHydraFusionEnabled();

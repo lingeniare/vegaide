@@ -788,7 +788,7 @@ function toGitHubInfo(meta: SessionMeta | undefined, workingDirectory: URI | und
 /** Copilot CLI session type */
 export const CopilotCLISessionType: ISessionType = {
 	id: 'copilotcli',
-	label: localize('copilotCLI', "Copilot"),
+	label: localize('copilotCLI', "VEGA IDE"),
 	icon: Codicon.copilot,
 	supportsWorktreeConfiguration: true,
 	authRequirement: SessionTypeAuthRequirement.GitHub,

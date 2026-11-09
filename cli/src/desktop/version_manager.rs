@@ -399,9 +399,9 @@ fn detect_installed_program(log: &log::Logger) -> io::Result<Vec<PathBuf>> {
 const DESKTOP_CLI_RELATIVE_PATH: &str = if cfg!(target_os = "macos") {
 	"Contents/Resources/app/bin/code"
 } else if cfg!(target_os = "windows") {
-	"bin/code.cmd,bin/code-insiders.cmd,bin/code-exploration.cmd"
+	"bin/vegaide.cmd,bin/code.cmd,bin/code-insiders.cmd,bin/code-exploration.cmd"
 } else {
-	"bin/code,bin/code-insiders,bin/code-exploration"
+	"bin/vegaide,bin/code,bin/code-insiders,bin/code-exploration"
 };
 
 #[cfg(test)]

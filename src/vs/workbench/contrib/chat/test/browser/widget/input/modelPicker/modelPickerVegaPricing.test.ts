@@ -13,7 +13,7 @@ import { NullLogService } from '../../../../../../../../platform/log/common/log.
 import { IRequestService } from '../../../../../../../../platform/request/common/request.js';
 import { AuthenticationSession, IAuthenticationService } from '../../../../../../../services/authentication/common/authentication.js';
 import { ILanguageModelChatMetadata, ILanguageModelChatMetadataAndIdentifier } from '../../../../../common/languageModels.js';
-import { formatVegaPrice, getVegaPricing, vegaPricingForModel } from '../../../../../browser/widget/input/modelPicker/modelPickerVegaPricing.js';
+import { formatVegaPrice, getVegaPricing, vegaPricingForModel, IVegaModelPricing } from '../../../../../browser/widget/input/modelPicker/modelPickerVegaPricing.js';
 
 suite('modelPickerVegaPricing', () => {
 	ensureNoDisposablesAreLeakedInTestSuite();
@@ -60,6 +60,30 @@ suite('modelPickerVegaPricing', () => {
 		assert.strictEqual(vegaPricingForModel(pricing, model('other', 'vega/z-ai/glm-4.6'))?.promptPer1M, 30);
 		assert.strictEqual(vegaPricingForModel(pricing, model('unknown')), undefined);
 		assert.strictEqual(vegaPricingForModel(undefined, model('z-ai/glm-4.6')), undefined);
+	});
+
+	test('vegaPricingForModel resolves agent-host selection ids, grouped bare slugs, and unique slug suffixes', () => {
+		const pricing = new Map<string, IVegaModelPricing>([
+			['openai/gpt-6.1-sol', { promptPer1M: 3.4 }],
+			['anthropic/claude-opus-5.5', { promptPer1M: 6.8 }],
+		]);
+		// A Codex provider-qualified id, as both metadata.id and identifier carry it.
+		assert.strictEqual(vegaPricingForModel(pricing, model('@provider=openai:gpt-6.1-sol', 'agent-host-codex:@provider=openai:gpt-6.1-sol'))?.promptPer1M, 3.4);
+		// A proxy-routed selection's provider is no catalog vendor; the bare slug still pins it uniquely.
+		assert.strictEqual(vegaPricingForModel(pricing, model('@provider=vscode-proxy:gpt-6.1-sol', 'agent-host-codex:@provider=vscode-proxy:gpt-6.1-sol'))?.promptPer1M, 3.4);
+		// A Claude provider-qualified id joins the same way.
+		assert.strictEqual(vegaPricingForModel(pricing, model('@provider=anthropic:claude-opus-5.5', 'agent-host-claude:@provider=anthropic:claude-opus-5.5'))?.promptPer1M, 6.8);
+		// A bare slug joins its picker's group vendor.
+		const bare = model('gpt-6.1-sol', 'agent-host-codex:gpt-6.1-sol');
+		assert.strictEqual(vegaPricingForModel(pricing, { ...bare, metadata: { ...bare.metadata, modelGroup: { id: 'openai' } } })?.promptPer1M, 3.4);
+		// An identifier's `vendor:` prefix peels off to the slug.
+		assert.strictEqual(vegaPricingForModel(pricing, model('x', 'agent-host-copilot:gpt-6.1-sol'))?.promptPer1M, 3.4);
+		// A slug two vendors share stays unknown rather than guessing a price.
+		const ambiguous = new Map<string, IVegaModelPricing>([['a/x', { promptPer1M: 1 }], ['b/x', { promptPer1M: 2 }]]);
+		assert.strictEqual(vegaPricingForModel(ambiguous, model('x')), undefined);
+		// But the group vendor still disambiguates it.
+		const grouped = model('x');
+		assert.strictEqual(vegaPricingForModel(ambiguous, { ...grouped, metadata: { ...grouped.metadata, modelGroup: { id: 'b' } } })?.promptPer1M, 2);
 	});
 
 	test('getVegaPricing authorizes the ruble request and maps fields by model id', async () => {

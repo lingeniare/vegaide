@@ -231,7 +231,7 @@ node build/next/index.ts bundle --nls --target server-web --out out-vscode-reh-w
 npm run gulp vscode-reh-web-darwin-arm64-min
 
 # Run server
-./vscode-server-darwin-arm64-web/bin/code-server-oss --connection-token dev-token
+./vscode-server-darwin-arm64-web/bin/vegaide-server --connection-token dev-token
 
 # Open browser - should connect without "Unauthorized client refused"
 ```

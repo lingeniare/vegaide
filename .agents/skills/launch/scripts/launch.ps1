@@ -91,7 +91,7 @@ function Get-SourceSharedDataDir([string]$repoPath) {
 		return Join-Path $env:VSCODE_PORTABLE 'shared-data'
 	}
 
-	$folderName = '.vscode-oss-shared'
+	$folderName = '.vegaide-shared'
 	$productJson = Join-Path $repoPath 'product.json'
 	if (Test-Path -LiteralPath $productJson -PathType Leaf) {
 		$product = Get-Content -LiteralPath $productJson -Raw | ConvertFrom-Json
@@ -423,7 +423,7 @@ try {
 		$sourceUserDataDir = if ($env:CODE_OSS_DEV_AUTHED_USER_DATA_DIR) {
 			$env:CODE_OSS_DEV_AUTHED_USER_DATA_DIR
 		} else {
-			Join-Path $env:USERPROFILE '.vscode-oss-dev'
+			Join-Path $env:USERPROFILE '.vegaide-dev'
 		}
 	}
 	$sourceUserDataDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($sourceUserDataDir)
@@ -441,7 +441,7 @@ try {
 	$agentHostPort = $ports[3]
 
 	$stamp = '{0:yyyyMMdd-HHmmss}-{1}' -f (Get-Date), $PID
-	$runDir = Join-Path (Join-Path $env:TEMP 'code-oss-dev') $stamp
+	$runDir = Join-Path (Join-Path $env:TEMP 'vegaide-dev') $stamp
 	$destinationUdd = Join-Path $runDir 'user-data'
 	$extensionsDir = Join-Path $destinationUdd 'extensions'
 	$sharedDataDir = Join-Path $runDir 'shared-data'

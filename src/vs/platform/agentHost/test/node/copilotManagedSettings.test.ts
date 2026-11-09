@@ -49,6 +49,24 @@ suite('Copilot managed settings resolution', () => {
 		assert.strictEqual(await resolveCopilotManagedSettings(rpc, undefined, 1000), result);
 	});
 
+	test('a VEGA application key resolves to unmanaged policy without querying the runtime', async () => {
+		const rpc = createUnmanagedCopilotSettings();
+		rpc.resolve = async () => { assert.fail('Unexpected policy query for a VEGA key'); };
+		const resolver = disposables.add(new CopilotManagedSettingsResolver(new NullLogService()));
+		for (const resolve of [
+			() => resolveCopilotManagedSettings(rpc, 'sk-apivega-test-key', 1000, '/test/workspace'),
+			() => resolver.resolve(rpc, 'sk-apivega-test-key', '/test/workspace'),
+		]) {
+			const result = await resolve();
+			assert.strictEqual(result.resolved.source, 'none');
+			assert.strictEqual(result.resolved.failClosed, false);
+			assert.strictEqual(result.resolved.bypassPermissionsDisabled, false);
+			assert.deepStrictEqual(result.resolved.managedKeys, []);
+			assert.deepStrictEqual(result.layers, []);
+			assert.deepStrictEqual(result.diagnostics, []);
+		}
+	});
+
 	test('propagates resolution failure rather than returning an unmanaged policy', async () => {
 		const rpc = createUnmanagedCopilotSettings();
 		const error = new Error('Policy resolution failed');

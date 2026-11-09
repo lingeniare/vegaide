@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $RunDir -PathType Container)) {
 	throw "Run directory does not exist: $RunDir"
 }
 
-$expectedRoot = [IO.Path]::GetFullPath((Join-Path $env:TEMP 'code-oss-dev'))
+$expectedRoot = [IO.Path]::GetFullPath((Join-Path $env:TEMP 'vegaide-dev'))
 if (-not $RunDir.StartsWith("$expectedRoot\", [StringComparison]::OrdinalIgnoreCase)) {
 	throw "Refusing to clean a directory outside $expectedRoot`: $RunDir"
 }
