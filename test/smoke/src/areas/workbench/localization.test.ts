@@ -12,6 +12,27 @@ export function setup(logger: Logger) {
 
 		installAllHandlers(logger);
 
+		it('starts with the bundled default "RU" locale and verifies title and viewlets text is in Russian', async function () {
+			const app = this.app as Application;
+
+			await app.restart({ extraArgs: [] });
+
+			const result = await app.workbench.localization.getLocalizedStrings();
+			const localeInfo = await app.workbench.localization.getLocaleInfo();
+
+			if (localeInfo.locale === undefined || localeInfo.locale.toLowerCase() !== 'ru') {
+				throw new Error(`The requested locale for VS Code was not Russian. The received value is: ${localeInfo.locale === undefined ? 'not set' : localeInfo.locale}`);
+			}
+
+			if (localeInfo.language.toLowerCase() !== 'ru') {
+				throw new Error(`The UI language is not Russian. It is ${localeInfo.language}`);
+			}
+
+			if (result.open.toLowerCase() !== 'открыть' || result.close.toLowerCase() !== 'закрыть' || result.find.toLowerCase() !== 'найти') {
+				throw new Error(`Received wrong Russian localized strings: ${JSON.stringify(result, undefined, 0)}`);
+			}
+		});
+
 		it('starts with "DE" locale and verifies title and viewlets text is in German', async function () {
 			const app = this.app as Application;
 

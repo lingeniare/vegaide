@@ -27,6 +27,22 @@
 	animation: sessions-loading-pulse 1.4s ease-in-out infinite;
 }
 
+.agent-sessions-workbench .sessions-loading-overlay .sessions-loading-icon.codicon::before {
+	content: "" !important;
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	background-color: currentColor;
+	-webkit-mask-image: var(--vega-star-icon);
+	mask-image: var(--vega-star-icon);
+	-webkit-mask-size: contain;
+	mask-size: contain;
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	mask-position: center;
+}
+
 @keyframes sessions-loading-pulse {
 	0%, 100% { opacity: 0.4; transform: scale(0.95); }
 	50%      { opacity: 1;   transform: scale(1.05); }

@@ -47,7 +47,11 @@
 		"controlUrl": "https://raw.githubusercontent.com/EclipseFdn/publish-extensions/refs/heads/master/extension-control/extensions.json"
 	},
 	"linkProtectionTrustedDomains": [
-		"https://open-vsx.org"
+		"https://open-vsx.org",
+		"https://api.vega.chat",
+		"https://vega.codes",
+		"https://context7.com",
+		"https://deepwiki.com"
 	],
 	"builtInExtensions": [
 		{

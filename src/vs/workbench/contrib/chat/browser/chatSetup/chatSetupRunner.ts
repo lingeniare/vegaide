@@ -155,21 +155,23 @@ export class ChatSetupDialog extends Disposable {
 			options.buttons.map(button => button.label),
 			createWorkbenchDialogOptions({
 				type: 'none',
-				extraClasses: ['chat-setup-dialog', ...(options.extraClasses ?? [])],
+				extraClasses: ['chat-setup-dialog', 'chat-setup-empty-detail', ...(options.extraClasses ?? [])],
 				detail: ' ',
 				icon: options.icon,
 				alignment: DialogContentsAlignment.Vertical,
 				cancelId: options.buttons.length,
 				disableCloseButton: options.disableCloseButton,
-				renderFooter: footer => {
+				renderFooter: (options.footer || options.renderFooter) ? footer => {
 					const element = footer.appendChild($('.chat-setup-dialog-footer'));
-					const renderedFooter = this._register(markdownRendererService.render(new MarkdownString(options.footer, { isTrusted: true })));
-					element.appendChild($('p', undefined, renderedFooter.element));
+					if (options.footer) {
+						const renderedFooter = this._register(markdownRendererService.render(new MarkdownString(options.footer, { isTrusted: true })));
+						element.appendChild($('p', undefined, renderedFooter.element));
+					}
 					const customFooter = options.renderFooter?.(element);
 					if (customFooter) {
 						this._register(customFooter);
 					}
-				},
+				} : undefined,
 				buttonOptions: options.buttons.map(button => {
 					const classes = button.classes;
 					// Claim the sign-in window while the click's activation is still live;
@@ -499,7 +501,9 @@ export class ChatSetup {
 			buttons,
 			icon: options?.dialogIcon ?? Codicon.copilotLarge,
 			disableCloseButton: options?.disableCloseButton ?? false,
-			footer: getChatSetupDialogFooter(options?.forceAnonymous, this.telemetryService.telemetryLevel, this.defaultAccountService.resolveGitHubUrl(GitHubPaths.copilotSettings)),
+			// The sign-in flow defers to the provider's own auth window for
+			// terms and privacy — no legal footer is needed under the button.
+			footer: offersProviderSignIn(entitlement, options) ? '' : getChatSetupDialogFooter(options?.forceAnonymous, this.telemetryService.telemetryLevel, this.defaultAccountService.resolveGitHubUrl(GitHubPaths.copilotSettings)),
 			extraClasses: options?.dialogExtraClasses,
 			renderFooter: options?.renderDialogFooter,
 		});

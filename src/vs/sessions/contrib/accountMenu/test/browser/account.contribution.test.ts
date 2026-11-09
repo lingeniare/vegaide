@@ -27,13 +27,13 @@ suite('Sessions - Account Menu', () => {
 
 	const store = ensureNoDisposablesAreLeakedInTestSuite();
 
-	test('labels the signed-out Copilot account action', () => {
+	test('labels the signed-out VEGA account action', () => {
 		const signIn = MenuRegistry.getMenuItems(Menus.AccountMenu)
 			.filter(isIMenuItem)
 			.find(item => item.command.id === 'workbench.action.agenticSignIn');
 
 		assert.ok(signIn);
-		assert.strictEqual(typeof signIn.command.title === 'string' ? signIn.command.title : signIn.command.title.value, 'Sign in with GitHub');
+		assert.strictEqual(typeof signIn.command.title === 'string' ? signIn.command.title : signIn.command.title.value, 'Sign in with VEGA IDE');
 	});
 
 	test('uses the shared Chat setup flow for Copilot sign-in', async () => {

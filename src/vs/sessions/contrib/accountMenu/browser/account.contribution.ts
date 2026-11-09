@@ -106,7 +106,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: AGENTIC_SIGN_IN_COMMAND_ID,
-			title: localize2('signIn', "Sign in with GitHub"),
+			title: localize2('signIn', "Sign in with VEGA IDE"),
 			icon: Codicon.signIn,
 			menu: {
 				id: AccountMenu,
@@ -598,7 +598,7 @@ export class TitleBarAccountWidget extends BaseActionViewItem {
 				avatar.referrerPolicy = 'no-referrer';
 			} else {
 				const accountIcon = append(copilotIdentity, $('span.sessions-account-titlebar-panel-provider-icon', { 'aria-hidden': 'true' }));
-				accountIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.github));
+				accountIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.copilot));
 			}
 			const title = append(copilotIdentity, $('div.sessions-account-titlebar-panel-provider-name'));
 			title.textContent = this.getPanelHeaderLabel();
@@ -628,7 +628,7 @@ export class TitleBarAccountWidget extends BaseActionViewItem {
 			}));
 			const copilotIdentity = append(copilotAccount, $('.sessions-account-titlebar-panel-provider-identity'));
 			const accountIcon = append(copilotIdentity, $('span.sessions-account-titlebar-panel-provider-icon', { 'aria-hidden': 'true' }));
-			accountIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.github));
+			accountIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.copilot));
 			const signInActions = append(copilotIdentity, $('.sessions-account-titlebar-panel-provider-sign-in-actions'));
 			const signInActionBar = panelStore.add(new ActionBar(signInActions));
 			panelStore.add(signInActionBar.onWillRun(() => {

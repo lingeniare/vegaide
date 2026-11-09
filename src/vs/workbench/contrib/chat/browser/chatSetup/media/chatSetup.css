@@ -20,7 +20,15 @@
 	}
 
 	.dialog-buttons-row > .dialog-buttons > .monaco-button.continue-button.default::before {
-		background-image: url('./github.svg');
+		background-color: currentColor;
+		-webkit-mask-image: var(--vega-star-icon);
+		mask-image: var(--vega-star-icon);
+		-webkit-mask-size: 16px 16px;
+		mask-size: 16px 16px;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-position: left center;
+		mask-position: left center;
 	}
 
 	.dialog-buttons-row > .dialog-buttons > .monaco-button.continue-button.google::before {
@@ -48,6 +56,36 @@
 	.chat-setup-dialog-footer {
 		font-size: 11px;
 		color: var(--vscode-descriptionForeground);
+	}
+
+	/* VEGA star header icon */
+
+	&.align-vertical .dialog-message-row > .dialog-icon.codicon {
+		margin-top: 16px;
+		margin-bottom: 12px;
+	}
+
+	&.align-vertical .dialog-message-row > .dialog-icon.codicon::before {
+		content: "" !important;
+		display: inline-block;
+		width: 1em;
+		height: 1em;
+		background-color: currentColor;
+		-webkit-mask-image: var(--vega-star-icon);
+		mask-image: var(--vega-star-icon);
+		-webkit-mask-size: contain;
+		mask-size: contain;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-position: center;
+		mask-position: center;
+	}
+
+	/* ChatSetupDialog passes a single-space detail only to force the title
+	   markup to render — hide the placeholder so the title sits right above
+	   the buttons without an empty gap. */
+	&.chat-setup-empty-detail .dialog-message-detail {
+		display: none;
 	}
 }
 

@@ -409,14 +409,18 @@ body {
    instead of a fixed #fff/#000.
    Status glyphs (warning/error/snooze/…) are excluded so they keep their
    meaning — only logo variants (copilot, -large, -compact, -dot*) get the star. */
+:root {
+	--vega-star-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Cg stroke='%23fff' stroke-width='24' stroke-linecap='round'%3E%3Cline x1='380' y1='86' x2='380' y2='674'/%3E%3Cline x1='380' y1='86' x2='380' y2='674' transform='rotate(30 380 380)'/%3E%3Cline x1='380' y1='86' x2='380' y2='674' transform='rotate(60 380 380)'/%3E%3Cline x1='380' y1='86' x2='380' y2='674' transform='rotate(90 380 380)'/%3E%3Cline x1='380' y1='86' x2='380' y2='674' transform='rotate(120 380 380)'/%3E%3Cline x1='380' y1='86' x2='380' y2='674' transform='rotate(150 380 380)'/%3E%3C/g%3E%3C/svg%3E");
+}
+
 .monaco-workbench [class*="codicon-copilot"]:not([class*="copilot-warning"]):not([class*="copilot-blocked"]):not([class*="copilot-not-connected"]):not([class*="copilot-unavailable"]):not([class*="copilot-in-progress"]):not([class*="copilot-error"]):not([class*="copilot-success"]):not([class*="copilot-snooze"])::before {
 	content: "" !important;
 	display: inline-block;
 	width: 1em;
 	height: 1em;
 	background-color: currentColor;
-	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Cg stroke='%23fff' stroke-width='20' stroke-linecap='round'%3E%3Cline x1='380' y1='12' x2='380' y2='748'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(30 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(60 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(90 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(120 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(150 380 380)'/%3E%3C/g%3E%3C/svg%3E");
-	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Cg stroke='%23fff' stroke-width='20' stroke-linecap='round'%3E%3Cline x1='380' y1='12' x2='380' y2='748'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(30 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(60 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(90 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(120 380 380)'/%3E%3Cline x1='380' y1='12' x2='380' y2='748' transform='rotate(150 380 380)'/%3E%3C/g%3E%3C/svg%3E");
+	-webkit-mask-image: var(--vega-star-icon);
+	mask-image: var(--vega-star-icon);
 	-webkit-mask-size: contain;
 	mask-size: contain;
 	-webkit-mask-repeat: no-repeat;

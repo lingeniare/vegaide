@@ -14,7 +14,7 @@ import { IUserDataProfilesService } from '../../platform/userDataProfile/common/
 import { ServiceCollection } from '../../platform/instantiation/common/serviceCollection.js';
 import { ChatEntitlementContext, IChatEntitlementService } from '../../workbench/services/chat/common/chatEntitlementService.js';
 import { isWeb } from '../../base/common/platform.js';
-import { GitHubPaths, IDefaultAccountService } from '../../platform/defaultAccount/common/defaultAccount.js';
+import { IDefaultAccountService } from '../../platform/defaultAccount/common/defaultAccount.js';
 import { IProductService } from '../../platform/product/common/productService.js';
 import { IContextKeyService } from '../../platform/contextkey/common/contextkey.js';
 import { IWorkbenchEnvironmentService } from '../../workbench/services/environment/common/environmentService.js';
@@ -23,7 +23,6 @@ import { ICommandService } from '../../platform/commands/common/commands.js';
 import { IWorkbenchLayoutService } from '../../workbench/services/layout/browser/layoutService.js';
 import { IKeybindingService } from '../../platform/keybinding/common/keybinding.js';
 import { IHostService } from '../../workbench/services/host/browser/host.js';
-import { IMarkdownRendererService } from '../../platform/markdown/browser/markdownRenderer.js';
 import { WELCOME_COMPLETE_KEY } from '../common/welcome.js';
 import { SessionsWelcomeVisibleContext } from '../common/contextkeys.js';
 import { ConditionalAuthState, conditionalAuthState, resolveSignedOutWindowGate, SignedOutWindowGate } from './sessionsAuthGate.js';
@@ -33,7 +32,6 @@ import { Codicon } from '../../base/common/codicons.js';
 import { $, append } from '../../base/browser/dom.js';
 import { Dialog, DialogContentsAlignment } from '../../base/browser/ui/dialog/dialog.js';
 import { createWorkbenchDialogOptions } from '../../workbench/browser/parts/dialogs/dialog.js';
-import { MarkdownString } from '../../base/common/htmlContent.js';
 import { localize } from '../../nls.js';
 import { createSessionsSignInDialogOptions, SessionsSigningInDialog } from './sessionsSignInDialog.js';
 import { SHOULD_SHOW_RETURN_TO_VSCODE_EDITOR_COMMAND_ID } from '../common/sessionCommands.js';
@@ -107,7 +105,6 @@ class SessionsSetUpWidget extends Disposable {
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IHostService private readonly hostService: IHostService,
-		@IMarkdownRendererService private readonly markdownRendererService: IMarkdownRendererService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ISessionsManagementService private readonly sessionsManagementService: ISessionsManagementService,
 	) {
@@ -535,7 +532,6 @@ class SessionsSetUpWidget extends Disposable {
 				alignment: DialogContentsAlignment.Vertical,
 				cancelId: 1,
 				disableCloseButton: true,
-				renderFooter: footer => footer.appendChild(this._createWelcomeFooter(disposables)),
 			}, this.keybindingService, this.layoutService, this.hostService)
 		));
 
@@ -544,29 +540,6 @@ class SessionsSetUpWidget extends Disposable {
 
 		this.storageService.store(WELCOME_COMPLETE_KEY, true, StorageScope.APPLICATION, StorageTarget.MACHINE);
 		this.serviceMarkDone();
-	}
-
-	private _createWelcomeFooter(disposables: DisposableStore): HTMLElement {
-		const element = $('.chat-setup-dialog-footer');
-		const defaultChatAgent = this.productService.defaultChatAgent;
-		const providerName = defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE';
-		const termsUrl = defaultChatAgent?.termsStatementUrl ?? '';
-		const privacyUrl = defaultChatAgent?.privacyStatementUrl ?? '';
-		const publicCodeUrl = defaultChatAgent?.publicCodeMatchesUrl ?? '';
-		const settingsUrl = this.defaultAccountService.resolveGitHubUrl(GitHubPaths.copilotSettings);
-
-		const footer = settingsUrl ? localize(
-			{ key: 'welcomeFooter', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}', '{Locked="]({5})"}'] },
-			"By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these [settings]({5}) anytime.",
-			providerName, termsUrl, privacyUrl, providerName, publicCodeUrl, settingsUrl
-		) : localize(
-			{ key: 'welcomeFooterWithoutSettingsLink', comment: ['{Locked="["}', '{Locked="]({1})"}', '{Locked="]({2})"}', '{Locked="]({4})"}'] },
-			"By continuing, you agree to the {0} [Terms]({1}) and [Privacy Statement]({2}). {3} may show [public code]({4}) suggestions and use your data to improve the product. You can change these settings anytime.",
-			providerName, termsUrl, privacyUrl, providerName, publicCodeUrl
-		);
-		element.appendChild($('p', undefined, disposables.add(this.markdownRendererService.render(new MarkdownString(footer, { isTrusted: true }))).element));
-
-		return element;
 	}
 }
 

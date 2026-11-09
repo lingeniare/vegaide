@@ -6,8 +6,7 @@
 import { mock } from '../../../../../base/test/common/mock.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { IMarkdownRendererService, MarkdownRendererService } from '../../../../../platform/markdown/browser/markdownRenderer.js';
-import { TelemetryLevel } from '../../../../../platform/telemetry/common/telemetry.js';
-import { ChatSetupDialog, getChatSetupDialogButtons, getChatSetupDialogFooter } from '../../../../contrib/chat/browser/chatSetup/chatSetupRunner.js';
+import { ChatSetupDialog, getChatSetupDialogButtons } from '../../../../contrib/chat/browser/chatSetup/chatSetupRunner.js';
 import { ChatEntitlement } from '../../../../services/chat/common/chatEntitlementService.js';
 import { IHostService } from '../../../../services/host/browser/host.js';
 import { IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
@@ -21,13 +20,6 @@ const providers = {
 	google: { name: 'Google' },
 	apple: { name: 'Apple' },
 	microsoft: { name: 'Microsoft' },
-};
-
-const footerContent = {
-	providerName: 'VEGA IDE',
-	termsStatementUrl: 'https://vega.codes/offer',
-	privacyStatementUrl: 'https://vega.codes/privacy',
-	publicCodeMatchesUrl: 'https://example.com/public-code',
 };
 
 export default defineThemedFixtureGroup({ path: 'sessions/signInDialog/' }, {
@@ -57,7 +49,7 @@ function renderSignInDialog(context: ComponentFixtureContext, showReturnToVSCode
 		buttons: getChatSetupDialogButtons(ChatEntitlement.Unknown, presentation, providers),
 		icon: presentation.dialogIcon,
 		disableCloseButton: presentation.disableCloseButton,
-		footer: getChatSetupDialogFooter(undefined, TelemetryLevel.USAGE, 'https://github.com/settings/copilot/features', footerContent),
+		footer: '',
 		extraClasses: presentation.dialogExtraClasses,
 		renderFooter: presentation.renderDialogFooter,
 	}));
