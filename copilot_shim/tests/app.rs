@@ -196,7 +196,7 @@ fn macos_install_only_finds_an_existing_cli_without_launching_it() {
 			false,
 			String::new(),
 			format!(
-				"VEGA IDE CLI is already installed.\nLocation: {}\n",
+				"Copilot CLI is already installed.\nLocation: {}\n",
 				cli.display()
 			),
 		)

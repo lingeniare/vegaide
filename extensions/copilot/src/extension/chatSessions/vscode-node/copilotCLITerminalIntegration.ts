@@ -127,7 +127,7 @@ export class CopilotCLITerminalIntegration extends Disposable implements ICopilo
 
 		const provideTerminalProfile = async () => {
 			const shellInfo = await this.getShellInfo([]);
-			const options = await getCommonTerminalOptions('VEGA IDE CLI', this._authenticationService, this._otelService, 'panel');
+			const options = await getCommonTerminalOptions('Copilot CLI', this._authenticationService, this._otelService, 'panel');
 			this.sendTerminalOpenTelemetry('new', shellInfo?.shell ?? 'unknown', 'newFromTerminalProfile', 'panel');
 			if (!shellInfo) {
 				// Create a profile with the user's default shell as a fallback.

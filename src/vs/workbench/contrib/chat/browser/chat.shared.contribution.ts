@@ -1982,7 +1982,7 @@ configurationRegistry.registerConfiguration({
 			properties: Object.fromEntries(allDiscoverySources.map(k => [k, { type: 'boolean', description: discoverySourceSettingsLabel[k] }])),
 			additionalProperties: false,
 			default: { ...defaultDiscoverySourceEnablement },
-			markdownDescription: nls.localize('mcp.discovery.enabled', "Configures discovery of Model Context Protocol servers from configuration from various other applications. The VEGA IDE CLI configuration is discovered by default; other applications must be enabled explicitly."),
+			markdownDescription: nls.localize('mcp.discovery.enabled', "Configures discovery of Model Context Protocol servers from configuration from various other applications. The Copilot CLI configuration is discovered by default; other applications must be enabled explicitly."),
 		},
 		[mcpWorkspaceRootConfig]: {
 			type: 'boolean',
@@ -2386,7 +2386,7 @@ configurationRegistry.registerConfiguration({
 		},
 		[ChatConfiguration.CopilotCliCommandEnabled]: {
 			type: 'boolean',
-			markdownDescription: nls.localize('chat.copilotCliCommand.enabled', "Controls whether integrated terminals include the `copilot` command that ships with VS Code. The command runs VEGA IDE CLI and offers to install it when it's missing. A VEGA IDE CLI that you installed yourself isn't affected."),
+			markdownDescription: nls.localize('chat.copilotCliCommand.enabled', "Controls whether integrated terminals include the `copilot` command that ships with VS Code. The command runs Copilot CLI and offers to install it when it's missing. A Copilot CLI that you installed yourself isn't affected."),
 			default: true,
 			scope: ConfigurationScope.APPLICATION,
 			policy: {
@@ -2396,7 +2396,7 @@ configurationRegistry.registerConfiguration({
 				localization: {
 					description: {
 						key: 'chat.copilotCliCommand.enabled.policy',
-						value: nls.localize('chat.copilotCliCommand.enabled.policy', "Controls whether VS Code provides the copilot command for VEGA IDE CLI. When disabled, VS Code setup on Windows and the Linux DEB and RPM packages don't add the command to PATH and remove the entry they added, VS Code doesn't install VEGA IDE CLI, and integrated terminals don't include the command. A VEGA IDE CLI that was installed separately isn't affected."),
+						value: nls.localize('chat.copilotCliCommand.enabled.policy', "Controls whether VS Code provides the copilot command for Copilot CLI. When disabled, VS Code setup on Windows and the Linux DEB and RPM packages don't add the command to PATH and remove the entry they added, VS Code doesn't install Copilot CLI, and integrated terminals don't include the command. A Copilot CLI that was installed separately isn't affected."),
 					}
 				},
 			}

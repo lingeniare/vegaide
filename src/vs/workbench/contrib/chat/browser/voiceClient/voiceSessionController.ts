@@ -1162,8 +1162,8 @@ export class VoiceSessionController extends Disposable implements IVoiceSessionC
 		if (!hasGptLiveByok && !isVoiceEntitled(this.chatEntitlementService)) {
 			this.disconnect();
 			this.notificationService.warn(this.chatEntitlementService.entitlement === ChatEntitlement.Business || this.chatEntitlementService.entitlement === ChatEntitlement.Enterprise
-				? localize('voiceMode.organizationUnavailable', "Voice Mode is not available for VEGA IDE Business or Enterprise accounts.")
-				: localize('voiceMode.requiresPaidPlan', "Voice Mode requires a paid VEGA IDE plan."));
+				? localize('voiceMode.organizationUnavailable', "Voice Mode is not available for Copilot Business or Enterprise accounts.")
+				: localize('voiceMode.requiresPaidPlan', "Voice Mode requires a paid Copilot plan."));
 			return;
 		}
 		this._usingGptLiveByok = hasGptLiveByok;

@@ -39,7 +39,7 @@ for ($attempt = 0; $attempt -lt 5; $attempt++) {
 		Get-CimInstance Win32_Process |
 			Where-Object {
 				$commandLine = $_.CommandLine
-				$_.Name -eq 'Code - OSS.exe' -and
+				$_.Name -eq 'VEGA IDE.exe' -and
 				$null -ne $commandLine -and
 				(Test-CommandLineHasPathArgument $commandLine '--user-data-dir' $userDataDir)
 			}
@@ -57,14 +57,14 @@ $remainingProcesses = @(
 	Get-CimInstance Win32_Process |
 		Where-Object {
 			$commandLine = $_.CommandLine
-			$_.Name -eq 'Code - OSS.exe' -and
+			$_.Name -eq 'VEGA IDE.exe' -and
 			$null -ne $commandLine -and
 			(Test-CommandLineHasPathArgument $commandLine '--user-data-dir' $userDataDir)
 		}
 )
 if ($remainingProcesses.Count -gt 0) {
 	$processIds = $remainingProcesses.ProcessId -join ', '
-	throw "Code OSS processes still reference the run directory: $processIds"
+	throw "VEGA IDE processes still reference the run directory: $processIds"
 }
 
 for ($attempt = 0; $attempt -lt 5 -and (Test-Path -LiteralPath $RunDir); $attempt++) {

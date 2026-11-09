@@ -25,7 +25,7 @@ export interface IResolvedAccountInfo {
 
 /**
  * Resolves the current account info by trying the default account service
- * first, then falling back to raw GitHub sessions from the authentication
+ * first, then falling back to raw VEGA sessions from the authentication
  * service. The fallback covers the window between session creation and
  * {@link IDefaultAccountService} initialization.
  */
@@ -44,12 +44,12 @@ export async function resolveAccountInfo(
 	}
 
 	try {
-		const sessions = await authenticationService.getSessions('github');
+		const sessions = await authenticationService.getSessions('vega');
 		if (sessions.length > 0) {
 			return {
 				accountName: sessions[0].account.label,
-				accountProviderId: 'github',
-				accountProviderLabel: 'GitHub',
+				accountProviderId: 'vega',
+				accountProviderLabel: 'VEGA IDE',
 				accountIcon: sessions[0].account.icon,
 			};
 		}
@@ -174,7 +174,7 @@ function getCopilotPresentation(
 			kind: 'default',
 			icon: Codicon.account,
 			label: localize('agentsSignInOptional', "Sign In"),
-			ariaLabel: localize('agentsSignInOptionalAria', "Sign in to GitHub to use more agents"),
+			ariaLabel: localize('agentsSignInOptionalAria', "Sign in to VEGA IDE to use more agents"),
 		};
 	}
 
@@ -212,7 +212,7 @@ function getCopilotPresentation(
 			label: localize('copilotTokensRemaining', "Tokens Remaining"),
 			badge: `${remainingPercent}%`,
 			dotBadge: remainingPercent <= 10 ? 'error' : 'warning',
-			ariaLabel: localize('copilotTokensRemainingAria', "{0}% VEGA IDE tokens remaining", remainingPercent),
+			ariaLabel: localize('copilotTokensRemainingAria', "{0}% Copilot tokens remaining", remainingPercent),
 		};
 	}
 

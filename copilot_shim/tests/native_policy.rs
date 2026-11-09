@@ -281,7 +281,7 @@ fn native_binary_dispatches_provisioned_policy() {
 			Some(10),
 			Vec::<u8>::new(),
 			String::from(
-				"VEGA IDE CLI was not found. Installing it from VS Code is turned off by the CopilotCliCommand policy; contact your administrator.\n"
+				"Copilot CLI was not found. Installing it from VS Code is turned off by the CopilotCliCommand policy; contact your administrator.\n"
 			),
 		)
 	);

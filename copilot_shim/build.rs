@@ -71,7 +71,7 @@ fn version_resource(major: u16, minor: u16, patch: u16, version: &str) -> Vec<u8
 
 	let strings = [
 		("CompanyName", "Microsoft Corporation"),
-		("FileDescription", "VEGA IDE CLI launcher"),
+		("FileDescription", "Copilot CLI launcher"),
 		("FileVersion", version),
 		("InternalName", "copilot.exe"),
 		(

@@ -170,9 +170,9 @@ class SessionsSetUpWidget extends Disposable {
 
 	private async _checkWebAuth(): Promise<void> {
 		try {
-			const sessions = await this.authenticationService.getSessions('github');
+			const sessions = await this.authenticationService.getSessions('vega');
 			if (sessions.length > 0) {
-				this.logService.info('[sessions welcome] GitHub session found on web, skipping welcome');
+				this.logService.info('[sessions welcome] VEGA session found on web, skipping welcome');
 				this.storageService.store(WELCOME_COMPLETE_KEY, true, StorageScope.APPLICATION, StorageTarget.MACHINE);
 				this.onCompleted();
 				return;
@@ -185,18 +185,18 @@ class SessionsSetUpWidget extends Disposable {
 
 	private _watchWebAuth(): void {
 		this._register(this.authenticationService.onDidChangeSessions(async e => {
-			if (e.providerId !== 'github' || !e.event.removed?.length) {
+			if (e.providerId !== 'vega' || !e.event.removed?.length) {
 				return;
 			}
 			try {
-				const remaining = await this.authenticationService.getSessions('github');
+				const remaining = await this.authenticationService.getSessions('vega');
 				if (remaining.length > 0) {
 					return;
 				}
 			} catch {
 				// Provider became unavailable — treat as signed out
 			}
-			this.logService.info('[sessions welcome] GitHub session removed on web, re-showing welcome');
+			this.logService.info('[sessions welcome] VEGA session removed on web, re-showing welcome');
 			this.storageService.remove(WELCOME_COMPLETE_KEY, StorageScope.APPLICATION);
 			this._showWelcome(false);
 		}));
@@ -549,7 +549,7 @@ class SessionsSetUpWidget extends Disposable {
 	private _createWelcomeFooter(disposables: DisposableStore): HTMLElement {
 		const element = $('.chat-setup-dialog-footer');
 		const defaultChatAgent = this.productService.defaultChatAgent;
-		const providerName = defaultChatAgent?.provider?.default?.name ?? 'GitHub';
+		const providerName = defaultChatAgent?.provider?.default?.name ?? 'VEGA IDE';
 		const termsUrl = defaultChatAgent?.termsStatementUrl ?? '';
 		const privacyUrl = defaultChatAgent?.privacyStatementUrl ?? '';
 		const publicCodeUrl = defaultChatAgent?.publicCodeMatchesUrl ?? '';

@@ -31,6 +31,8 @@ suite('Default theme colors', () => {
 	}
 
 	for (const { name, file, selector } of [
+		{ name: 'VEGA Dark', file: 'vega-dark.json', selector: 'vs-dark' },
+		{ name: 'VEGA Light', file: 'vega-light.json', selector: 'vs' },
 		{ name: 'Dark 2026', file: '2026-dark.json', selector: 'vs-dark' },
 		{ name: 'Light 2026', file: '2026-light.json', selector: 'vs' },
 	] as const) {

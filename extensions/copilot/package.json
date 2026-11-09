@@ -6761,7 +6761,7 @@
         {
           "icon": "copilot",
           "id": "copilot-cli",
-          "title": "VEGA IDE CLI",
+          "title": "Copilot CLI",
           "titleTemplate": "${sequence}"
         }
       ]

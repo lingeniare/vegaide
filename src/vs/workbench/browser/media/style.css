@@ -25,6 +25,24 @@
 	src: url("../../../base/browser/media/fonts/GoogleSans-Italic.ttf") format("truetype-variations");
 }
 
+/* VEGA mono font: bundled Google Sans Code variable font (wght 300-700, OFL-1.1) */
+
+@font-face {
+	font-family: "Google Sans Code";
+	font-style: normal;
+	font-weight: 300 700;
+	font-display: swap;
+	src: url("../../../base/browser/media/fonts/GoogleSansCode.ttf") format("truetype-variations");
+}
+
+@font-face {
+	font-family: "Google Sans Code";
+	font-style: italic;
+	font-weight: 300 700;
+	font-display: swap;
+	src: url("../../../base/browser/media/fonts/GoogleSansCode-Italic.ttf") format("truetype-variations");
+}
+
 /* Font Families (with CJK support) */
 
 .monaco-workbench.mac { font-family: "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -46,9 +64,9 @@
 .monaco-workbench.linux:lang(ja) { font-family: "Google Sans", system-ui, "Ubuntu", "Droid Sans", "Source Han Sans J", "Source Han Sans JP", "Source Han Sans", sans-serif; }
 .monaco-workbench.linux:lang(ko) { font-family: "Google Sans", system-ui, "Ubuntu", "Droid Sans", "Source Han Sans K", "Source Han Sans JR", "Source Han Sans", "UnDotum", "FBaekmuk Gulim", sans-serif; }
 
-.monaco-workbench.mac { --monaco-monospace-font: "Google Sans", "SF Mono", Monaco, Menlo, Courier, monospace; }
-.monaco-workbench.windows { --monaco-monospace-font: "Google Sans", Consolas, "Courier New", monospace; }
-.monaco-workbench.linux { --monaco-monospace-font: "Google Sans", "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace; }
+.monaco-workbench.mac { --monaco-monospace-font: "Google Sans Code", "SF Mono", Monaco, Menlo, Courier, monospace; }
+.monaco-workbench.windows { --monaco-monospace-font: "Google Sans Code", Consolas, "Courier New", monospace; }
+.monaco-workbench.linux { --monaco-monospace-font: "Google Sans Code", "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace; }
 
 /* Global Styles */
 
@@ -388,8 +406,10 @@ body {
 /* VEGA product mark: replace all Copilot logo codicons with the VEGA star.
    The star is rendered via CSS mask so it inherits `currentColor` — the icon
    automatically follows the theme (dark UI = light glyph, light UI = dark glyph)
-   instead of a fixed #fff/#000. */
-.monaco-workbench [class*="codicon-copilot"]::before {
+   instead of a fixed #fff/#000.
+   Status glyphs (warning/error/snooze/…) are excluded so they keep their
+   meaning — only logo variants (copilot, -large, -compact, -dot*) get the star. */
+.monaco-workbench [class*="codicon-copilot"]:not([class*="copilot-warning"]):not([class*="copilot-blocked"]):not([class*="copilot-not-connected"]):not([class*="copilot-unavailable"]):not([class*="copilot-in-progress"]):not([class*="copilot-error"]):not([class*="copilot-success"]):not([class*="copilot-snooze"])::before {
 	content: "" !important;
 	display: inline-block;
 	width: 1em;

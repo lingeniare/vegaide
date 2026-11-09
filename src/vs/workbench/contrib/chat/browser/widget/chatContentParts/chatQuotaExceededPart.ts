@@ -56,7 +56,7 @@ export class ChatQuotaExceededPart extends Disposable implements IChatContentPar
 				primaryButtonLabel = localize('manageBudget', "Manage Budget");
 				break;
 			case ChatEntitlement.Free:
-				primaryButtonLabel = localize('upgradeToCopilotPro', "Upgrade to VEGA IDE Pro");
+				primaryButtonLabel = localize('upgradeToCopilotPro', "Upgrade to Copilot Pro");
 				break;
 		}
 

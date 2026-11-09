@@ -73,9 +73,9 @@ find_shim() {
 	done
 }
 
-# Prints PATH without the folders of VS Code copilot launchers, so that the shim's search for VEGA IDE CLI finds
+# Prints PATH without the folders of VS Code copilot launchers, so that the shim's search for Copilot CLI finds
 # neither this script nor the launcher of another VS Code quality. Only the start of each copilot is read, where the
-# launcher's marker is, so a VEGA IDE CLI executable on PATH isn't read in full on every run.
+# launcher's marker is, so a Copilot CLI executable on PATH isn't read in full on every run.
 path_without_launchers() {
 	remaining="$PATH:"
 	result=
@@ -99,7 +99,7 @@ if [ -n "$SHIM" ]; then
 	exec "$SHIM" "$@"
 fi
 
-echo "The copilot command runs VEGA IDE CLI through the VS Code Server, which isn't installed in this WSL distribution yet." >&2
+echo "The copilot command runs Copilot CLI through the VS Code Server, which isn't installed in this WSL distribution yet." >&2
 echo "Run '$APP_NAME .' to open a folder from WSL in VS Code, which installs it, and then run copilot again." >&2
-echo "To install VEGA IDE CLI yourself, see https://docs.github.com/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli" >&2
+echo "To install Copilot CLI yourself, see https://docs.github.com/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli" >&2
 exit 127

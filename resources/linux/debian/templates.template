@@ -8,7 +8,7 @@ Description: Add Microsoft apt repository for Visual Studio Code?
 Template: @@NAME@@/add-copilot-command
 Type: boolean
 Default: true
-Description: Add the copilot command for VEGA IDE CLI to PATH?
- The installer would like to add /usr/bin/copilot, which runs GitHub
- Copilot CLI and offers to install it when it's missing. The
+Description: Add the copilot command for Copilot CLI to PATH?
+ The installer would like to add /usr/bin/copilot, which runs Copilot
+ CLI and offers to install it when it's missing. The
  CopilotCliCommand policy in /etc/vscode/policy.json takes precedence.

@@ -13,7 +13,7 @@ import { language } from '../../../base/common/platform.js';
  */
 const RU_BRAND_NAMES: ReadonlyArray<readonly [from: string, to: string]> = [
 	['VEGA IDE', 'ВЕГА Редактор'],
-	['VEGA IDE', 'ВЕГА КОД'],
+	['VEGA Code', 'ВЕГА Редактор'],
 	['VEGA', 'ВЕГА'],
 ];
 

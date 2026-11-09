@@ -780,7 +780,7 @@ const HOOK_TYPE_MAP: Record<string, string> = {
 	'SubagentStop': 'SubagentStop',
 	'Stop': 'Stop',
 	'ErrorOccurred': 'ErrorOccurred',
-	// camelCase (VEGA IDE CLI)
+	// camelCase (Copilot CLI)
 	'sessionStart': 'SessionStart',
 	'sessionEnd': 'SessionEnd',
 	'userPromptSubmitted': 'UserPromptSubmit',

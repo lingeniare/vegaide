@@ -5,7 +5,7 @@
 
 const copilotSpec: Fig.Spec = {
 	name: 'copilot',
-	description: 'VEGA IDE CLI - An AI-powered coding assistant',
+	description: 'Copilot CLI - An AI-powered coding assistant',
 	options: [
 		{
 			name: '--add-dir',

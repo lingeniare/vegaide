@@ -1012,7 +1012,7 @@ suite('VoiceSessionController', () => {
 
 		assert.strictEqual(controller.isConnecting.get(), false);
 		assert.strictEqual(controller.isConnected.get(), false);
-		assert.deepStrictEqual(notificationService.notifications.map(notification => notification.message), ['Voice Mode requires a paid VEGA IDE plan.']);
+		assert.deepStrictEqual(notificationService.notifications.map(notification => notification.message), ['Voice Mode requires a paid Copilot plan.']);
 	});
 
 	test('confirms the OpenAI model only on the first successful GPT-Live connection', async () => {
@@ -1521,12 +1521,12 @@ suite('VoiceSessionController', () => {
 				{
 					entitlement: ChatEntitlement.Business,
 					connecting: false,
-					notifications: ['Voice Mode is not available for VEGA IDE Business or Enterprise accounts.'],
+					notifications: ['Voice Mode is not available for Copilot Business or Enterprise accounts.'],
 				},
 				{
 					entitlement: ChatEntitlement.Enterprise,
 					connecting: false,
-					notifications: ['Voice Mode is not available for VEGA IDE Business or Enterprise accounts.'],
+					notifications: ['Voice Mode is not available for Copilot Business or Enterprise accounts.'],
 				},
 			],
 			internalConnecting: true,

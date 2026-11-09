@@ -72,7 +72,7 @@ the proxy and its DI registration in the agent host.
 
 - The SDK is hard-wired to call `https://api.anthropic.com`-shaped
   endpoints. We can't redirect at the SDK level.
-- We don't ship Anthropic API keys; we ship VEGA IDE tokens.
+- We don't ship Anthropic API keys; we ship Copilot tokens.
   The proxy authenticates via Bearer-token-with-nonce, mints CAPI
   tokens internally, and forwards.
 - All routing/translation logic stays out of the SDK subprocess.
