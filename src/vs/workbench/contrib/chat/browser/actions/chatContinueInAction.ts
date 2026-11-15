@@ -28,7 +28,6 @@ import { IFileService } from '../../../../../platform/files/common/files.js';
 import { IChatAgentService } from '../../common/participants/chatAgents.js';
 import { ILanguageModelsService } from '../../common/languageModels.js';
 import { ChatContextKeys } from '../../common/actions/chatContextKeys.js';
-import { chatEditingWidgetFileStateContextKey, ModifiedFileEntryState } from '../../common/editing/chatEditingService.js';
 import { ChatModel, type IChatModel } from '../../common/model/chatModel.js';
 import { ChatRequestParser } from '../../common/requestParser/chatRequestParser.js';
 import { getDynamicVariablesForWidget, getSelectedToolAndToolSetsForWidget } from '../attachments/chatVariables.js';
@@ -39,9 +38,7 @@ import { isChatViewTitleActionContext, type IChatViewTitleActionContext } from '
 import { getLocalChatMigrationTarget, LocalChatMigrationTelemetry, type LocalChatMigrationFailureReason } from '../agentSessions/agentHost/localChatMigrationTelemetry.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
 import { IManagedSettingsService, requiresCopilotAgentHost } from '../../../../../platform/policy/common/copilotManagedSettings.js';
-import { PROMPT_LANGUAGE_ID } from '../../common/promptSyntax/promptTypes.js';
-import { AgentSessionProviders, AgentSessionTarget, CHAT_DELEGATE_TO_AGENT_HOST_SESSION_COMMAND_ID, getAgentSessionProvider, getAgentSessionProviderIcon, getAgentSessionProviderName, IAgentHostDelegationRequest, isAgentHostTarget } from '../agentSessions/agentSessions.js';
-import { ISCMService } from '../../../scm/common/scm.js';
+import { AgentSessionProviders, CHAT_DELEGATE_TO_AGENT_HOST_SESSION_COMMAND_ID, getAgentSessionProvider, getAgentSessionProviderName, IAgentHostDelegationRequest, isAgentHostTarget } from '../agentSessions/agentSessions.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
 import { IAgentSessionsService } from '../agentSessions/agentSessionsService.js';
 import { IChatWidget, IChatWidgetService, isIChatViewViewContext } from '../chat.js';
