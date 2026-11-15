@@ -50,7 +50,7 @@
 		"compile-web": "node esbuild.browser.mts",
 		"watch": "gulp watch-extension:vega-authentication",
 		"watch-web": "node esbuild.browser.mts --watch",
-		"vscode:prepublish": "npm run compile"
+		"vscode:prepublish": "pnpm run compile"
 	},
 	"repository": {
 		"type": "git",
