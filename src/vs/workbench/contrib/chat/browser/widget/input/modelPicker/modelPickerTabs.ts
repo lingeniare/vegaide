@@ -158,7 +158,6 @@ export interface IModelPickerSectionsOptions {
 	readonly models: readonly ILanguageModelChatMetadataAndIdentifier[];
 	readonly selectedModelId: string | undefined;
 	readonly organizationDefaultModelId?: string;
-	readonly recentModelIds: readonly string[];
 	readonly pinnedModelIds: readonly string[];
 	readonly controlModels: IStringDictionary<IModelControlEntry>;
 	readonly preferredSpeedVariants?: ReadonlyMap<string, string>;

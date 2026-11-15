@@ -25,11 +25,12 @@ const commonResourcePatterns = [
 	// Fonts referenced from CSS via @font-face
 	'vs/base/browser/media/fonts/*.ttf',
 
-	// SVGs referenced from CSS (needed for transpile/dev builds where CSS is copied as-is)
+	// Images referenced from CSS or loaded dynamically
 	'vs/workbench/browser/media/code-icon.{svg,png}',
 	'vs/workbench/browser/parts/editor/media/letterpress*.svg',
 	'vs/workbench/contrib/chat/browser/widget/media/chatPet/**/*.{gif,png}',
 	'vs/sessions/contrib/chat/browser/media/*.svg',
+	'vs/sessions/services/chatBackground/browser/media/*.webp',
 	'vs/sessions/contrib/welcome/browser/media/themePreviews/*.svg'
 ];
 

@@ -77,8 +77,7 @@ const defaultChat = product.defaultChatAgent;
  * Variation A — Classic Wizard Modal
  *
  * A centered modal overlay with progress dots, clean step transitions,
- * and polished navigation. Sits on top of the agent sessions welcome
- * tab. When dismissed, the welcome tab is revealed underneath.
+ * and polished navigation.
  *
  * Steps:
  * 1. Sign In — sessions-style sign-in hero with the VEGA provider

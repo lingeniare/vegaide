@@ -10,7 +10,6 @@ import { ChatSetupDialog, getChatSetupDialogButtons } from '../../../../contrib/
 import { ChatEntitlement } from '../../../../services/chat/common/chatEntitlementService.js';
 import { IHostService } from '../../../../services/host/browser/host.js';
 import { IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
-// eslint-disable-next-line local/code-import-patterns
 import { createSessionsSignInDialogOptions, SessionsSigningInDialog } from '../../../../../sessions/browser/sessionsSignInDialog.js';
 import { ComponentFixtureContext, createEditorServices, defineComponentFixture, defineThemedFixtureGroup } from '../fixtureUtils.js';
 
