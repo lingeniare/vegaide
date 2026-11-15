@@ -617,7 +617,7 @@ suite('SessionWorktreeCleanupEditor', () => {
 			titles: [...section.querySelectorAll('.session-worktree-cleanup-session-link')].map(element => element.textContent),
 			reason: section.querySelector('.session-worktree-cleanup-reason')?.textContent,
 			selectable: section.querySelectorAll('[role="checkbox"]').length,
-			sessionlessReason: [...container.querySelectorAll('.session-worktree-cleanup-reason')].some(element => element.textContent === 'Cleanup failed: git add exited with code 128'),
+			sessionlessReason: [...container.querySelectorAll('.session-worktree-cleanup-reason')].some(element => element.textContent?.startsWith('Cleanup failed; retry scheduled: git add exited with code 128')),
 		}, {
 			unavailable: 'Needs attention (1)',
 			titles: ['retryable'],

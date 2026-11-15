@@ -2938,16 +2938,14 @@ export class SessionSectionRenderer implements ITreeRenderer<SessionListItem, Fu
 		} else if (element.id === INBOX_NOTIFICATIONS_SECTION_ID) {
 			template.container.classList.add('session-section-inbox');
 			template.icon.style.display = '';
-			if (this.hoverService) {
-				const inboxHover = template.elementDisposables.add(new MutableDisposable<IDisposable>());
-				template.elementDisposables.add(autorun(reader => {
-					const keybindingLabel = this.inboxOpenKeybindingLabel.read(reader);
-					const hoverText = keybindingLabel
+			template.elementDisposables.add(this.hoverService.setupDelayedHover(template.container, () => {
+				const keybindingLabel = this.inboxOpenKeybindingLabel.get();
+				return withSessionsListHoverPresentation({
+					content: keybindingLabel
 						? localize('inboxNotificationsSectionHoverWithKeybinding', "Open Inbox ({0})", keybindingLabel)
-						: localize('inboxNotificationsSectionHover', "Open Inbox");
-					inboxHover.value = this.hoverService?.setupManagedHover(getDefaultHoverDelegate('element'), template.container, hoverText);
-				}));
-			}
+						: localize('inboxNotificationsSectionHover', "Open Inbox"),
+				});
+			}));
 			template.elementDisposables.add(autorun(reader => {
 				template.container.classList.toggle('active', this.inboxActive.read(reader));
 			}));

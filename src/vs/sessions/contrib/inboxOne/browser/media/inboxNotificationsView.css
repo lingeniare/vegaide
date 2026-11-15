@@ -132,7 +132,6 @@
 
 .inbox-notifications-content.no-detail .inbox-notifications-list-pane {
 	flex: 1 1 auto;
-	width: auto !important;
 }
 
 .inbox-notifications-detail-pane {
@@ -925,12 +924,6 @@
 	align-items: center;
 	color: var(--vscode-descriptionForeground);
 	font-size: var(--vscode-fontSize-label2);
-}
-
-.inbox-notifications-item-badge.kind {
-	background-color: var(--vscode-editorWidget-background);
-	color: var(--vscode-descriptionForeground);
-	border: 1px solid var(--vscode-widget-border);
 }
 
 .inbox-notifications-item-badge.repository {
