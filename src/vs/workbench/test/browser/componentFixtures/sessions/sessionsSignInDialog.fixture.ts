@@ -45,7 +45,7 @@ function renderSignInDialog(context: ComponentFixtureContext, showReturnToVSCode
 	const presentation = createSessionsSignInDialogOptions(instantiationService.get(ICommandService), showReturnToVSCodeEditor, allowContinueWithoutSignIn);
 	const dialog = context.disposableStore.add(instantiationService.createInstance(ChatSetupDialog, context.container, {
 		title: presentation.dialogTitle,
-		buttons: getChatSetupDialogButtons(ChatEntitlement.Unknown, presentation, providers),
+		buttons: getChatSetupDialogButtons(ChatEntitlement.Unknown, presentation, false, false, providers),
 		icon: presentation.dialogIcon,
 		disableCloseButton: presentation.disableCloseButton,
 		footer: '',

@@ -272,7 +272,7 @@ const CAPI_URL_OVERRIDE_SMOKE_TEST_ENV = 'VSCODE_SMOKE_TEST_PROXY_HEADER';
 export const VEGA_API_KEY_PREFIX = 'sk-apivega-';
 
 /** Whether the supplied credential is a VEGA application key. */
-export function isVegaApiKey(token: string | undefined): boolean {
+export function isVegaApiKey(token: string | undefined): token is string {
 	return typeof token === 'string' && token.startsWith(VEGA_API_KEY_PREFIX);
 }
 
