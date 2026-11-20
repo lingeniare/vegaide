@@ -34,7 +34,7 @@ export class OpenInVSCodeTitleBarWidget extends BaseActionViewItem {
 	override render(container: HTMLElement): void {
 		super.render(container);
 
-		container.classList.add('open-in-vscode-titlebar-widget');
+		container.classList.add('open-in-vscode-titlebar-widget', 'agent-sessions-interactive');
 		container.setAttribute('role', 'button');
 
 		// Expose the product quality on the widget for tests and tooling.

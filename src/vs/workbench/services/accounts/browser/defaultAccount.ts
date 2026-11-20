@@ -1055,6 +1055,7 @@ export class DefaultAccountProvider extends Disposable implements IDefaultAccoun
 					copilotTokenInfo: {
 						sn: tokenMap.get('sn'),
 						fcv1: tokenMap.get('fcv1'),
+						st: tokenMap.get('st'),
 					},
 				};
 			}

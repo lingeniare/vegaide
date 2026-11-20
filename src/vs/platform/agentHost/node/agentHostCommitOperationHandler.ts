@@ -9,6 +9,7 @@ import { captureCredentialSource, type IAgentHostCredentialSource } from '../com
 import { URI } from '../../../base/common/uri.js';
 import { localize } from '../../../nls.js';
 import { ruLabel, withRuBrandNames } from '../../../platform/product/common/vegaBranding.js';
+import { AgentSession } from '../common/agent.js';
 import { IAgentHostAuthenticationService } from './agentHostAuthenticationService.js';
 import { IAgentHostGitHubEndpointService } from './agentHostGitHubEndpointService.js';
 import { parseChangesetUri } from '../common/changesetUri.js';
@@ -120,6 +121,7 @@ export class AgentHostCommitOperationHandler implements IChangesetOperationHandl
 		try {
 			message = this._cleanCommitMessage(await this._copilotApiService.utilityChatCompletion(authToken, {
 				messages: this._buildCommitMessagePrompt(workingDirectory, branchName, diffs),
+				telemetry: { source: 'gitCommitMessageGenerator', agentSessionId: AgentSession.id(sessionUri) },
 			}, { signal }));
 		} catch (err) {
 			this._throwIfCancelled(token);

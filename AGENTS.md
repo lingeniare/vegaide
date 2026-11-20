@@ -128,9 +128,4 @@ The accent of `VEGA Dark` / `VEGA Light` lives in **three** places — change al
 
 Scale is role-based: primary anchor (borders/buttons/progress), deep (badge bg, selection — keep ≥4.5:1 vs white text), hover (lighter step), bright + lightest (links/highlights on dark). Hex alpha suffixes (`B3`, `40`, `26`, …) stay untouched — swap the base color only. Since 2026-11 VEGA Dark uses purple anchored on `#564592`; `*focusBorder/Outline` keys sit one step lighter (`#8572caB3`) because the deep anchor is nearly invisible as a focus ring on `#121314`. VEGA Light still uses the emerald scale (`#059669`/`#047857`/`#34D399`).
 
-## Upstream backports ahead of release/1.146 (learned 2026-11)
 
-Cherry-picked upstream-main fixes that are **not** in `release/1.146` — drop these notes once a 1.146.x service release or the next release branch contains them:
-
-- `9845ea4f1dc` ← upstream `3c73cdb5feb` (PR #347898): quadratic renderer freeze when many text models are disposed at once — the "diff editor hangs for tens of seconds" bug after opening a multi-diff over a huge changeset (SCM "open all changes" of a big merge, Agents-window session diffs). `MainThreadDocumentAndEditorStateComputer._updateStateOnModelRemove` sends a per-model delta instead of recomputing full state; `WorkerManager` debounces `_checkStopEmptyWorker` per removal burst. Symptom check: freeze on *closing* a multi-diff, not on diff computation itself.
-- Candidate, not taken yet: upstream `1fc916d4c03` (PR #348123) — Agents window freeze on sessions with many recorded artifacts (unchanged artifact snapshot re-send/re-apply).
