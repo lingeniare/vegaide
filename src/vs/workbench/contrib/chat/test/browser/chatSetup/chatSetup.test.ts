@@ -410,8 +410,9 @@ suite('Chat Microsoft sign-in probe service', () => {
 		}
 		assert.deepStrictEqual(observed, [false, true].flatMap(runtimeMicrosoft => ['negative', 'positive', 'pending'].map(probe => ({
 			runtimeMicrosoft, probe, promptShown: true, runtimeProbed: false,
-			strategies: [ChatSetupStrategy.SetupWithoutEnterpriseProvider, ChatSetupStrategy.SetupWithGoogleProvider, ChatSetupStrategy.SetupWithAppleProvider,
-			...(runtimeMicrosoft || probe === 'positive' ? [ChatSetupStrategy.SetupWithMicrosoftProvider] : []), ChatSetupStrategy.SetupWithEnterpriseProvider],
+			// VEGA IDE configures a single sign-in provider, so the dialog can
+			// only ever offer the default-provider strategy regardless of probes.
+			strategies: [ChatSetupStrategy.SetupWithoutEnterpriseProvider],
 		}))));
 	});
 
