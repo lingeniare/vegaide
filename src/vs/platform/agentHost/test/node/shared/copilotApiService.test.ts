@@ -2527,6 +2527,47 @@ suite('CopilotApiService', () => {
 			assert.ok(withHeader['Copilot-Integration-Id'], 'integration id should be present by default');
 			assert.strictEqual(suppressed['Copilot-Integration-Id'], undefined, 'integration id should be suppressed when opted in');
 		});
+
+		test('VEGA application-key requests carry OpenRouter app attribution headers', async () => {
+			const { fetch: fetchFn, captured } = routingFetch(() => modelsResponse([]));
+			const service = createService(fetchFn);
+
+			await service.models('sk-apivega-test-key');
+			const headers = captured().init?.headers as Record<string, string>;
+
+			assert.ok(captured().url.startsWith('https://api.vega.chat/api/v1'), `expected a VEGA URL, got: ${captured().url}`);
+			assert.strictEqual(headers['HTTP-Referer'], 'https://api.vega.chat');
+			assert.strictEqual(headers['X-OpenRouter-Title'], 'VEGA');
+			assert.strictEqual(headers['X-OpenRouter-Categories'], 'general-chat');
+			assert.strictEqual(headers['Authorization'], 'Bearer sk-apivega-test-key');
+		});
+
+		test('VEGA attribution survives the /v1/v1/ messages URL rewrite', async () => {
+			const { fetch: fetchFn, captured } = routingFetch(
+				() => anthropicResponse([{ type: 'text', text: 'ok' }]),
+			);
+			const service = createService(fetchFn);
+
+			await service.messages('sk-apivega-test-key', baseRequest);
+			const headers = captured().init?.headers as Record<string, string>;
+
+			assert.strictEqual(captured().url, 'https://api.vega.chat/api/v1/messages');
+			assert.strictEqual(headers['HTTP-Referer'], 'https://api.vega.chat');
+			assert.strictEqual(headers['X-OpenRouter-Title'], 'VEGA');
+			assert.strictEqual(headers['X-OpenRouter-Categories'], 'general-chat');
+		});
+
+		test('GitHub-token requests do not carry VEGA attribution headers', async () => {
+			const { fetch: fetchFn, captured } = routingFetch(() => modelsResponse([]));
+			const service = createService(fetchFn);
+
+			await service.models('gh-tok');
+			const headers = captured().init?.headers as Record<string, string>;
+
+			assert.strictEqual(headers['HTTP-Referer'], undefined);
+			assert.strictEqual(headers['X-OpenRouter-Title'], undefined);
+			assert.strictEqual(headers['X-OpenRouter-Categories'], undefined);
+		});
 	});
 
 	// #endregion

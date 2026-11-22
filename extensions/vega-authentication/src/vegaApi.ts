@@ -17,13 +17,24 @@
 export const VEGA_API_ORIGIN = 'https://api.vega.chat';
 export const VEGA_OPENAI_BASE = `${VEGA_API_ORIGIN}/api/v1`;
 
+/**
+ * OpenRouter-style app attribution headers sent with requests to the VEGA
+ * gateway (an OpenRouter-compatible proxy), identifying the calling
+ * application for the gateway's app attribution and rankings.
+ */
+export const VEGA_ATTRIBUTION_HEADERS: Record<string, string> = {
+	'HTTP-Referer': VEGA_API_ORIGIN,
+	'X-OpenRouter-Title': 'VEGA',
+	'X-OpenRouter-Categories': 'general-chat',
+};
+
 /** Registered application/client id for this product on the VEGA side. */
 export const VEGA_CLIENT_ID = 'vegaide';
 
 /** The only scope the application key is minted for. */
 export const VEGA_SCOPE = 'api';
 
-const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' };
+const JSON_HEADERS = { ...VEGA_ATTRIBUTION_HEADERS, 'Content-Type': 'application/json', Accept: 'application/json' };
 
 /** Bounds every API call so a slow or unreachable api.vega.chat fails fast instead of freezing the sign-in UI. */
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -151,7 +162,7 @@ export interface IVegaAccountInfo {
 /** Resolves a displayable account identity for the signed-in user. */
 export async function getAccountInfo(apiKey: string): Promise<IVegaAccountInfo> {
 	const response = await fetch(`${VEGA_API_ORIGIN}/api/v1/account`, {
-		headers: { Accept: 'application/json', Authorization: `Bearer ${apiKey}` },
+		headers: { ...VEGA_ATTRIBUTION_HEADERS, Accept: 'application/json', Authorization: `Bearer ${apiKey}` },
 		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 	});
 	if (!response.ok) {

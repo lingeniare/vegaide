@@ -6,8 +6,22 @@
 import { ExtendedTokenInfo } from './copilotToken';
 import { nowSeconds } from './copilotTokenManager';
 
+/** The VEGA site origin. */
+export const VEGA_API_ORIGIN = 'https://api.vega.chat';
+
 /** OpenAI-compatible API base served by the VEGA gateway. */
-export const VEGA_API_BASE_URL = 'https://api.vega.chat/api/v1';
+export const VEGA_API_BASE_URL = `${VEGA_API_ORIGIN}/api/v1`;
+
+/**
+ * OpenRouter-style app attribution headers sent with requests to the VEGA
+ * gateway. api.vega.chat is an OpenRouter-compatible proxy; these identify the
+ * calling application for the gateway's app attribution and rankings.
+ */
+export const VEGA_ATTRIBUTION_HEADERS: Record<string, string> = {
+	'HTTP-Referer': VEGA_API_ORIGIN,
+	'X-OpenRouter-Title': 'VEGA',
+	'X-OpenRouter-Categories': 'general-chat',
+};
 
 /**
  * Server-side API key format minted by VEGA (`POST /api/v1/keys/<app>`).

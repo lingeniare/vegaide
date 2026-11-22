@@ -9,7 +9,7 @@ import { getExpirationTime, getRemainingTimeInSeconds } from '../../../../base/c
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { isScopedCredentialUsable, type IAgentHostScopedCredential } from '../../common/agentHostCredentials.js';
-import { VEGA_API_BASE_URL } from '../../common/githubEndpoints.js';
+import { VEGA_API_BASE_URL, VEGA_ATTRIBUTION_HEADERS } from '../../common/githubEndpoints.js';
 import { AhpErrorCodes, ProtocolError } from '../../common/state/sessionProtocol.js';
 import { isVegaApiKey } from '../shared/copilotApiService.js';
 
@@ -83,6 +83,8 @@ export class CopilotGitHubSessionCredentials {
 					type: 'openai',
 					baseUrl: VEGA_API_BASE_URL,
 					bearerToken: this._staticToken,
+					// OpenRouter-style app attribution for the VEGA gateway.
+					headers: { ...VEGA_ATTRIBUTION_HEADERS },
 				},
 			};
 		}

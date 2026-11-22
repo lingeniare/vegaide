@@ -7,6 +7,7 @@ import * as path from 'path';
 import { Emitter } from '../../../util/vs/base/common/event';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { Config, ConfigKey, ExperimentBasedConfig, ExperimentBasedConfigType, IConfigurationService } from '../../configuration/common/configurationService';
+import { VEGA_API_ORIGIN, VEGA_ATTRIBUTION_HEADERS } from '../../authentication/common/vega';
 import { INTEGRATION_ID } from '../../endpoint/common/licenseAgreement';
 import { IEnvService } from '../../env/common/envService';
 import { IVSCodeExtensionContext } from '../../extContext/common/extensionContext';
@@ -150,6 +151,9 @@ export class FetcherService extends Disposable implements IFetcherService {
 	}
 
 	createWebSocket(url: string, options?: WebSocketConnectOptions): WebSocketConnection {
+		if (url.startsWith(VEGA_API_ORIGIN)) {
+			options = { ...options, headers: { ...VEGA_ATTRIBUTION_HEADERS, ...options?.headers } };
+		}
 		if (options?.headers) {
 			delete options.headers['Request-Hmac'];
 			options.headers['Copilot-Integration-Id'] = INTEGRATION_ID;
@@ -158,6 +162,11 @@ export class FetcherService extends Disposable implements IFetcherService {
 	}
 
 	async fetch(url: string, options: FetchOptions): Promise<Response> {
+		// Requests to the VEGA gateway (an OpenRouter-compatible proxy) carry app
+		// attribution headers; the caller's own headers always win on a collision.
+		if (url.startsWith(VEGA_API_ORIGIN)) {
+			options = { ...options, headers: { ...VEGA_ATTRIBUTION_HEADERS, ...options.headers } };
+		}
 		const start = Date.now();
 		try {
 			const { response: res, updatedFetchers, updatedKnownBadFetchers } = await fetchWithFallbacks(this._getAvailableFetchers(), url, options, this._knownBadFetchers, this._configurationService, this._logService, this._telemetryService, this._experimentationService);

@@ -173,6 +173,22 @@ suite('CopilotGitHubCredentials', () => {
 		});
 	}));
 
+	test('VEGA application-key sessions map to an openai provider with app attribution headers', () => {
+		const session = CopilotGitHubSessionCredentials.fromToken('sk-apivega-test-key');
+		assert.deepStrictEqual(session.sdkSessionOptions, {
+			provider: {
+				type: 'openai',
+				baseUrl: 'https://api.vega.chat/api/v1',
+				bearerToken: 'sk-apivega-test-key',
+				headers: {
+					'HTTP-Referer': 'https://api.vega.chat',
+					'X-OpenRouter-Title': 'VEGA',
+					'X-OpenRouter-Categories': 'general-chat',
+				},
+			},
+		});
+	});
+
 	test('observed revocation prevents a scoped SDK launch without acquiring another credential', () => {
 		let usable = true;
 		const session = CopilotGitHubSessionCredentials.fromCredential({

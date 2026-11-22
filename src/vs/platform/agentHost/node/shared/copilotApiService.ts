@@ -15,7 +15,7 @@ import { ILogService } from '../../../log/common/log.js';
 import { IProductService } from '../../../product/common/productService.js';
 import { ITelemetryService } from '../../../telemetry/common/telemetry.js';
 import type { IAgentTelemetryContext } from '../../common/agent.js';
-import { VEGA_API_BASE_URL } from '../../common/githubEndpoints.js';
+import { VEGA_API_BASE_URL, VEGA_ATTRIBUTION_HEADERS } from '../../common/githubEndpoints.js';
 import { IAgentHostGitHubEndpointService } from '../agentHostGitHubEndpointService.js';
 import type { IAgentHostGitHubTelemetryContext } from '../agentHostRestrictedTelemetry.js';
 import { getUtilityModelCallFailureOutcome, reportUtilityModelCall, toUtilityModelCallGitHubTelemetry, type AgentHostUtilityModelCallOutcome, type IAgentHostUtilityModelCallTelemetryContext } from './utilityModelCallTelemetry.js';
@@ -1312,12 +1312,19 @@ export class CopilotApiService extends Disposable implements ICopilotApiService 
 		const { extensionInfo } = await this._getCapiBase();
 		const fetch = this._fetch;
 		const capiClient = new CAPIClient(extensionInfo, COPILOT_LICENSE_AGREEMENT, {
-			fetch: (url, options) => fetch(rewriteVegaRequestUrl(url), {
-				method: options.method ?? 'GET',
-				headers: options.headers,
-				body: options.body,
-				signal: options.signal as AbortSignal | undefined,
-			}),
+			fetch: (url, options) => {
+				const rewritten = rewriteVegaRequestUrl(url);
+				return fetch(rewritten, {
+					method: options.method ?? 'GET',
+					// VEGA-bound requests carry OpenRouter app attribution headers;
+					// the request's own headers always win on a collision.
+					headers: typeof rewritten === 'string' && rewritten.startsWith(VEGA_API_BASE_URL)
+						? { ...VEGA_ATTRIBUTION_HEADERS, ...options.headers }
+						: options.headers,
+					body: options.body,
+					signal: options.signal as AbortSignal | undefined,
+				});
+			},
 		});
 
 		if (isVegaApiKey(githubToken)) {

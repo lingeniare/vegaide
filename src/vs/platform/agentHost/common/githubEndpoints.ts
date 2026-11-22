@@ -13,6 +13,17 @@ export const VEGA_API_BASE_URL = 'https://api.vega.chat/api/v1';
 export const VEGA_AUTH_SERVER_URL = 'https://api.vega.chat';
 
 /**
+ * OpenRouter-style app attribution headers sent with requests to the VEGA
+ * gateway. api.vega.chat is an OpenRouter-compatible proxy; these identify the
+ * calling application for the gateway's app attribution and rankings.
+ */
+export const VEGA_ATTRIBUTION_HEADERS: Record<string, string> = {
+	'HTTP-Referer': VEGA_AUTH_SERVER_URL,
+	'X-OpenRouter-Title': 'VEGA',
+	'X-OpenRouter-Categories': 'general-chat',
+};
+
+/**
  * The VEGA protected resource. Under the VEGA product configuration the agent
  * host authenticates against `api.vega.chat` instead of VEGA IDE: the
  * `vega` authentication provider resolves a device-flow session whose access

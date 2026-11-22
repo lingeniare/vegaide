@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken } from '../../../../../../../base/common/cancellation.js';
+import { VEGA_ATTRIBUTION_HEADERS } from '../../../../../../../platform/agentHost/common/githubEndpoints.js';
 import { ILogService } from '../../../../../../../platform/log/common/log.js';
 import { IRequestService, asJson, isSuccess } from '../../../../../../../platform/request/common/request.js';
 import { IAuthenticationService } from '../../../../../../services/authentication/common/authentication.js';
@@ -79,7 +80,7 @@ async function fetchVegaPricing(
 		const response = await requestService.request({
 			type: 'GET',
 			url: `${VEGA_PRICING_URL}?limit=${VEGA_PRICING_PAGE_LIMIT}&page=${page}`,
-			headers: { Accept: 'application/json', Authorization: `Bearer ${apiKey}` },
+			headers: { ...VEGA_ATTRIBUTION_HEADERS, Accept: 'application/json', Authorization: `Bearer ${apiKey}` },
 			callSite: 'chat.modelPicker.vegaPricing',
 		}, token);
 		if (!isSuccess(response)) {
