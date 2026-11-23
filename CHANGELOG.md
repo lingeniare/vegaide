@@ -3,6 +3,67 @@
 Все значимые изменения VEGA IDE. Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.147.0] — 2026-11-23
+
+Обновление базы до **Microsoft VS Code 1.147.0** (ветка `upstream/release/1.147`, тег `1.147.0`,
+коммит `8a14f0cc1b0`).
+
+### Обновление до VS Code 1.147
+
+Ключевое из [release notes 1.147](https://code.visualstudio.com/updates/v1_147):
+
+- **Агент-сессии**
+  - Send Later (эксп.) — отложенная отправка запросов и follow-up'ов по расписанию из окна Agents.
+  - Draft requests (эксп.) — несколько неотправленных запросов с собственным контекстом и конфигурацией,
+    переживают перезапуск.
+  - Шаринг удалённых окружений как GitHub Environments — поднять сессии SSH/WSL/Dev Tunnel с другого
+    устройства.
+  - Сохранение чат-сессий при пересборке Dev Container (эксп., state volume).
+  - Inbox mode: подтверждение (acknowledge) сессий, фильтры по workspace и окружению.
+- **Агенты**
+  - Model routers (эксп.) — YAML-роутеры в `~/.agents/model-routers/` выбирают модель под тип задачи.
+  - HTML-превью и нативные визуалы (отчёты, мокапы, графики) прямо в ответах агента.
+  - Automations и настраиваемые assisted permissions — свои правила, что безопасно, а что требует
+    одобрения.
+  - Панель Details можно переставлять вокруг редактора (эксп.); информация о расширениях в окне Agents.
+- **Чат** — скриншоты других приложений как вложения (эксп.), захват и разметка изображений,
+  inline attachment pills (эксп.).
+- **MCP** — Skills over MCP.
+- **Интеграция браузера (preview)** — агенты управляют браузером (Browser Use), превью удалённых
+  HTML-файлов без копирования, открытие не-localhost ссылок, отключение димминга.
+- **Песочница** — повтор действия с обновлёнными разрешениями внутри sandbox.
+- **Редактор** — настройка скруглений и отступов панелей, connected panel tabs (эксп.),
+  редактирование Markdown-таблиц по ячейкам, сворачиваемые details-секции.
+- **Enterprise** — Claude и Codex рядом с managed settings; регулярные выражения в правилах
+  managed shell permissions.
+- **Устаревает** — десктоп на macOS Ventura/Sonoma и 32-bit ARM Linux; Local harness будет удалён
+  в феврале 2027.
+
+### VEGA IDE
+
+- **OpenRouter-атрибуция для всех запросов к api.vega.chat.** Заголовки `HTTP-Referer:
+  https://api.vega.chat`, `X-OpenRouter-Title: VEGA`, `X-OpenRouter-Categories: general-chat`
+  объявлены один раз как `VEGA_ATTRIBUTION_HEADERS` в каждом пакете и теперь применяются везде:
+  `vega-authentication`, расширение `copilot` (fetch и WebSocket через `FetcherService`), agent host
+  (`CopilotApiService`, `ProviderConfig.headers` Copilot SDK) и загрузка каталога `/pricing` в
+  workbench.
+- **`isVegaApiKey` стал type guard** (`token is string`) — после проверки ключ доступен компилятору
+  как `string` без повторных проверок.
+- **Адаптация к API upstream 1.147** — обновлена сигнатура `getChatSetupDialogButtons` в фикстуре
+  `sessionsSignInDialog`.
+- **Тесты**: новые `vegaAttributionHeaders.spec.ts` (copilot, vitest) и кейсы атрибуции в
+  `copilotApiService`/`copilotGitHubCredentials` (agentHost); `chatSetup` ожидает единственный
+  провайдер `vega` в диалоге входа — социальные кнопки не показываются независимо от результата
+  Microsoft sign-in пробы.
+
+### Проверено
+
+- `pnpm run compile` — 0 ошибок (клиент + расширение Copilot).
+- `scripts\test.bat` по затронутым областям — 220 тестов зелёные (copilotApiService,
+  copilotGitHubCredentials, githubEndpoints, chatSetup, modelPickerVegaPricing,
+  onboardingVariationA, defaultThemeColors, account.contribution).
+- `vitest` расширения copilot — 14/14 (vegaAttributionHeaders, vega, vegaModelAdapter).
+
 ## [1.146.0] — 2026-11-15
 
 Первый публичный релиз VEGA IDE на базе **Microsoft VS Code 1.146.0** (ветка `release/1.146`, коммит `69047191fc4`).
@@ -77,4 +138,5 @@
 - `pnpm run compile` — 0 ошибок (клиент + расширение Copilot).
 - `pnpm run valid-layers-check`, ESLint по изменённым файлам — ок.
 
+[1.147.0]: https://github.com/lingeniare/vegaide/releases/tag/v1.147.0
 [1.146.0]: https://github.com/lingeniare/vegaide/releases/tag/v1.146.0
