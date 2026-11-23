@@ -6,7 +6,7 @@
 .app-window-screenshot-setup-dialog .app-window-screenshot-setup-icon {
 	width: 64px;
 	height: 64px;
-	background: url('../../../../browser/media/code-icon.svg') center / contain no-repeat;
+	background: url('../../../../browser/media/code-icon.png') center / contain no-repeat;
 }
 
 /* The body holds every control, so the modal has no buttons of its own. */

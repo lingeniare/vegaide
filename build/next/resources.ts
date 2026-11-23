@@ -170,7 +170,7 @@ const webResourcePatterns = [
 const mobileResourcePatterns = [
 	'vs/editor/common/languages/highlights/*.scm',
 	'vs/editor/common/languages/injections/*.scm',
-	'vs/workbench/browser/media/code-icon.svg',
+	'vs/workbench/browser/media/code-icon.{svg,png}',
 	'vs/workbench/browser/parts/editor/media/letterpress*.svg',
 	'vs/workbench/contrib/chat/browser/widget/media/chatPet/**/*.{gif,png}',
 	'vs/sessions/contrib/chat/browser/media/*.svg',
